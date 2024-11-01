@@ -1,0 +1,28 @@
+meta {
+  name: Create new recipe
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8080/recipe
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "sam",
+    "ingredients": [{
+      "quantity": 1,
+      "name": "Potato",
+      "unit": "kg"
+    }],
+    "instructions": [
+      "Chop 'm",
+      "Mash 'm",
+      "Put 'm in a pot"
+    ],
+    "cookingTime": 40
+  }
+}

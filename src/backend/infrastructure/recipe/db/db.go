@@ -2,6 +2,7 @@
 package recipe_db
 
 import (
+	"PlatePilot/infrastructure/recipe/db/entities"
 	"fmt"
 
 	"gorm.io/driver/postgres"
@@ -13,6 +14,9 @@ func NewPostgresDB(cfg *DatabaseConfig) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(cfg.DSN()), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
+
+	db.AutoMigrate(&entities.RecipeEntity{}, &entities.IngredientEntity{})
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}

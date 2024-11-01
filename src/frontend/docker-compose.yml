@@ -6,4 +6,4 @@ services:
 
 networks:
   plate-pilot-network:
-    external: true
+    driver: bridge

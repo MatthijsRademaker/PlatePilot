@@ -27,7 +27,7 @@ dev: docker-up migrate-up
 
 # Docker commands
 docker-up:
-	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.backend-only.yml  up -d
+	$(DOCKER_COMPOSE) -f docker-compose.yml -f docker-compose.backend-only.yml  up --watch
 
 docker-down:
 	$(DOCKER_COMPOSE) down

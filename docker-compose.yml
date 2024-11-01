@@ -1,3 +1,7 @@
 include:
   - src/frontend/docker-compose.yml
   - src/backend/docker-compose.yml
+
+networks:
+  plate-pilot-network:
+    driver: bridge
