@@ -11,6 +11,10 @@ RUN go mod download
 
 COPY --chown=app:app *.go ./
 
+# RUN go get -u github.com/swaggo/swag 
+
+# RUN swag init
+
 RUN CGO_ENABLED=0 GOOS=linux go build -o /PlatePilot
 
 # Optional:
