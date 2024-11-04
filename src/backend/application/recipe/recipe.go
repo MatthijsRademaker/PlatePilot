@@ -62,13 +62,13 @@ func (controller *RecipeHandler) postRecipe(c echo.Context) error {
 		return err
 	}
 
-	var ingredients = make([]recipe.Ingredient, len(recipeToAdd.Ingredients))
+	ingredients := make([]recipe.Ingredient, len(recipeToAdd.Ingredients))
 
 	for _, i := range recipeToAdd.Ingredients {
 		ingredients = append(ingredients, recipe.Ingredient{Name: i.Name, Quantity: i.Quantity, Unit: i.Unit})
 	}
 
-	recipe, err := recipe.NewRecipe(recipeToAdd.Name, ingredients, recipeToAdd.Instructions, recipeToAdd.CookingTime)
+	recipe, err := recipe.NewRecipe(recipeToAdd.Name, ingredients, recipeToAdd.Instructions, recipeToAdd.CookingTime, recipeToAdd.Cuisines, recipeToAdd.KCalories)
 
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, "Non valid recipe provided")
@@ -88,6 +88,8 @@ type Recipe struct {
 	Ingredients  []Ingredient  `json:"ingredients"`
 	Instructions []string      `json:"instructions"`
 	CookingTime  time.Duration `json:"CookingTime"`
+	Cuisines     []string      `json:"cuisines"`
+	KCalories    uint          `json:"kCalories"`
 }
 
 type Ingredient struct {

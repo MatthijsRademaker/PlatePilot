@@ -3,20 +3,19 @@ package recipe
 import (
 	"errors"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Recipe struct {
-	Id           uuid.UUID
 	Name         string
 	Ingredients  []Ingredient
 	Instructions []string
 	CookingTime  time.Duration
+	Cuisines     []string
+	KCalories    uint
 }
 
 // Factory method with validation
-func NewRecipe(name string, ingredients []Ingredient, instructions []string, cookingTime time.Duration) (*Recipe, error) {
+func NewRecipe(name string, ingredients []Ingredient, instructions []string, cookingTime time.Duration, cuisines []string, kCalories uint) (*Recipe, error) {
 	if name == "" {
 		return nil, errors.New("recipe name cannot be empty")
 	}
@@ -26,11 +25,12 @@ func NewRecipe(name string, ingredients []Ingredient, instructions []string, coo
 	}
 
 	return &Recipe{
-		Id:           uuid.New(),
 		Name:         name,
 		Ingredients:  ingredients,
 		Instructions: instructions,
 		CookingTime:  cookingTime,
+		Cuisines:     cuisines,
+		KCalories:    kCalories,
 	}, nil
 }
 
