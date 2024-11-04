@@ -1,20 +1,19 @@
 package handlers
 
 import (
+	"PlatePilot/domain/recipes"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
-
-	"PlatePilot/domain/recipe"
 )
 
 type RecipeHandler struct {
-	recipeRepository recipe.RecipeRepository
+	recipeRepository recipes.RecipeRepository
 }
 
-func RegisterRecipeHandlers(repo recipe.RecipeRepository, e *echo.Echo) {
+func RegisterRecipeHandlers(repo recipes.RecipeRepository, e *echo.Echo) {
 	recipeHandler := &RecipeHandler{recipeRepository: repo}
 	e.GET("/recipe/:id", recipeHandler.getRecipe)
 	e.POST("/recipe", recipeHandler.postRecipe)
@@ -62,13 +61,13 @@ func (controller *RecipeHandler) postRecipe(c echo.Context) error {
 		return err
 	}
 
-	ingredients := make([]recipe.Ingredient, len(recipeToAdd.Ingredients))
+	ingredients := make([]recipes.Ingredient, len(recipeToAdd.Ingredients))
 
 	for _, i := range recipeToAdd.Ingredients {
-		ingredients = append(ingredients, recipe.Ingredient{Name: i.Name, Quantity: i.Quantity, Unit: i.Unit})
+		ingredients = append(ingredients, recipes.Ingredient{Name: i.Name, Quantity: i.Quantity, Unit: i.Unit})
 	}
 
-	recipe, err := recipe.NewRecipe(recipeToAdd.Name, ingredients, recipeToAdd.Instructions, recipeToAdd.CookingTime, recipeToAdd.Cuisines, recipeToAdd.KCalories)
+	recipe, err := recipes.NewRecipe(recipeToAdd.Name, ingredients, recipeToAdd.Instructions, recipeToAdd.CookingTime, recipeToAdd.Cuisines, recipeToAdd.KCalories)
 
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, "Non valid recipe provided")

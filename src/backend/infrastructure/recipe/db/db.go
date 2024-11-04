@@ -1,5 +1,5 @@
 // internal/infrastructure/database/postgres.go
-package recipe_db
+package recipes_db
 
 import (
 	"PlatePilot/infrastructure/recipe/db/entities"

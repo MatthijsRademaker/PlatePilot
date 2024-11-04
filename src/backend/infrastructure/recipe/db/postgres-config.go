@@ -1,5 +1,5 @@
 // internal/infrastructure/config/database.go
-package recipe_db
+package recipes_db
 
 import (
 	"fmt"

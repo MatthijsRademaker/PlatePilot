@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/recipe.Recipe"
+                            "$ref": "#/definitions/recipes.Recipe"
                         }
                     }
                 ],
@@ -43,7 +43,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/recipe.Recipe"
+                            "$ref": "#/definitions/recipes.Recipe"
                         }
                     }
                 }
@@ -51,7 +51,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "recipe.Ingredient": {
+        "recipes.Ingredient": {
             "type": "object",
             "properties": {
                 "name": {
@@ -65,7 +65,7 @@ const docTemplate = `{
                 }
             }
         },
-        "recipe.Recipe": {
+        "recipes.Recipe": {
             "type": "object"
         }
     }
