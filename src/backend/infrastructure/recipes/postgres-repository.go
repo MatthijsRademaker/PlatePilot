@@ -2,7 +2,7 @@ package recipesRepository
 
 import (
 	"PlatePilot/domain/recipes"
-	"PlatePilot/infrastructure/recipe/db/entities"
+	"PlatePilot/infrastructure/recipes/db/entities"
 	"context"
 
 	"gorm.io/gorm"

@@ -3,25 +3,27 @@ package mealplanner
 import recipes "PlatePilot/domain/recipes"
 
 type MealPlan struct {
-	Recipes []recipes.Recipe
+	RecipeIds []uint
 }
 
 // Factory method with validation
 func NewMealPlan(recipe1 recipes.Recipe) *MealPlan {
-	recipes := []recipes.Recipe{recipe1}
+	recipes := []uint{recipe1.Id}
 	return &MealPlan{
-		Recipes: recipes,
+		RecipeIds: recipes,
 	}
 }
 
 func (mealPlan *MealPlan) AddRecipe(recipe recipes.Recipe) *MealPlan {
-	mealPlan.Recipes = append(mealPlan.Recipes, recipe)
+	mealPlan.RecipeIds = append(mealPlan.RecipeIds, recipe.Id)
 
 	return mealPlan
 }
 
 func (mealPlan *MealPlan) AddRecipes(recipes []recipes.Recipe) *MealPlan {
-	mealPlan.Recipes = append(mealPlan.Recipes, recipes...)
+	for _, r := range recipes {
+		mealPlan.RecipeIds = append(mealPlan.RecipeIds, r.Id)
+	}
 
 	return mealPlan
 }

@@ -2,7 +2,7 @@
 package recipes_db
 
 import (
-	"PlatePilot/infrastructure/recipe/db/entities"
+	"PlatePilot/infrastructure/recipes/db/entities"
 	"fmt"
 
 	"gorm.io/driver/postgres"

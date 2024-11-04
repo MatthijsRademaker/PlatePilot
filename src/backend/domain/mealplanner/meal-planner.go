@@ -5,5 +5,4 @@ type MealPlanner interface {
 	GenerateMealPlan(daysToPlanFor int, constraints ...MealPlanConstraints) (*MealPlan, error)
 }
 
-type MealPlanConstraints struct {
-}
+type MealPlanConstraints []string

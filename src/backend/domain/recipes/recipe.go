@@ -6,12 +6,14 @@ import (
 )
 
 type Recipe struct {
-	Name         string
-	Ingredients  []Ingredient
-	Instructions []string
-	CookingTime  time.Duration
-	Cuisines     []string
-	KCalories    uint
+	Id             uint
+	Name           string
+	Ingredients    []Ingredient
+	MainIngredient string
+	Instructions   []string
+	CookingTime    time.Duration
+	Cuisines       []string
+	KCalories      uint
 }
 
 // Factory method with validation
