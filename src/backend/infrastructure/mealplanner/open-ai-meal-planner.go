@@ -3,7 +3,6 @@ package mealplanner
 import (
 	"PlatePilot/domain/mealplanner"
 	"PlatePilot/domain/recipes"
-	"context"
 
 	"github.com/openai/openai-go" // imported as openai
 	"github.com/openai/openai-go/option"
@@ -11,21 +10,21 @@ import (
 
 type OpenAiMealPlanner struct {
 	client            *openai.Client
-	recipesRepository recipes.RecipeRepository
+	recipesRepository *recipes.RecipeRepository
 }
 
-func CreateMealPlanner(openAiKey string) *mealplanner.MealPlanner {
+func CreateMealPlanner(openAiKey string, recipeRepository *recipes.RecipeRepository) *mealplanner.MealPlanner {
 
 	client := openai.NewClient(
 		option.WithAPIKey("My API Key"), // defaults to os.LookupEnv("OPENAI_API_KEY")
 	)
-	chatCompletion, err := client.Chat.Completions.New(context.TODO(), openai.ChatCompletionNewParams{
-		Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
-			openai.UserMessage("Say this is a test"),
-		}),
-		Model: openai.F(openai.ChatModelGPT4o),
-	})
-	if err != nil {
-		panic(err.Error())
+
+	return &OpenAiMealPlanner{
+		client:            client,
+		recipesRepository: recipeRepository,
 	}
+}
+
+func (planner *mealplanner.MealPlanner) Suggest(mealPlan *mealplanner.MealPlan, amountToSuggest int, constraints ...mealplanner.MealPlanConstraints) (*mealplanner.MealPlan, error) {
+
 }
