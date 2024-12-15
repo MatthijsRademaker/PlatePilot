@@ -10,8 +10,8 @@ var recipeDb = postgres.AddDatabase("recipedb");
 
 const string launchProfile = "https";
 
-var applicationApi = builder
-    .AddProject<Projects.Application>("application")
+builder
+    .AddProject<Projects.Recipe_Application>("application")
     .WithReference(recipeDb)
     .WaitFor(recipeDb);
 
