@@ -1,4 +1,0 @@
-networks:
-  plate-pilot-network:
-    external: false
-    driver: bridge
