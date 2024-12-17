@@ -2,7 +2,7 @@ using Domain;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
-namespace Recipe.Api.Application
+namespace Application
 {
     public static class RegisterDependencies
     {

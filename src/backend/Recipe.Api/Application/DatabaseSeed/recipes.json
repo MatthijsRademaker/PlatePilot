@@ -1,0 +1,712 @@
+{
+  "recipes": [
+    {
+      "id": 1,
+      "name": "Spaghetti Carbonara",
+      "description": "Classic Italian pasta dish with eggs and pancetta",
+      "prepTime": "15 minutes",
+      "cookTime": "20 minutes",
+      "mainIngredient": {
+        "id": 1,
+        "name": "Spaghetti",
+        "quantity": "1 pound"
+      },
+      "cuisine": "Italian",
+      "ingredients": [
+        {
+          "id": 2,
+          "name": "Eggs",
+          "quantity": "4 large"
+        },
+        {
+          "id": 3,
+          "name": "Pancetta",
+          "quantity": "8 oz"
+        },
+        {
+          "id": 4,
+          "name": "Parmesan",
+          "quantity": "1 cup"
+        }
+      ],
+      "directions": [
+        "Boil pasta until al dente",
+        "Cook pancetta until crispy",
+        "Mix eggs and cheese",
+        "Combine all ingredients"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Chicken Tikka Masala",
+      "description": "Creamy Indian curry with tender chicken",
+      "prepTime": "30 minutes",
+      "cookTime": "45 minutes",
+      "mainIngredient": {
+        "id": 5,
+        "name": "Chicken",
+        "quantity": "2 pounds"
+      },
+      "cuisine": "Indian",
+      "ingredients": [
+        {
+          "id": 6,
+          "name": "Yogurt",
+          "quantity": "1 cup"
+        },
+        {
+          "id": 7,
+          "name": "Tomato Sauce",
+          "quantity": "2 cups"
+        }
+      ],
+      "directions": [
+        "Marinate chicken",
+        "Grill chicken pieces",
+        "Prepare sauce",
+        "Combine and simmer"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Beef Tacos",
+      "description": "Classic Mexican street tacos",
+      "prepTime": "20 minutes",
+      "cookTime": "15 minutes",
+      "mainIngredient": {
+        "id": 8,
+        "name": "Ground Beef",
+        "quantity": "1 pound"
+      },
+      "cuisine": "Mexican",
+      "ingredients": [
+        {
+          "id": 9,
+          "name": "Corn Tortillas",
+          "quantity": "12 pieces"
+        },
+        {
+          "id": 10,
+          "name": "Onion",
+          "quantity": "1 medium"
+        }
+      ],
+      "directions": [
+        "Brown the beef",
+        "Add seasonings",
+        "Warm tortillas",
+        "Assemble tacos"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Pad Thai",
+      "description": "Traditional Thai stir-fried noodles",
+      "prepTime": "25 minutes",
+      "cookTime": "15 minutes",
+      "mainIngredient": {
+        "id": 11,
+        "name": "Rice Noodles",
+        "quantity": "8 oz"
+      },
+      "cuisine": "Thai",
+      "ingredients": [
+        {
+          "id": 12,
+          "name": "Tofu",
+          "quantity": "14 oz"
+        },
+        {
+          "id": 13,
+          "name": "Bean Sprouts",
+          "quantity": "2 cups"
+        }
+      ],
+      "directions": [
+        "Soak noodles",
+        "Stir-fry tofu",
+        "Combine ingredients",
+        "Add sauce"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Caesar Salad",
+      "description": "Classic romaine lettuce salad with creamy dressing",
+      "prepTime": "15 minutes",
+      "cookTime": "0 minutes",
+      "mainIngredient": {
+        "id": 14,
+        "name": "Romaine Lettuce",
+        "quantity": "2 heads"
+      },
+      "cuisine": "American",
+      "ingredients": [
+        {
+          "id": 15,
+          "name": "Croutons",
+          "quantity": "1 cup"
+        },
+        {
+          "id": 16,
+          "name": "Parmesan",
+          "quantity": "1/2 cup"
+        }
+      ],
+      "directions": [
+        "Wash lettuce",
+        "Make dressing",
+        "Toss ingredients",
+        "Add cheese"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Sushi Rolls",
+      "description": "California roll with fresh ingredients",
+      "prepTime": "40 minutes",
+      "cookTime": "0 minutes",
+      "mainIngredient": {
+        "id": 17,
+        "name": "Sushi Rice",
+        "quantity": "2 cups"
+      },
+      "cuisine": "Japanese",
+      "ingredients": [
+        {
+          "id": 18,
+          "name": "Nori",
+          "quantity": "4 sheets"
+        },
+        {
+          "id": 19,
+          "name": "Cucumber",
+          "quantity": "1 medium"
+        }
+      ],
+      "directions": [
+        "Cook rice",
+        "Prepare fillings",
+        "Roll sushi",
+        "Cut into pieces"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Mushroom Risotto",
+      "description": "Creamy Italian rice dish",
+      "prepTime": "10 minutes",
+      "cookTime": "30 minutes",
+      "mainIngredient": {
+        "id": 20,
+        "name": "Arborio Rice",
+        "quantity": "1.5 cups"
+      },
+      "cuisine": "Italian",
+      "ingredients": [
+        {
+          "id": 21,
+          "name": "Mushrooms",
+          "quantity": "8 oz"
+        },
+        {
+          "id": 22,
+          "name": "White Wine",
+          "quantity": "1/2 cup"
+        }
+      ],
+      "directions": [
+        "Sauté mushrooms",
+        "Toast rice",
+        "Add stock gradually",
+        "Finish with cheese"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Greek Salad",
+      "description": "Fresh Mediterranean salad",
+      "prepTime": "15 minutes",
+      "cookTime": "0 minutes",
+      "mainIngredient": {
+        "id": 23,
+        "name": "Cucumber",
+        "quantity": "2 medium"
+      },
+      "cuisine": "Greek",
+      "ingredients": [
+        {
+          "id": 24,
+          "name": "Feta Cheese",
+          "quantity": "200g"
+        },
+        {
+          "id": 25,
+          "name": "Kalamata Olives",
+          "quantity": "1 cup"
+        }
+      ],
+      "directions": [
+        "Chop vegetables",
+        "Combine ingredients",
+        "Add dressing",
+        "Toss gently"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Beef Stroganoff",
+      "description": "Creamy Russian beef dish",
+      "prepTime": "20 minutes",
+      "cookTime": "35 minutes",
+      "mainIngredient": {
+        "id": 26,
+        "name": "Beef Sirloin",
+        "quantity": "1.5 pounds"
+      },
+      "cuisine": "Russian",
+      "ingredients": [
+        {
+          "id": 27,
+          "name": "Mushrooms",
+          "quantity": "8 oz"
+        },
+        {
+          "id": 28,
+          "name": "Sour Cream",
+          "quantity": "1 cup"
+        }
+      ],
+      "directions": [
+        "Slice beef",
+        "Cook mushrooms",
+        "Make sauce",
+        "Combine all"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Chicken Stir Fry",
+      "description": "Quick Asian chicken dish",
+      "prepTime": "15 minutes",
+      "cookTime": "12 minutes",
+      "mainIngredient": {
+        "id": 29,
+        "name": "Chicken Breast",
+        "quantity": "1 pound"
+      },
+      "cuisine": "Chinese",
+      "ingredients": [
+        {
+          "id": 30,
+          "name": "Bell Peppers",
+          "quantity": "2 medium"
+        },
+        {
+          "id": 31,
+          "name": "Broccoli",
+          "quantity": "2 cups"
+        }
+      ],
+      "directions": [
+        "Cut chicken",
+        "Chop vegetables",
+        "Stir fry chicken",
+        "Add vegetables"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Fish and Chips",
+      "description": "Classic British comfort food",
+      "prepTime": "20 minutes",
+      "cookTime": "25 minutes",
+      "mainIngredient": {
+        "id": 32,
+        "name": "Cod Fillets",
+        "quantity": "1.5 pounds"
+      },
+      "cuisine": "British",
+      "ingredients": [
+        {
+          "id": 33,
+          "name": "Potatoes",
+          "quantity": "4 large"
+        },
+        {
+          "id": 34,
+          "name": "Beer",
+          "quantity": "1 cup"
+        }
+      ],
+      "directions": ["Make batter", "Cut chips", "Fry fish", "Cook chips"]
+    },
+    {
+      "id": 12,
+      "name": "Vegetable Curry",
+      "description": "Spicy Indian vegetable medley",
+      "prepTime": "25 minutes",
+      "cookTime": "35 minutes",
+      "mainIngredient": {
+        "id": 35,
+        "name": "Cauliflower",
+        "quantity": "1 head"
+      },
+      "cuisine": "Indian",
+      "ingredients": [
+        {
+          "id": 36,
+          "name": "Potatoes",
+          "quantity": "2 medium"
+        },
+        {
+          "id": 37,
+          "name": "Coconut Milk",
+          "quantity": "1 can"
+        }
+      ],
+      "directions": [
+        "Chop vegetables",
+        "Make curry paste",
+        "Cook vegetables",
+        "Simmer in sauce"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Beef Burgers",
+      "description": "Classic American hamburgers",
+      "prepTime": "15 minutes",
+      "cookTime": "10 minutes",
+      "mainIngredient": {
+        "id": 38,
+        "name": "Ground Beef",
+        "quantity": "1 pound"
+      },
+      "cuisine": "American",
+      "ingredients": [
+        {
+          "id": 39,
+          "name": "Burger Buns",
+          "quantity": "4 pieces"
+        },
+        {
+          "id": 40,
+          "name": "Cheese",
+          "quantity": "4 slices"
+        }
+      ],
+      "directions": [
+        "Form patties",
+        "Season meat",
+        "Grill burgers",
+        "Assemble burgers"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "French Onion Soup",
+      "description": "Classic French soup with caramelized onions",
+      "prepTime": "15 minutes",
+      "cookTime": "45 minutes",
+      "mainIngredient": {
+        "id": 41,
+        "name": "Onions",
+        "quantity": "6 large"
+      },
+      "cuisine": "French",
+      "ingredients": [
+        {
+          "id": 42,
+          "name": "Beef Broth",
+          "quantity": "6 cups"
+        },
+        {
+          "id": 43,
+          "name": "Gruyere Cheese",
+          "quantity": "1 cup"
+        }
+      ],
+      "directions": [
+        "Slice onions",
+        "Caramelize onions",
+        "Add broth",
+        "Top with cheese"
+      ]
+    },
+    {
+      "id": 15,
+      "name": "California Rolls",
+      "description": "California roll with fresh ingredients",
+      "prepTime": "40 minutes",
+      "cookTime": "0 minutes",
+      "mainIngredient": {
+        "id": 17,
+        "name": "Sushi Rice",
+        "quantity": "2 cups"
+      },
+      "cuisine": "Japanese",
+      "ingredients": [
+        {
+          "id": 18,
+          "name": "Nori",
+          "quantity": "4 sheets"
+        },
+        {
+          "id": 19,
+          "name": "Cucumber",
+          "quantity": "1 medium"
+        }
+      ],
+      "directions": [
+        "Cook rice",
+        "Prepare fillings",
+        "Roll sushi",
+        "Cut into pieces"
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Wild Mushroom Risotto",
+      "description": "Creamy Italian rice dish",
+      "prepTime": "10 minutes",
+      "cookTime": "30 minutes",
+      "mainIngredient": {
+        "id": 20,
+        "name": "Arborio Rice",
+        "quantity": "1.5 cups"
+      },
+      "cuisine": "Italian",
+      "ingredients": [
+        {
+          "id": 21,
+          "name": "Mushrooms",
+          "quantity": "8 oz"
+        },
+        {
+          "id": 22,
+          "name": "White Wine",
+          "quantity": "1/2 cup"
+        }
+      ],
+      "directions": [
+        "Sauté mushrooms",
+        "Toast rice",
+        "Add stock gradually",
+        "Finish with cheese"
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Mediterranean Salad",
+      "description": "Fresh Mediterranean salad",
+      "prepTime": "15 minutes",
+      "cookTime": "0 minutes",
+      "mainIngredient": {
+        "id": 23,
+        "name": "Cucumber",
+        "quantity": "2 medium"
+      },
+      "cuisine": "Greek",
+      "ingredients": [
+        {
+          "id": 24,
+          "name": "Feta Cheese",
+          "quantity": "200g"
+        },
+        {
+          "id": 25,
+          "name": "Kalamata Olives",
+          "quantity": "1 cup"
+        }
+      ],
+      "directions": [
+        "Chop vegetables",
+        "Combine ingredients",
+        "Add dressing",
+        "Toss gently"
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Russian Beef Stroganoff",
+      "description": "Creamy Russian beef dish",
+      "prepTime": "20 minutes",
+      "cookTime": "35 minutes",
+      "mainIngredient": {
+        "id": 26,
+        "name": "Beef Sirloin",
+        "quantity": "1.5 pounds"
+      },
+      "cuisine": "Russian",
+      "ingredients": [
+        {
+          "id": 27,
+          "name": "Mushrooms",
+          "quantity": "8 oz"
+        },
+        {
+          "id": 28,
+          "name": "Sour Cream",
+          "quantity": "1 cup"
+        }
+      ],
+      "directions": [
+        "Slice beef",
+        "Cook mushrooms",
+        "Make sauce",
+        "Combine all"
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Szechuan Chicken Stir Fry",
+      "description": "Quick Asian chicken dish",
+      "prepTime": "15 minutes",
+      "cookTime": "12 minutes",
+      "mainIngredient": {
+        "id": 29,
+        "name": "Chicken Breast",
+        "quantity": "1 pound"
+      },
+      "cuisine": "Chinese",
+      "ingredients": [
+        {
+          "id": 30,
+          "name": "Bell Peppers",
+          "quantity": "2 medium"
+        },
+        {
+          "id": 31,
+          "name": "Broccoli",
+          "quantity": "2 cups"
+        }
+      ],
+      "directions": [
+        "Cut chicken",
+        "Chop vegetables",
+        "Stir fry chicken",
+        "Add vegetables"
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Beer Battered Fish and Chips",
+      "description": "Classic British comfort food",
+      "prepTime": "20 minutes",
+      "cookTime": "25 minutes",
+      "mainIngredient": {
+        "id": 32,
+        "name": "Cod Fillets",
+        "quantity": "1.5 pounds"
+      },
+      "cuisine": "British",
+      "ingredients": [
+        {
+          "id": 33,
+          "name": "Potatoes",
+          "quantity": "4 large"
+        },
+        {
+          "id": 34,
+          "name": "Beer",
+          "quantity": "1 cup"
+        }
+      ],
+      "directions": ["Make batter", "Cut chips", "Fry fish", "Cook chips"]
+    },
+    {
+      "id": 21,
+      "name": "Thai Vegetable Curry",
+      "description": "Spicy Indian vegetable medley",
+      "prepTime": "25 minutes",
+      "cookTime": "35 minutes",
+      "mainIngredient": {
+        "id": 35,
+        "name": "Cauliflower",
+        "quantity": "1 head"
+      },
+      "cuisine": "Indian",
+      "ingredients": [
+        {
+          "id": 36,
+          "name": "Potatoes",
+          "quantity": "2 medium"
+        },
+        {
+          "id": 37,
+          "name": "Coconut Milk",
+          "quantity": "1 can"
+        }
+      ],
+      "directions": [
+        "Chop vegetables",
+        "Make curry paste",
+        "Cook vegetables",
+        "Simmer in sauce"
+      ]
+    },
+    {
+      "id": 22,
+      "name": "BBQ Bacon Cheeseburgers",
+      "description": "Classic American hamburgers",
+      "prepTime": "15 minutes",
+      "cookTime": "10 minutes",
+      "mainIngredient": {
+        "id": 38,
+        "name": "Ground Beef",
+        "quantity": "1 pound"
+      },
+      "cuisine": "American",
+      "ingredients": [
+        {
+          "id": 39,
+          "name": "Burger Buns",
+          "quantity": "4 pieces"
+        },
+        {
+          "id": 40,
+          "name": "Cheese",
+          "quantity": "4 slices"
+        }
+      ],
+      "directions": [
+        "Form patties",
+        "Season meat",
+        "Grill burgers",
+        "Assemble burgers"
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Bistro French Onion Soup",
+      "description": "Classic French soup with caramelized onions",
+      "prepTime": "15 minutes",
+      "cookTime": "45 minutes",
+      "mainIngredient": {
+        "id": 41,
+        "name": "Onions",
+        "quantity": "6 large"
+      },
+      "cuisine": "French",
+      "ingredients": [
+        {
+          "id": 42,
+          "name": "Beef Broth",
+          "quantity": "6 cups"
+        },
+        {
+          "id": 43,
+          "name": "Gruyere Cheese",
+          "quantity": "1 cup"
+        }
+      ],
+      "directions": [
+        "Slice onions",
+        "Caramelize onions",
+        "Add broth",
+        "Top with cheese"
+      ]
+    }
+  ]
+}

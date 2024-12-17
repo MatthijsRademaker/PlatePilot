@@ -1,8 +1,9 @@
+using Application;
+using Application.DatabaseSeed;
 using Application.Endpoints.V1;
 using Asp.Versioning;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using Recipe.Api.Application;
 using ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +32,9 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<RecipeContext>();
         context.Database.Migrate();
+
+        var seeder = new DatabaseSeeder(context);
+        await seeder.SeedAsync();
     }
     catch (Exception ex)
     {
