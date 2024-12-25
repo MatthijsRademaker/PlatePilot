@@ -8,11 +8,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace RecipeApi.Application.Migrations
+namespace RecipeApplication.Migrations
 {
     [DbContext(typeof(RecipeContext))]
-    [Migration("20241225144432_CuisineRelations")]
-    partial class CuisineRelations
+    [Migration("20241225145756_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -35,11 +35,14 @@ namespace RecipeApi.Application.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Cuisines");
+                    b.HasIndex("Name");
+
+                    b.ToTable("Cuisines", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Ingredient", b =>

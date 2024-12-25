@@ -1,5 +1,6 @@
 namespace Domain;
 
+// TODO: Implement this interface in RecipeSuggestor.cs
 public interface IRecipeSuggestor
 {
     Task<IEnumerable<Recipe>> SuggestRecipesAsync(
@@ -11,7 +12,19 @@ public interface IRecipeSuggestor
 
 public class SuggestionConstraints
 {
-    public Dictionary<Ingredient, int> MainIngredientConstraints { get; set; }
+    public List<IngredientConstraint> MainIngredientConstraints { get; set; }
 
-    public Dictionary<Cuisine, int> CuisineConstraints { get; set; }
+    public List<CuisineConstraint> CuisineConstraints { get; set; }
+}
+
+public class CuisineConstraint
+{
+    public int CuisineId { get; set; }
+    public int AmountToGenerate { get; set; }
+}
+
+public class IngredientConstraint
+{
+    public int IngredientId { get; set; }
+    public int AmountToGenerate { get; set; }
 }

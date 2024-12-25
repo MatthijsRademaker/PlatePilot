@@ -28,6 +28,7 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
         var recipe = recipeContext
             .Recipes.Include(r => r.Ingredients)
             .Include(r => r.MainIngredient)
+            .Include(r => r.Cuisine)
             .FirstOrDefault(r => r.Id == id);
         return Task.FromResult(recipe ?? throw new RecipeNotFoundException(id));
     }
@@ -38,6 +39,7 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
             recipeContext
                 .Recipes.Include(r => r.Ingredients)
                 .Include(r => r.MainIngredient)
+                .Include(r => r.Cuisine)
                 .AsEnumerable()
         );
     }

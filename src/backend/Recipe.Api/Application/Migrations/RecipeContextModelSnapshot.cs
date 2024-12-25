@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace RecipeApi.Application.Migrations
+namespace RecipeApplication.Migrations
 {
     [DbContext(typeof(RecipeContext))]
     partial class RecipeContextModelSnapshot : ModelSnapshot

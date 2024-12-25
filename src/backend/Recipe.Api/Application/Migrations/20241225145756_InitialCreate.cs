@@ -3,7 +3,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace RecipeApi.Application.Migrations
+namespace RecipeApplication.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -12,6 +12,28 @@ namespace RecipeApi.Application.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase().Annotation("Npgsql:PostgresExtension:vector", ",,");
+
+            migrationBuilder.CreateTable(
+                name: "Cuisines",
+                columns: table => new
+                {
+                    Id = table
+                        .Column<int>(type: "integer", nullable: false)
+                        .Annotation(
+                            "Npgsql:ValueGenerationStrategy",
+                            NpgsqlValueGenerationStrategy.IdentityByDefaultColumn
+                        ),
+                    Name = table.Column<string>(
+                        type: "character varying(50)",
+                        maxLength: 50,
+                        nullable: false
+                    ),
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Cuisines", x => x.Id);
+                }
+            );
 
             migrationBuilder.CreateTable(
                 name: "Ingredients",
@@ -55,12 +77,19 @@ namespace RecipeApi.Application.Migrations
                     PrepTime = table.Column<string>(type: "text", nullable: false),
                     CookTime = table.Column<string>(type: "text", nullable: false),
                     MainIngredientId = table.Column<int>(type: "integer", nullable: false),
-                    Cuisine = table.Column<string>(type: "text", nullable: false),
+                    CuisineId = table.Column<int>(type: "integer", nullable: false),
                     Directions = table.Column<string[]>(type: "text[]", nullable: false),
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Recipes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Recipes_Cuisines_CuisineId",
+                        column: x => x.CuisineId,
+                        principalTable: "Cuisines",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade
+                    );
                     table.ForeignKey(
                         name: "FK_Recipes_Ingredients_MainIngredientId",
                         column: x => x.MainIngredientId,
@@ -102,6 +131,12 @@ namespace RecipeApi.Application.Migrations
             );
 
             migrationBuilder.CreateIndex(
+                name: "IX_Cuisines_Name",
+                table: "Cuisines",
+                column: "Name"
+            );
+
+            migrationBuilder.CreateIndex(
                 name: "IX_IngredientRecipe_RecipeId",
                 table: "IngredientRecipe",
                 column: "RecipeId"
@@ -111,6 +146,12 @@ namespace RecipeApi.Application.Migrations
                 name: "IX_Ingredients_Name",
                 table: "Ingredients",
                 column: "Name"
+            );
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Recipes_CuisineId",
+                table: "Recipes",
+                column: "CuisineId"
             );
 
             migrationBuilder.CreateIndex(
@@ -128,6 +169,8 @@ namespace RecipeApi.Application.Migrations
             migrationBuilder.DropTable(name: "IngredientRecipe");
 
             migrationBuilder.DropTable(name: "Recipes");
+
+            migrationBuilder.DropTable(name: "Cuisines");
 
             migrationBuilder.DropTable(name: "Ingredients");
         }
