@@ -1,3 +1,4 @@
+using System.Collections;
 using System.ComponentModel;
 using Domain;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -12,6 +13,7 @@ public static class RecipeApi
         var api = endpoints.MapGroup("/api/recipes").HasApiVersion(1.0);
 
         api.MapGet("/{id:int}", getRecipeById);
+        api.MapGet("/all", getAllRecipes);
 
         return api;
     }
@@ -26,6 +28,19 @@ public static class RecipeApi
     )
     {
         var items = await recipeDependencies.RecipeRepository.GetRecipeAsync(id);
+        return TypedResults.Ok(items);
+    }
+
+
+    [ProducesResponseType<ProblemDetails>(
+        StatusCodes.Status400BadRequest,
+        "application/problem+json"
+    )]
+    public static async Task<Ok<IEnumerable< Domain.Recipe>>> getAllRecipes(
+        [AsParameters] RecipeDependencies recipeDependencies
+    )
+    {
+        var items = await recipeDependencies.RecipeRepository.GetRecipesAsync();
         return TypedResults.Ok(items);
     }
 }
