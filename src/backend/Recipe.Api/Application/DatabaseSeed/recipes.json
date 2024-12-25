@@ -11,7 +11,7 @@
         "name": "Spaghetti",
         "quantity": "1 pound"
       },
-      "cuisine": "Italian",
+      "cuisine": { "name": "Italian" },
       "ingredients": [
         {
           "id": 2,
@@ -47,7 +47,7 @@
         "name": "Chicken",
         "quantity": "2 pounds"
       },
-      "cuisine": "Indian",
+      "cuisine": { "name": "Indian" },
       "ingredients": [
         {
           "id": 6,
@@ -78,7 +78,7 @@
         "name": "Ground Beef",
         "quantity": "1 pound"
       },
-      "cuisine": "Mexican",
+      "cuisine": { "name": "Mexican" },
       "ingredients": [
         {
           "id": 9,
@@ -109,7 +109,7 @@
         "name": "Rice Noodles",
         "quantity": "8 oz"
       },
-      "cuisine": "Thai",
+      "cuisine": { "name": "Thai" },
       "ingredients": [
         {
           "id": 12,
@@ -140,7 +140,7 @@
         "name": "Romaine Lettuce",
         "quantity": "2 heads"
       },
-      "cuisine": "American",
+      "cuisine": { "name": "American" },
       "ingredients": [
         {
           "id": 15,
@@ -171,7 +171,7 @@
         "name": "Sushi Rice",
         "quantity": "2 cups"
       },
-      "cuisine": "Japanese",
+      "cuisine": { "name": "Japanese" },
       "ingredients": [
         {
           "id": 18,
@@ -202,7 +202,7 @@
         "name": "Arborio Rice",
         "quantity": "1.5 cups"
       },
-      "cuisine": "Italian",
+      "cuisine": { "name": "Italian" },
       "ingredients": [
         {
           "id": 21,
@@ -233,7 +233,7 @@
         "name": "Cucumber",
         "quantity": "2 medium"
       },
-      "cuisine": "Greek",
+      "cuisine": { "name": "Greek" },
       "ingredients": [
         {
           "id": 24,
@@ -264,7 +264,7 @@
         "name": "Beef Sirloin",
         "quantity": "1.5 pounds"
       },
-      "cuisine": "Russian",
+      "cuisine": { "name": "Russian" },
       "ingredients": [
         {
           "id": 27,
@@ -295,7 +295,7 @@
         "name": "Chicken Breast",
         "quantity": "1 pound"
       },
-      "cuisine": "Chinese",
+      "cuisine": { "name": "Chinese" },
       "ingredients": [
         {
           "id": 30,
@@ -326,7 +326,7 @@
         "name": "Cod Fillets",
         "quantity": "1.5 pounds"
       },
-      "cuisine": "British",
+      "cuisine": { "name": "British" },
       "ingredients": [
         {
           "id": 33,
@@ -352,7 +352,7 @@
         "name": "Cauliflower",
         "quantity": "1 head"
       },
-      "cuisine": "Indian",
+      "cuisine": { "name": "Indian" },
       "ingredients": [
         {
           "id": 36,
@@ -383,7 +383,7 @@
         "name": "Ground Beef",
         "quantity": "1 pound"
       },
-      "cuisine": "American",
+      "cuisine": { "name": "American" },
       "ingredients": [
         {
           "id": 39,
@@ -414,7 +414,7 @@
         "name": "Onions",
         "quantity": "6 large"
       },
-      "cuisine": "French",
+      "cuisine": { "name": "French" },
       "ingredients": [
         {
           "id": 42,
@@ -445,7 +445,7 @@
         "name": "Sushi Rice",
         "quantity": "2 cups"
       },
-      "cuisine": "Japanese",
+      "cuisine": { "name": "Japanese" },
       "ingredients": [
         {
           "id": 18,
@@ -476,7 +476,7 @@
         "name": "Arborio Rice",
         "quantity": "1.5 cups"
       },
-      "cuisine": "Italian",
+      "cuisine": { "name": "Italian" },
       "ingredients": [
         {
           "id": 21,
@@ -507,7 +507,7 @@
         "name": "Cucumber",
         "quantity": "2 medium"
       },
-      "cuisine": "Greek",
+      "cuisine": { "name": "Greek" },
       "ingredients": [
         {
           "id": 24,
@@ -538,7 +538,7 @@
         "name": "Beef Sirloin",
         "quantity": "1.5 pounds"
       },
-      "cuisine": "Russian",
+      "cuisine": { "name": "Russian" },
       "ingredients": [
         {
           "id": 27,
@@ -569,7 +569,7 @@
         "name": "Chicken Breast",
         "quantity": "1 pound"
       },
-      "cuisine": "Chinese",
+      "cuisine": { "name": "Chinese" },
       "ingredients": [
         {
           "id": 30,
@@ -600,7 +600,7 @@
         "name": "Cod Fillets",
         "quantity": "1.5 pounds"
       },
-      "cuisine": "British",
+      "cuisine": { "name": "British" },
       "ingredients": [
         {
           "id": 33,
@@ -626,7 +626,7 @@
         "name": "Cauliflower",
         "quantity": "1 head"
       },
-      "cuisine": "Indian",
+      "cuisine": { "name": "Indian" },
       "ingredients": [
         {
           "id": 36,
@@ -657,7 +657,7 @@
         "name": "Ground Beef",
         "quantity": "1 pound"
       },
-      "cuisine": "American",
+      "cuisine": { "name": "American" },
       "ingredients": [
         {
           "id": 39,
@@ -688,7 +688,7 @@
         "name": "Onions",
         "quantity": "6 large"
       },
-      "cuisine": "French",
+      "cuisine": { "name": "French" },
       "ingredients": [
         {
           "id": 42,

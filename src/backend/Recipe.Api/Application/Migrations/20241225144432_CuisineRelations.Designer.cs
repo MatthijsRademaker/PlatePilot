@@ -8,11 +8,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace RecipeApi.Infrastructure.Migrations
+namespace RecipeApi.Application.Migrations
 {
     [DbContext(typeof(RecipeContext))]
-    [Migration("20241215145852_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20241225144432_CuisineRelations")]
+    partial class CuisineRelations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,23 @@ namespace RecipeApi.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "vector");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Domain.Cuisine", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Cuisines");
+                });
 
             modelBuilder.Entity("Domain.Ingredient", b =>
                 {
@@ -61,9 +78,8 @@ namespace RecipeApi.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Cuisine")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("CuisineId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -86,6 +102,8 @@ namespace RecipeApi.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CuisineId");
 
                     b.HasIndex("MainIngredientId");
 
@@ -111,11 +129,19 @@ namespace RecipeApi.Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Recipe", b =>
                 {
+                    b.HasOne("Domain.Cuisine", "Cuisine")
+                        .WithMany()
+                        .HasForeignKey("CuisineId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Domain.Ingredient", "MainIngredient")
                         .WithMany()
                         .HasForeignKey("MainIngredientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Cuisine");
 
                     b.Navigation("MainIngredient");
                 });

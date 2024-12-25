@@ -1,4 +1,5 @@
 ﻿using Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure;
 
@@ -24,13 +25,21 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
 
     public Task<Recipe> GetRecipeAsync(int id)
     {
-        var recipe = recipeContext.Recipes.FirstOrDefault(r => r.Id == id);
+        var recipe = recipeContext
+            .Recipes.Include(r => r.Ingredients)
+            .Include(r => r.MainIngredient)
+            .FirstOrDefault(r => r.Id == id);
         return Task.FromResult(recipe ?? throw new RecipeNotFoundException(id));
     }
 
     public Task<IEnumerable<Recipe>> GetRecipesAsync()
     {
-        return Task.FromResult(recipeContext.Recipes.AsEnumerable());
+        return Task.FromResult(
+            recipeContext
+                .Recipes.Include(r => r.Ingredients)
+                .Include(r => r.MainIngredient)
+                .AsEnumerable()
+        );
     }
 
     public Task<Recipe> UpdateRecipeAsync(Recipe recipe)

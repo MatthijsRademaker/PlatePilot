@@ -8,7 +8,7 @@ namespace Application.DatabaseSeed;
 public class DatabaseSeeder
 {
     private readonly RecipeContext context;
-    
+
     public DatabaseSeeder(RecipeContext context)
     {
         this.context = context;
@@ -19,8 +19,10 @@ public class DatabaseSeeder
         if (!context.Recipes.Any())
         {
             var recipesJson = await File.ReadAllTextAsync("DatabaseSeed/recipes.json");
-            var recipesData = JsonSerializer.Deserialize<RecipeData>(recipesJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var recipesData = JsonSerializer.Deserialize<RecipeData>(
+                recipesJson,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
 
             if (recipesData == null)
             {
@@ -28,8 +30,10 @@ public class DatabaseSeeder
             }
 
             var addedIngredients = new Dictionary<string, Ingredient>();
+            var addedCuisines = new Dictionary<string, Cuisine>();
             var addedRecipes = new Dictionary<string, Recipe>();
             var nextIngredientId = 1;
+            var nextCuisineId = 1;
 
             foreach (var recipe in recipesData.Recipes)
             {
@@ -51,6 +55,18 @@ public class DatabaseSeeder
                     recipe.MainIngredient = addedIngredients[recipe.MainIngredient.Name];
                 }
 
+                // Handle cuisine
+                if (!addedCuisines.ContainsKey(recipe.Cuisine.Name))
+                {
+                    recipe.Cuisine.Id = nextCuisineId++;
+                    addedCuisines[recipe.Cuisine.Name] = recipe.Cuisine;
+                    context.Cuisines.Add(recipe.Cuisine);
+                }
+                else
+                {
+                    recipe.Cuisine = addedCuisines[recipe.Cuisine.Name];
+                }
+
                 // Handle recipe ingredients
                 var uniqueIngredients = new List<Ingredient>();
                 foreach (var ingredient in recipe.Ingredients)
@@ -69,6 +85,7 @@ public class DatabaseSeeder
                 }
                 recipe.Ingredients = uniqueIngredients;
 
+                // Add recipe
                 addedRecipes[recipe.Name] = recipe;
                 context.Recipes.Add(recipe);
             }

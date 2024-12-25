@@ -31,12 +31,11 @@ public static class RecipeApi
         return TypedResults.Ok(items);
     }
 
-
     [ProducesResponseType<ProblemDetails>(
         StatusCodes.Status400BadRequest,
         "application/problem+json"
     )]
-    public static async Task<Ok<IEnumerable< Domain.Recipe>>> getAllRecipes(
+    public static async Task<Ok<IEnumerable<Domain.Recipe>>> getAllRecipes(
         [AsParameters] RecipeDependencies recipeDependencies
     )
     {

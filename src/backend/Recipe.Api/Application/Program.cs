@@ -31,7 +31,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<RecipeContext>();
-        context.Database.Migrate();
+        await context.MigrateAsync();
 
         var seeder = new DatabaseSeeder(context);
         await seeder.SeedAsync();

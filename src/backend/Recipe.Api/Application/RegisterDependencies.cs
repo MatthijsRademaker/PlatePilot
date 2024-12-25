@@ -14,6 +14,8 @@ namespace Application
                 {
                     dbContextOptionsBuilder.UseNpgsql(builder =>
                     {
+                        builder.EnableRetryOnFailure();
+                        builder.MigrationsAssembly("Recipe.Application");
                         // TODO look into once AI
                         // builder.UseVector();
                     });
