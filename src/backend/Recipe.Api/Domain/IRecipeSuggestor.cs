@@ -12,19 +12,23 @@ public interface IRecipeSuggestor
 
 public class SuggestionConstraints
 {
-    public List<IngredientConstraint> MainIngredientConstraints { get; set; }
-
-    public List<CuisineConstraint> CuisineConstraints { get; set; }
+    public List<List<IConstraint>> ConstraintsPerDay { get; set; }
 }
 
-public class CuisineConstraint
+public class CuisineConstraint : IConstraint
 {
-    public int CuisineId { get; set; }
+    public int EntityId { get; set; }
     public int AmountToGenerate { get; set; }
 }
 
-public class IngredientConstraint
+public class IngredientConstraint : IConstraint
 {
-    public int IngredientId { get; set; }
+    public int EntityId { get; set; }
+    public int AmountToGenerate { get; set; }
+}
+
+public interface IConstraint
+{
+    public int EntityId { get; set; }
     public int AmountToGenerate { get; set; }
 }
