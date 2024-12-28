@@ -14,6 +14,7 @@ public static class RecipeApi
 
         api.MapGet("/{id:int}", getRecipeById);
         api.MapGet("/all", getAllRecipes);
+        api.MapSuggestionV1();
 
         return api;
     }
@@ -36,15 +37,11 @@ public static class RecipeApi
         "application/problem+json"
     )]
     public static async Task<Ok<IEnumerable<Domain.Recipe>>> getAllRecipes(
-        [AsParameters] RecipeDependencies recipeDependencies
+        [AsParameters] RecipeDependencies recipeDependencies,
+        [FromQuery] int amount
     )
     {
-        var items = await recipeDependencies.RecipeRepository.GetRecipesAsync();
+        var items = await recipeDependencies.RecipeRepository.GetRecipesAsync(amount);
         return TypedResults.Ok(items);
     }
-}
-
-public class RecipeDependencies(IRecipeRepository RecipeRepository)
-{
-    public IRecipeRepository RecipeRepository { get; } = RecipeRepository;
 }

@@ -50,7 +50,7 @@ app.MapDefaultEndpoints();
 
 app.UseCors(options =>
 {
-    options.AllowAnyOrigin();
+    options.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
 });
 
 app.UseStatusCodePages();

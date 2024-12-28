@@ -1,6 +1,5 @@
 namespace Domain;
 
-// TODO: Implement this interface in RecipeSuggestor.cs
 public interface IRecipeSuggestor
 {
     Task<IEnumerable<Recipe>> SuggestRecipesAsync(

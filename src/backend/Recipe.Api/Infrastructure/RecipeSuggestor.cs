@@ -2,6 +2,7 @@ using Domain;
 
 namespace Infrastructure;
 
+// TODO rename to MealPlanner
 public class RecipeSuggestor(IRecipeRepository recipeRepository) : IRecipeSuggestor
 {
     public async Task<IEnumerable<Recipe>> SuggestRecipesAsync(
@@ -13,6 +14,15 @@ public class RecipeSuggestor(IRecipeRepository recipeRepository) : IRecipeSugges
         var result = new List<Recipe>();
         var selectedSet = new HashSet<Recipe>(alreadySelectedRecipes);
 
+        // psuedo
+        // create a stack of constraints
+        // while stack is not empty do
+        //     pop constraint
+        //     get recipes by constraint
+        //     filter out already selected recipes
+        //     sort by least used cuisine/ingredients
+        // if stack is empty and length of result is less than amountToSuggest
+        // generate without constraints
         foreach (var dayConstraints in constraints.ConstraintsPerDay)
         {
             // Get all recipes that match any of the day's constraints
@@ -84,9 +94,12 @@ public class RecipeSuggestor(IRecipeRepository recipeRepository) : IRecipeSugges
         double similarity = 0;
 
         if (a.Cuisine == b.Cuisine)
-            similarity += 0.5;
+            similarity += 0.25;
 
-        // TODO Add ingredient similarity calculation here
+        if (a.MainIngredient == b.MainIngredient)
+            similarity += 0.25;
+
+        // Jaccard similarity
         if (a.Ingredients != null && b.Ingredients != null)
         {
             var commonIngredients = a.Ingredients.Intersect(b.Ingredients).Count();

@@ -25,6 +25,8 @@ namespace Application
             builder.EnrichNpgsqlDbContext<RecipeContext>();
 
             builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
+
+            builder.Services.AddScoped<IRecipeSuggestor, RecipeSuggestor>();
         }
     }
 }
