@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Application.Endpoints.V1;
 
-public static class SuggestionEndpoint
+public static class MealPlannerEndpoint
 {
-    public static void MapSuggestionV1(this RouteGroupBuilder endpoints)
+    public static void MealPlannerV1(this RouteGroupBuilder endpoints)
     {
-        endpoints.MapPost("/suggest", suggestRecipes);
+        endpoints.MapPost("/mealplanner", suggestRecipes);
     }
 
     [ProducesResponseType<ProblemDetails>(
@@ -26,7 +26,7 @@ public static class SuggestionEndpoint
             )
         );
 
-        var items = await recipeDependencies.RecipeSuggestor.SuggestRecipesAsync(
+        var items = await recipeDependencies.MealPlanner.SuggestMealsAsync(
             suggestionsRequest.Amount,
             new SuggestionConstraints()
             {

@@ -1,0 +1,34 @@
+meta {
+  name: PlanMeal
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/recipes/mealplanner
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "constraints": {
+      "ingredientConstraints": [
+          [{
+            "entityId": 8
+          }]
+      ],
+      "cuisineConstraints": [
+        [
+          {
+            "entityId": 3
+          }
+        ]
+      ]
+    },
+    "alreadySelectedRecipeIds": [
+      2
+    ],
+    "amount": 1
+  }
+}

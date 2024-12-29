@@ -18,12 +18,15 @@ public class RecipeContext(DbContextOptions<RecipeContext> options) : DbContext(
 
     public DbSet<Cuisine> Cuisines { get; set; }
 
+    public DbSet<Allergy> Allergies { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         builder.HasPostgresExtension("vector");
         builder.ApplyConfiguration(new RecipeEntityTypeConfiguration());
         builder.ApplyConfiguration(new IngredientEntityTypeConfiguration());
         builder.ApplyConfiguration(new CuisineEntityTypeConfiguration());
+        builder.ApplyConfiguration(new AllergyEntityTypeConfiguration());
 
         // Add the outbox table to this context
         // builder.UseIntegrationEventLogs();

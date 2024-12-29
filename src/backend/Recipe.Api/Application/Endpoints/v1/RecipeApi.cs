@@ -14,7 +14,9 @@ public static class RecipeApi
 
         api.MapGet("/{id:int}", getRecipeById);
         api.MapGet("/all", getAllRecipes);
-        api.MapSuggestionV1();
+        api.MealPlannerV1();
+
+        // TODO add ingredient and cuisine filter endpoints here.
 
         return api;
     }

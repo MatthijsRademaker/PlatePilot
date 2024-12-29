@@ -17,7 +17,7 @@ namespace Application
                         builder.EnableRetryOnFailure();
                         builder.MigrationsAssembly("Recipe.Application");
                         // TODO look into once AI
-                        // builder.UseVector();
+                        builder.UseVector();
                     });
                 }
             );
@@ -26,7 +26,7 @@ namespace Application
 
             builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 
-            builder.Services.AddScoped<IRecipeSuggestor, RecipeSuggestor>();
+            builder.Services.AddScoped<IMealPlanner, MealPlanner>();
         }
     }
 }

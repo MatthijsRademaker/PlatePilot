@@ -2,6 +2,7 @@ using System.Text.Json;
 using Domain;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using RecipeApi.Infrastructure;
 
 namespace Application.DatabaseSeed;
 
@@ -84,6 +85,7 @@ public class DatabaseSeeder
                     }
                 }
                 recipe.Ingredients = uniqueIngredients;
+                recipe.SearchVector = recipe.ToVector();
 
                 // Add recipe
                 addedRecipes[recipe.Name] = recipe;

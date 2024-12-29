@@ -1,5 +1,6 @@
 ﻿using Domain;
 using Microsoft.EntityFrameworkCore;
+using Pgvector.EntityFrameworkCore;
 
 namespace Infrastructure;
 
@@ -33,52 +34,70 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
         return Task.FromResult(recipe ?? throw new RecipeNotFoundException(id));
     }
 
-    public Task<IEnumerable<Recipe>> GetRecipesAsync(int amount)
+    public async Task<IEnumerable<Recipe>> GetRecipesAsync(int amount)
     {
-        return Task.FromResult(
-            recipeContext
-                .Recipes.Include(r => r.Ingredients)
-                .Include(r => r.MainIngredient)
-                .Include(r => r.Cuisine)
-                .Take(amount)
-                .AsEnumerable()
-        );
+        return await recipeContext
+            .Recipes.Include(r => r.Ingredients)
+            .Include(r => r.MainIngredient)
+            .Include(r => r.Cuisine)
+            .Take(amount)
+            .ToListAsync();
     }
 
-    public Task<IEnumerable<Recipe>> GetRecipesByCuisineAsync(int entityId, int amount)
+    public Task<IEnumerable<Recipe>> GetRecipesByAllergyAsync(int entityId)
     {
-        return Task.FromResult(
-            recipeContext
-                .Recipes.Include(r => r.Ingredients)
-                .Include(r => r.MainIngredient)
-                .Include(r => r.Cuisine)
-                .Where(r => r.Cuisine.Id == entityId)
-                .Take(amount)
-                .AsEnumerable()
-        );
+        return recipeContext
+            .Recipes.Include(r => r.Ingredients)
+            .Include(r => r.MainIngredient)
+            .Include(r => r.Cuisine)
+            .Include(i => i.Allergies)
+            .Where(r => r.Ingredients.Any(i => i.Allergies.Any(a => a.Id == entityId)))
+            .ToListAsync();
     }
 
-    public Task<IEnumerable<Recipe>> GetRecipesByIngredientAsync(int entityId, int amount)
+    public async Task<IEnumerable<Recipe>> GetRecipesByCuisineAsync(int entityId)
     {
-        return Task.FromResult(
-            recipeContext
-                .Recipes.Include(r => r.Ingredients)
-                .Include(r => r.MainIngredient)
-                .Include(r => r.Cuisine)
-                .Where(r =>
-                    r.Ingredients.Any(i => i.Id == entityId) || r.MainIngredient.Id == entityId
-                )
-                .Take(amount)
-                .AsEnumerable()
-        );
+        return await recipeContext
+            .Recipes.Include(r => r.Ingredients)
+            .Include(r => r.MainIngredient)
+            .Include(r => r.Cuisine)
+            .Where(r => r.Cuisine.Id == entityId)
+            .ToListAsync();
     }
 
-    public Task<Recipe> UpdateRecipeAsync(Recipe recipe)
+    public async Task<IEnumerable<Recipe>> GetRecipesByIngredientAsync(int entityId)
+    {
+        return await recipeContext
+            .Recipes.Include(r => r.Ingredients)
+            .Include(r => r.MainIngredient)
+            .Include(r => r.Cuisine)
+            .Where(r => r.Ingredients.Any(i => i.Id == entityId) || r.MainIngredient.Id == entityId)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Recipe>> SearchSimilarRecipes(Recipe recipe, int amount)
+    {
+        return await recipeContext
+            .Recipes.Include(r => r.Ingredients)
+            .Include(r => r.MainIngredient)
+            .Include(r => r.Cuisine)
+            .Select(r => new
+            {
+                Recipe = r,
+                Similarity = r.SearchVector.CosineDistance(recipe.SearchVector),
+            })
+            .OrderByDescending(r => r.Similarity)
+            .Take(amount)
+            .Select(r => r.Recipe)
+            .ToListAsync();
+    }
+
+    public async Task<Recipe> UpdateRecipeAsync(Recipe recipe)
     {
         recipeContext.Recipes.Update(recipe);
-        recipeContext.SaveChangesAsync();
+        await recipeContext.SaveChangesAsync();
 
-        return Task.FromResult(recipe);
+        return recipe;
     }
 }
 

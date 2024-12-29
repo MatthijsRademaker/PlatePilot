@@ -4,12 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Application.Endpoints.V1;
 
-public class RecipeDependencies(
-    IRecipeRepository RecipeRepository,
-    IRecipeSuggestor RecipeSuggestor
-)
+public class RecipeDependencies(IRecipeRepository RecipeRepository, IMealPlanner MealPlanner)
 {
-    public IRecipeSuggestor RecipeSuggestor { get; } = RecipeSuggestor;
+    public IMealPlanner MealPlanner { get; } = MealPlanner;
 
     public IRecipeRepository RecipeRepository { get; } = RecipeRepository;
 }

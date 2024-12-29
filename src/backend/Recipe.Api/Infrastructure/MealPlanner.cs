@@ -2,10 +2,10 @@ using Domain;
 
 namespace Infrastructure;
 
-// TODO rename to MealPlanner
-public class RecipeSuggestor(IRecipeRepository recipeRepository) : IRecipeSuggestor
+// TODO Maybe inject the RecipeContext instead of the repository
+public class MealPlanner(IRecipeRepository recipeRepository) : IMealPlanner
 {
-    public async Task<IEnumerable<Recipe>> SuggestRecipesAsync(
+    public async Task<IEnumerable<Recipe>> SuggestMealsAsync(
         int amountToSuggest,
         SuggestionConstraints constraints,
         IEnumerable<Recipe> alreadySelectedRecipes
@@ -13,61 +13,54 @@ public class RecipeSuggestor(IRecipeRepository recipeRepository) : IRecipeSugges
     {
         var result = new List<Recipe>();
         var selectedSet = new HashSet<Recipe>(alreadySelectedRecipes);
+        var amountToGenerate = Math.Max(amountToSuggest, constraints.ConstraintsPerDay.Count);
+        var stackToGenerate = new Stack<List<IConstraint>>(constraints.ConstraintsPerDay);
 
-        // psuedo
-        // create a stack of constraints
-        // while stack is not empty do
-        //     pop constraint
-        //     get recipes by constraint
-        //     filter out already selected recipes
-        //     sort by least used cuisine/ingredients
-        // if stack is empty and length of result is less than amountToSuggest
-        // generate without constraints
-        foreach (var dayConstraints in constraints.ConstraintsPerDay)
+        while (stackToGenerate.Any())
         {
-            // Get all recipes that match any of the day's constraints
-            var matchingRecipes = await Task.WhenAll(
-                dayConstraints.Select(async constraint =>
-                {
-                    var recipes = await GetRecipesByConstraint(constraint);
-                    return (constraint, recipes);
-                })
-            );
-
-            // Filter out already selected recipes and sort by least used cuisine/ingredients
-            var candidates = matchingRecipes
-                .SelectMany(x => x.recipes)
-                .Distinct()
+            var newConstraints = stackToGenerate.Pop();
+            var recipes = await GetRecipesByConstraints(newConstraints);
+            var bestSuitedRecipe = recipes
                 .Where(r => !selectedSet.Contains(r))
                 .OrderByDescending(r => CalculateDiversityScore(r, selectedSet))
-                .Take(amountToSuggest);
+                .FirstOrDefault();
+
+            if (bestSuitedRecipe != null)
+            {
+                result.Add(bestSuitedRecipe);
+                selectedSet.Add(bestSuitedRecipe);
+            }
+
+            if (result.Count >= amountToSuggest)
+                break;
+        }
+
+        while (result.Count < amountToSuggest)
+        {
+            //  TODO should this get all recipes??
+            var recipes = await recipeRepository.GetRecipesAsync(100);
+            var candidates = recipes
+                .Where(r => !selectedSet.Contains(r))
+                .OrderByDescending(r => CalculateDiversityScore(r, selectedSet))
+                .Take(amountToSuggest - result.Count);
 
             foreach (var recipe in candidates)
             {
                 if (result.Count >= amountToSuggest)
                     break;
                 result.Add(recipe);
-                selectedSet.Add(recipe);
             }
         }
 
         return result;
     }
 
-    private async Task<IEnumerable<Recipe>> GetRecipesByConstraint(IConstraint constraint)
+    private async Task<IEnumerable<Recipe>> GetRecipesByConstraints(
+        IEnumerable<IConstraint> constraints
+    )
     {
-        return constraint switch
-        {
-            CuisineConstraint c => await recipeRepository.GetRecipesByCuisineAsync(
-                c.EntityId,
-                c.AmountToGenerate
-            ),
-            IngredientConstraint i => await recipeRepository.GetRecipesByIngredientAsync(
-                i.EntityId,
-                i.AmountToGenerate
-            ),
-            _ => Enumerable.Empty<Recipe>(),
-        };
+        var recipes = await recipeRepository.GetRecipesAsync(100);
+        return recipes.Where(r => constraints.All(c => c.Matches(r)));
     }
 
     private double CalculateDiversityScore(Recipe candidate, HashSet<Recipe> selectedRecipes)
