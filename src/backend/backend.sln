@@ -6,11 +6,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hosting", "Hosting\Hosting.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceDefaults", "ServiceDefaults\ServiceDefaults.csproj", "{AECC3275-CE4D-4A94-8DDD-D2EAB54E01F6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RecipeApi", "Recipe.Api\Application\Recipe.Application.csproj", "{031571BA-69C7-483E-98AC-1F625549C64B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RecipeApi", "RecipeApi\Application\RecipeApplication.csproj", "{031571BA-69C7-483E-98AC-1F625549C64B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecipeApi.Domain", "Recipe.Api\Domain\Recipe.Domain.csproj", "{F7F363FD-8769-4ABE-BA5D-09E9A189631D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecipeApi.Domain", "RecipeApi\Domain\RecipeDomain.csproj", "{F7F363FD-8769-4ABE-BA5D-09E9A189631D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecipeApi.Infrastructure", "Recipe.Api\Infrastructure\RecipeApi.Infrastructure.csproj", "{82EC89AD-8DE5-4FFD-887A-8511717AD19C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecipeApi.Infrastructure", "RecipeApi\Infrastructure\RecipeInfrastructure.csproj", "{82EC89AD-8DE5-4FFD-887A-8511717AD19C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Recipe.Api\Application\Recipe.Application.csproj" />
+    <ProjectReference Include="..\RecipeApi\Application\RecipeApplication.csproj" />
   </ItemGroup>
 
   <ItemGroup>
