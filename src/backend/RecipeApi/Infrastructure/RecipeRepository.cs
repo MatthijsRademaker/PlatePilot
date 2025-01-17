@@ -30,12 +30,11 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
         return Task.FromResult(recipe ?? throw new RecipeNotFoundException(id));
     }
 
-    public async Task<IEnumerable<Recipe>> GetRecipesAsync(int amount)
+    public async Task<IEnumerable<Recipe>> GetRecipesAsync(int startIndex, int amount)
     {
         return await recipeContext
-            .Recipes.Include(r => r.Ingredients)
-            .Include(r => r.MainIngredient)
-            .Include(r => r.Cuisine)
+            .GetRecipesWithIncludes()
+            .Skip(startIndex)
             .Take(amount)
             .ToListAsync();
     }

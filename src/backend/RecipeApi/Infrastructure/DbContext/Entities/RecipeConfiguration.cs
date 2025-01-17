@@ -18,8 +18,9 @@ class RecipeEntityTypeConfiguration : IEntityTypeConfiguration<Recipe>
 
         builder.HasMany(ci => ci.Ingredients).WithMany();
 
-        builder.Property(ci => ci.SearchVector).HasColumnType("Vector(128)");
-        // TODO once openAi is implemented
+        // TODO verify that i can nest properties like this, or should this be in its own table?
+        builder.Property(ci => ci.Metadata.SearchVector).HasColumnType("Vector(128)");
+        // TODO once openAi or other embedding is implemented
         // builder.Property(ci => ci.SearchVector).HasColumnType("Vector(384)");
 
         builder.HasIndex(ci => ci.Name);

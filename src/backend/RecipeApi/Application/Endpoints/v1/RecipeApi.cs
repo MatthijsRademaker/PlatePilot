@@ -40,10 +40,11 @@ public static class RecipeApi
     )]
     public static async Task<Ok<IEnumerable<RecipeResponse>>> getAllRecipes(
         [AsParameters] RecipeDependencies recipeDependencies,
-        [FromQuery] int amount
+        [FromQuery] int pageIndex,
+        [FromQuery] int pageSize
     )
     {
-        var items = await recipeDependencies.RecipeRepository.GetRecipesAsync(amount);
+        var items = await recipeDependencies.RecipeRepository.GetRecipesAsync(pageIndex * pageSize, pageSize);
         return TypedResults.Ok(items.Select(RecipeResponse.FromRecipe));
     }
 }

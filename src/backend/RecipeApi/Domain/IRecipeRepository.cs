@@ -4,7 +4,7 @@
 public interface IRecipeRepository
 {
     public Task<IEnumerable<Recipe>> SearchSimilarRecipes(Recipe recipe, int amount);
-    public Task<IEnumerable<Recipe>> GetRecipesAsync(int amount);
+    public Task<IEnumerable<Recipe>> GetRecipesAsync(int startIndex, int amount);
     public Task<Recipe> GetRecipeAsync(int id);
 
     public Task<Recipe> CreateRecipeAsync(Recipe recipe);
