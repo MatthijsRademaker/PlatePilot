@@ -6,27 +6,22 @@ namespace Application.Endpoints.V1;
 
 public static class MealPlannerEndpoint
 {
-    public static void MealPlannerV1(this RouteGroupBuilder endpoints)
+    public static IEndpointRouteBuilder MapMealPlannerV1(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/mealplanner", suggestRecipes);
+        endpoints.MapGroup("v1").MapPost("/plan-meal", suggestRecipes);
+        return endpoints;
     }
 
     [ProducesResponseType<ProblemDetails>(
         StatusCodes.Status400BadRequest,
         "application/problem+json"
     )]
-    private static async Task<Ok<IEnumerable<RecipeResponse>>> suggestRecipes(
-        [AsParameters] RecipeDependencies recipeDependencies,
+    private static async Task<Ok<IEnumerable<Guid>>> suggestRecipes(
+        IMealPlanner mealPlanner,
         [FromBody] SuggestionsRequest suggestionsRequest
     )
     {
-        var alreadySelectedRecipes = await Task.WhenAll(
-            suggestionsRequest.AlreadySelectedRecipeIds.Select(async id =>
-                await recipeDependencies.RecipeRepository.GetRecipeAsync(id)
-            )
-        );
-
-        var items = await recipeDependencies.MealPlanner.SuggestMealsAsync(
+        var items = await mealPlanner.SuggestMealsAsync(
             suggestionsRequest.Amount,
             new SuggestionConstraints()
             {
@@ -42,15 +37,15 @@ public static class MealPlannerEndpoint
                     )
                     .ToList(),
             },
-            alreadySelectedRecipes
+            suggestionsRequest.AlreadySelectedRecipeIds
         );
 
-        return TypedResults.Ok(items.Select(RecipeResponse.FromRecipe));
+        return TypedResults.Ok(items);
     }
 
     public record SuggestionsRequest(
         SuggestionConstraintsRequest Constraints,
-        IEnumerable<int> AlreadySelectedRecipeIds,
+        IEnumerable<Guid> AlreadySelectedRecipeIds,
         int Amount
     );
 

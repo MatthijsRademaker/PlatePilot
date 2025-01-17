@@ -33,8 +33,6 @@ public class DatabaseSeeder
             var addedIngredients = new Dictionary<string, Ingredient>();
             var addedCuisines = new Dictionary<string, Cuisine>();
             var addedRecipes = new Dictionary<string, Recipe>();
-            var nextIngredientId = 1;
-            var nextCuisineId = 1;
 
             foreach (var recipe in recipesData.Recipes)
             {
@@ -47,7 +45,7 @@ public class DatabaseSeeder
                 // Handle main ingredient
                 if (!addedIngredients.ContainsKey(recipe.MainIngredient.Name))
                 {
-                    recipe.MainIngredient.Id = nextIngredientId++;
+                    recipe.MainIngredient.Id = Guid.NewGuid();
                     addedIngredients[recipe.MainIngredient.Name] = recipe.MainIngredient;
                     context.Ingredients.Add(recipe.MainIngredient);
                 }
@@ -59,7 +57,7 @@ public class DatabaseSeeder
                 // Handle cuisine
                 if (!addedCuisines.ContainsKey(recipe.Cuisine.Name))
                 {
-                    recipe.Cuisine.Id = nextCuisineId++;
+                    recipe.Cuisine.Id = Guid.NewGuid();
                     addedCuisines[recipe.Cuisine.Name] = recipe.Cuisine;
                     context.Cuisines.Add(recipe.Cuisine);
                 }
@@ -74,7 +72,7 @@ public class DatabaseSeeder
                 {
                     if (!addedIngredients.ContainsKey(ingredient.Name))
                     {
-                        ingredient.Id = nextIngredientId++;
+                        ingredient.Id = Guid.NewGuid();
                         addedIngredients[ingredient.Name] = ingredient;
                         context.Ingredients.Add(ingredient);
                         uniqueIngredients.Add(ingredient);
@@ -85,7 +83,7 @@ public class DatabaseSeeder
                     }
                 }
                 recipe.Ingredients = uniqueIngredients;
-                recipe.SearchVector = recipe.ToVector();
+                recipe.Metadata.SearchVector = recipe.ToVector();
 
                 // Add recipe
                 addedRecipes[recipe.Name] = recipe;

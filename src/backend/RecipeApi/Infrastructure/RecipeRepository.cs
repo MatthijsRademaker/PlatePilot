@@ -4,6 +4,7 @@ using Pgvector.EntityFrameworkCore;
 
 namespace Infrastructure;
 
+// TODO rewrite to query pattern
 public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
 {
     public async Task<Recipe> CreateRecipeAsync(Recipe recipe)
@@ -14,7 +15,7 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
         return recipe;
     }
 
-    public async Task DeleteRecipeAsync(int id)
+    public async Task DeleteRecipeAsync(Guid id)
     {
         var recipe = recipeContext.Recipes.FirstOrDefault(r => r.Id == id);
         if (recipe != null)
@@ -24,7 +25,7 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
         }
     }
 
-    public Task<Recipe> GetRecipeAsync(int id)
+    public Task<Recipe> GetRecipeAsync(Guid id)
     {
         var recipe = recipeContext.GetRecipesWithIncludes().FirstOrDefault(r => r.Id == id);
         return Task.FromResult(recipe ?? throw new RecipeNotFoundException(id));
@@ -39,7 +40,7 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Recipe>> GetRecipesByAllergyAsync(int entityId)
+    public async Task<IEnumerable<Recipe>> GetRecipesByAllergyAsync(Guid entityId)
     {
         return await recipeContext
             .GetRecipesWithIncludes()
@@ -47,7 +48,7 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Recipe>> GetRecipesByCuisineAsync(int entityId)
+    public async Task<IEnumerable<Recipe>> GetRecipesByCuisineAsync(Guid entityId)
     {
         return await recipeContext
             .GetRecipesWithIncludes()
@@ -55,7 +56,7 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Recipe>> GetRecipesByIngredientAsync(int entityId)
+    public async Task<IEnumerable<Recipe>> GetRecipesByIngredientAsync(Guid entityId)
     {
         return await recipeContext
             .GetRecipesWithIncludes()
@@ -70,7 +71,7 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
             .Select(r => new
             {
                 Recipe = r,
-                Similarity = r.SearchVector.CosineDistance(recipe.SearchVector),
+                Similarity = r.Metadata.SearchVector.CosineDistance(recipe.Metadata.SearchVector),
             })
             .OrderByDescending(r => r.Similarity)
             .Take(amount)
@@ -88,4 +89,4 @@ public class RecipeRepository(RecipeContext recipeContext) : IRecipeRepository
 }
 
 [Serializable]
-internal class RecipeNotFoundException(int id) : Exception($"Recipe not found with id: {id}");
+internal class RecipeNotFoundException(Guid id) : Exception($"Recipe not found with id: {id}");

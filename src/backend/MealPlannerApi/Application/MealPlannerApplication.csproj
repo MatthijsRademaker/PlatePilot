@@ -21,8 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Domain/RecipeDomain.csproj" />
-    <ProjectReference Include="../Infrastructure/RecipeInfrastructure.csproj" />
+    <ProjectReference Include="../Domain/MealPlannerDomain.csproj" />
+    <ProjectReference Include="../Infrastructure/MealPlannerInfrastructure.csproj" />
     <ProjectReference Include="..\..\ServiceDefaults\ServiceDefaults.csproj" />
   </ItemGroup>
 

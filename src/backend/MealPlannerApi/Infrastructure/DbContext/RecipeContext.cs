@@ -6,27 +6,23 @@ using Microsoft.Extensions.Configuration;
 namespace Infrastructure;
 
 /// <remarks>
-/// Add migrations using the following command inside the 'Infrastructure' project directory:
+/// Add migrations using the following command inside the 'MealPlannerInfrastructure' project directory:
 ///
-/// dotnet ef migrations add --startup-project ../Application --context RecipeContext [migration-name]
+/// dotnet ef migrations add --startup-project ../../Hosting --context RecipeContext [migration-name]
 /// </remarks>
 public class RecipeContext(DbContextOptions<RecipeContext> options) : DbContext(options)
 {
     public DbSet<Recipe> Recipes { get; set; }
 
-    public DbSet<Ingredient> Ingredients { get; set; }
-
-    public DbSet<Cuisine> Cuisines { get; set; }
-
-    public DbSet<Allergy> Allergies { get; set; }
+    // Add function mapping, note the not supported exception is thrown when the function is called client side
+    [DbFunction("recipe_matches", Schema = "public")]
+    public static bool RecipeMatches(Guid recipeId, string constraintType, Guid entityId) =>
+        throw new NotSupportedException();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         builder.HasPostgresExtension("vector");
         builder.ApplyConfiguration(new RecipeEntityTypeConfiguration());
-        builder.ApplyConfiguration(new IngredientEntityTypeConfiguration());
-        builder.ApplyConfiguration(new CuisineEntityTypeConfiguration());
-        builder.ApplyConfiguration(new AllergyEntityTypeConfiguration());
 
         // Add the outbox table to this context
         // builder.UseIntegrationEventLogs();
@@ -48,15 +44,5 @@ public class RecipeContext(DbContextOptions<RecipeContext> options) : DbContext(
                 ex
             );
         }
-    }
-
-    public IQueryable<Recipe> GetRecipesWithIncludes()
-    {
-        return Recipes
-            .Include(r => r.Ingredients)
-            .ThenInclude(i => i.Allergies)
-            .Include(r => r.MainIngredient)
-            .ThenInclude(i => i.Allergies)
-            .Include(r => r.Cuisine);
     }
 }

@@ -13,10 +13,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RecipeApi\Application\RecipeApplication.csproj" />
+    <ProjectReference Include="..\MealPlannerApi\Application\MealPlannerApplication.csproj" />
+    <ProjectReference Include="..\WebApiBFF\Application\WebApiBFF.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" Version="9.0.0" />
+    <PackageReference Include="Aspire.Hosting.RabbitMQ" Version="9.0.0" />
     <PackageReference Include="Aspire.Hosting.Redis" Version="9.0.0" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.0.0" />
     <PackageReference Include="Aspire.Hosting.Azure.CognitiveServices" Version="9.0.0" />

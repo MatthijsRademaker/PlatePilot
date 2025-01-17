@@ -14,7 +14,6 @@ public static class RecipeApi
 
         api.MapGet("/{id:int}", getRecipeById);
         api.MapGet("/all", getAllRecipes);
-        api.MealPlannerV1();
 
         // TODO add ingredient and cuisine filter endpoints here.
 
@@ -26,11 +25,11 @@ public static class RecipeApi
         "application/problem+json"
     )]
     public static async Task<Ok<RecipeResponse>> getRecipeById(
-        [AsParameters] RecipeDependencies recipeDependencies,
-        int id
+        IRecipeRepository recipeRepository,
+        Guid id
     )
     {
-        var item = await recipeDependencies.RecipeRepository.GetRecipeAsync(id);
+        var item = await recipeRepository.GetRecipeAsync(id);
         return TypedResults.Ok(RecipeResponse.FromRecipe(item));
     }
 
@@ -39,19 +38,19 @@ public static class RecipeApi
         "application/problem+json"
     )]
     public static async Task<Ok<IEnumerable<RecipeResponse>>> getAllRecipes(
-        [AsParameters] RecipeDependencies recipeDependencies,
+        IRecipeRepository recipeRepository,
         [FromQuery] int pageIndex,
         [FromQuery] int pageSize
     )
     {
-        var items = await recipeDependencies.RecipeRepository.GetRecipesAsync(pageIndex * pageSize, pageSize);
+        var items = await recipeRepository.GetRecipesAsync(pageIndex * pageSize, pageSize);
         return TypedResults.Ok(items.Select(RecipeResponse.FromRecipe));
     }
 }
 
 public class RecipeResponse
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
     public string PrepTime { get; set; }

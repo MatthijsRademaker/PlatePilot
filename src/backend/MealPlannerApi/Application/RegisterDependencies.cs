@@ -22,7 +22,7 @@ namespace Application
 
             builder.EnrichNpgsqlDbContext<RecipeContext>();
 
-            builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
+            builder.Services.AddScoped<IMealPlanner, MealPlanner>();
         }
     }
 }

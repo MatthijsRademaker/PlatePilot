@@ -4,7 +4,7 @@ namespace Domain;
 
 public class Recipe
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; }
     public string Description { get; set; }
 
@@ -27,6 +27,9 @@ public class Recipe
 
 public class Metadata
 {
+    public Guid Id { get; set; }
+    public Guid AggregateId { get; set; }
+
     public Vector SearchVector { get; set; }
     public string ImageUrl { get; set; }
     public string Author { get; set; }
@@ -34,20 +37,20 @@ public class Metadata
     public DateTime PublishedDate { get; set; }
 }
 
-public class NutritionalInfo 
+public class NutritionalInfo
 {
     public int Calories { get; set; }
 }
 
 public class Allergy
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; }
 }
 
 public class Ingredient
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; }
     public string Quantity { get; set; }
 
@@ -56,6 +59,6 @@ public class Ingredient
 
 public class Cuisine
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public string Name { get; set; }
 }

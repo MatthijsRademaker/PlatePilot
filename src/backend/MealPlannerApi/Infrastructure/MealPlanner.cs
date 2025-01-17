@@ -5,14 +5,16 @@ namespace Infrastructure;
 
 public class MealPlanner(RecipeContext recipeContext) : IMealPlanner
 {
-    public async Task<IEnumerable<Recipe>> SuggestMealsAsync(
+    public async Task<IEnumerable<Guid>> SuggestMealsAsync(
         int amountToSuggest,
         SuggestionConstraints constraints,
-        IEnumerable<Recipe> alreadySelectedRecipes
+        IEnumerable<Guid> alreadySelectedRecipeIds
     )
     {
         var result = new List<Recipe>();
-        var selectedSet = new HashSet<Recipe>(alreadySelectedRecipes);
+        var selectedSet = new HashSet<Recipe>(
+            recipeContext.Recipes.Where(r => alreadySelectedRecipeIds.Contains(r.Id))
+        );
         var amountToGenerate = Math.Max(amountToSuggest, constraints.ConstraintsPerDay.Count);
         var stackToGenerate = new Stack<List<IConstraint>>(constraints.ConstraintsPerDay);
 
@@ -38,8 +40,7 @@ public class MealPlanner(RecipeContext recipeContext) : IMealPlanner
         while (result.Count < amountToSuggest)
         {
             var candidates = recipeContext
-                .GetRecipesWithIncludes()
-                .Where(r => !selectedSet.Contains(r))
+                .Recipes.Where(r => !selectedSet.Contains(r))
                 .ToList()
                 .OrderByDescending(r => CalculateDiversityScore(r, selectedSet))
                 .Take(amountToSuggest - result.Count);
@@ -52,34 +53,37 @@ public class MealPlanner(RecipeContext recipeContext) : IMealPlanner
             }
         }
 
-        return result;
+        return result.Select(r => r.Id);
     }
 
     private async Task<IEnumerable<Recipe>> GetRecipesByConstraints(
         IEnumerable<IConstraint> constraints
     )
     {
-        var query = recipeContext.GetRecipesWithIncludes();
+        var query = recipeContext.Recipes.AsQueryable();
 
         foreach (var constraint in constraints)
         {
-            switch (constraint)
-            {
-                case AllergiesConstraint ac:
-                    query = query.Where(r =>
-                        r.Ingredients.Any(i => i.Allergies.Any(a => a.Id == ac.EntityId))
-                    );
-                    break;
-                case CuisineConstraint cc:
-                    query = query.Where(r => r.Cuisine.Id == cc.EntityId);
-                    break;
-                case IngredientConstraint ic:
-                    query = query.Where(r =>
-                        r.Ingredients.Any(i => i.Id == ic.EntityId)
-                        || r.MainIngredient.Id == ic.EntityId
-                    );
-                    break;
-            }
+            query = query.Where(r =>
+                RecipeContext.RecipeMatches(r.Id, nameof(constraint), constraint.EntityId)
+            );
+            // switch (constraint)
+            // {
+            //     case AllergiesConstraint ac:
+            //         query = query.Where(r =>
+            //             r.AllergyIds != null && r.AllergyIds.Contains(ac.EntityId)
+            //         );
+            //         break;
+            //     case CuisineConstraint cc:
+            //         query = query.Where(r => r.CuisineId == cc.EntityId);
+            //         break;
+            //     case IngredientConstraint ic:
+            //         query = query.Where(r =>
+            //             r.IngredientIds.Any(id => id == ic.EntityId)
+            //             || r.MainIngredientId == ic.EntityId
+            //         );
+            //         break;
+            // }
         }
 
         return await query.ToListAsync();
@@ -108,18 +112,18 @@ public class MealPlanner(RecipeContext recipeContext) : IMealPlanner
         // This is a simplified example - you might want to adjust the weights
         double similarity = 0;
 
-        if (a.Cuisine == b.Cuisine)
+        if (a.CuisineId == b.CuisineId)
             similarity += 0.25;
 
-        if (a.MainIngredient == b.MainIngredient)
+        if (a.MainIngredientId == b.MainIngredientId)
             similarity += 0.25;
 
         // Jaccard similarity
-        if (a.Ingredients != null && b.Ingredients != null)
+        if (a.IngredientIds != null && b.IngredientIds != null)
         {
-            var commonIngredients = a.Ingredients.Intersect(b.Ingredients).Count();
+            var commonIngredients = a.IngredientIds.Intersect(b.IngredientIds).Count();
             similarity +=
-                (double)commonIngredients / Math.Min(a.Ingredients.Count, b.Ingredients.Count);
+                (double)commonIngredients / Math.Min(a.IngredientIds.Count, b.IngredientIds.Count);
         }
 
         return similarity;

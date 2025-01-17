@@ -8,18 +8,28 @@ var postgres = builder
 
 var recipeDb = postgres.AddDatabase("recipedb");
 
+var rabbitmq = builder.AddRabbitMQ("messaging").WithManagementPlugin();
+;
+
 const string launchProfile = "https";
 
-builder
-    .AddProject<Projects.RecipeApplication>("application")
+var recipeApi = builder
+    .AddProject<Projects.RecipeApplication>("recipe-api")
     .WithReference(recipeDb)
-    .WaitFor(recipeDb);
+    .WaitFor(recipeDb)
+    .WithReference(rabbitmq);
 
-// TODO - Use this in maui project?
-// builder
-//     .AddProject<Projects.backend_Web>("webfrontend")
-//     .WithExternalHttpEndpoints()
-//     .WithReference(apiService)
-//     .WaitFor(apiService);
+var mealPlannerApi = builder
+    .AddProject<Projects.MealPlannerApplication>("meal-planner-api")
+    .WithReference(recipeDb)
+    .WaitFor(recipeDb)
+    .WithReference(rabbitmq);
+
+// TODO caching layer for recipe api
+builder
+    .AddProject<Projects.WebApiBFF>("web-api-bff")
+    .WithReference(recipeApi)
+    .WithReference(mealPlannerApi)
+    .WithReference(rabbitmq);
 
 builder.Build().Run();
