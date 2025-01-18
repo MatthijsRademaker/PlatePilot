@@ -1,11 +1,44 @@
 using Microsoft.EntityFrameworkCore.Migrations;
+using Pgvector;
 
-namespace MealPlannerInfrastructure.Migrations;
+namespace Infrastructure.Migrations;
 
-public partial class AddMatchesFunction : Migration
+public partial class InitialCreate : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
+        // Enable required extensions
+        migrationBuilder.AlterDatabase().Annotation("Npgsql:PostgresExtension:vector", ",,");
+
+        // Create base recipes table
+        migrationBuilder.CreateTable(
+            name: "recipes",
+            columns: table => new
+            {
+                Id = table.Column<Guid>(type: "uuid", nullable: false),
+                SearchVector = table.Column<Vector>(type: "vector(128)", nullable: false),
+                CuisineId = table.Column<int>(type: "integer", nullable: false),
+                MainIngredientId = table.Column<int>(type: "integer", nullable: false),
+                IngredientIds = table.Column<List<int>>(type: "integer[]", nullable: false),
+                AllergyIds = table.Column<List<int>>(type: "integer[]", nullable: false),
+            }
+        );
+
+        // Create materialized view
+        migrationBuilder.Sql(
+            @"
+            CREATE SCHEMA materialized;
+            
+            CREATE MATERIALIZED VIEW materialized.recipe_view AS 
+            SELECT *
+            FROM recipes;
+
+            CREATE UNIQUE INDEX recipe_view_id_idx ON materialized.recipe_view(id);
+            CREATE INDEX recipe_view_search_idx ON materialized.recipe_view 
+            USING ivfflat (search_vector vector_cosine_ops);
+        "
+        );
+
         migrationBuilder.Sql(
             @"
             CREATE TYPE constraint_type AS ENUM ('AllergyConstraint', 'CuisineConstraint', 'IngredientConstraint');
@@ -48,7 +81,10 @@ public partial class AddMatchesFunction : Migration
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
+        migrationBuilder.Sql("DROP MATERIALIZED VIEW IF EXISTS materialized.recipe_view;");
+        migrationBuilder.Sql("DROP SCHEMA IF EXISTS materialized CASCADE;");
         migrationBuilder.Sql("DROP FUNCTION IF EXISTS recipe_matches;");
         migrationBuilder.Sql("DROP TYPE IF EXISTS constraint_type;");
+        migrationBuilder.DropTable(name: "recipes");
     }
 }
