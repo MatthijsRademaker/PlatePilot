@@ -27,13 +27,9 @@ public class Recipe
 
 public class Metadata
 {
-    public Guid Id { get; set; }
-    public Guid AggregateId { get; set; }
-
     public Vector SearchVector { get; set; }
-    public string ImageUrl { get; set; }
-    public string Author { get; set; }
-    public ICollection<string> Tags { get; set; }
+    public string? ImageUrl { get; set; }
+    public ICollection<string> Tags { get; set; } = [];
     public DateTime PublishedDate { get; set; }
 }
 

@@ -2,6 +2,7 @@ using Application;
 using Application.DatabaseSeed;
 using Application.Endpoints.V1;
 using Asp.Versioning;
+using Common.Events;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using ServiceDefaults;
@@ -31,6 +32,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<RecipeContext>();
+        // var eventBus = services.GetRequiredService<IEventBus>();
         await context.MigrateAsync();
 
         var seeder = new DatabaseSeeder(context);

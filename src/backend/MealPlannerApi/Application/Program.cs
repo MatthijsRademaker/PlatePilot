@@ -10,7 +10,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
 builder.AddApplicationServices();
-builder.AddRabbitMQClient(connectionName: "messaging");
 builder.Services.AddCors();
 
 // Add services to the container.

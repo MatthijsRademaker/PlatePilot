@@ -89,11 +89,8 @@ namespace RecipeInfrastructure.Migrations
                     CuisineId = table.Column<Guid>(type: "uuid", nullable: false),
                     Directions = table.Column<string[]>(type: "text[]", nullable: false),
                     NutritionalInfo_Calories = table.Column<int>(type: "integer", nullable: false),
-                    Metadata_Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Metadata_AggregateId = table.Column<Guid>(type: "uuid", nullable: false),
                     Metadata_SearchVector = table.Column<Vector>(type: "Vector(128)", nullable: false),
-                    Metadata_ImageUrl = table.Column<string>(type: "text", nullable: false),
-                    Metadata_Author = table.Column<string>(type: "text", nullable: false),
+                    Metadata_ImageUrl = table.Column<string>(type: "text", nullable: true),
                     Metadata_Tags = table.Column<string[]>(type: "text[]", nullable: false),
                     Metadata_PublishedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },

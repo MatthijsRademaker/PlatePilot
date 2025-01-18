@@ -1,18 +1,15 @@
+using Common.Events;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using RabbitMQ.Client;
 
 namespace Infrastructure;
 
-public class RecipeEventHandler(
-    ILogger<RecipeEventHandler> logger,
-    IConnection connection,
-    IServiceScopeFactory serviceScopeFactory
-) : BackgroundService
+public class RecipeEventHandler(ILogger<RecipeEventHandler> logger) : IEventHandler
 {
-    protected override async Task ExecuteAsync(CancellationToken ct)
+    public Task Handle(IEvent @event)
     {
-        // TODO look into eshop example
+        logger.LogInformation("Handling event: {Event}", @event);
+        throw new NotImplementedException();
     }
 }

@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Domain/MealPlannerDomain.csproj" />
+    <ProjectReference Include="../../Common/Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,6 +20,5 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Aspire.RabbitMQ.Client" />
   </ItemGroup>
 </Project>

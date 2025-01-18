@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Common.Events;
 using Domain;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -6,15 +7,9 @@ using RecipeApi.Infrastructure;
 
 namespace Application.DatabaseSeed;
 
-public class DatabaseSeeder
+public class DatabaseSeeder(RecipeContext context)
+// public class DatabaseSeeder(IEventBus eventBus, RecipeContext context)
 {
-    private readonly RecipeContext context;
-
-    public DatabaseSeeder(RecipeContext context)
-    {
-        this.context = context;
-    }
-
     public async Task SeedAsync()
     {
         if (!context.Recipes.Any())
@@ -83,11 +78,18 @@ public class DatabaseSeeder
                     }
                 }
                 recipe.Ingredients = uniqueIngredients;
-                recipe.Metadata.SearchVector = recipe.ToVector();
+                recipe.Metadata = new Metadata
+                {
+                    PublishedDate = DateTime.UtcNow,
+                    SearchVector = recipe.ToVector(),
+                };
 
                 // Add recipe
                 addedRecipes[recipe.Name] = recipe;
                 context.Recipes.Add(recipe);
+
+                // Publish event
+                // await eventBus.PublishAsync(new RecipeCreated(recipe.Id));
             }
 
             await context.SaveChangesAsync();

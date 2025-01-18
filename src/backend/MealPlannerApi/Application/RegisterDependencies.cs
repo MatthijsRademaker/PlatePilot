@@ -1,3 +1,5 @@
+using AzureServiceBusEventBus.Abstractions;
+using Common.Events;
 using Domain;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +25,8 @@ namespace Application
             builder.EnrichNpgsqlDbContext<RecipeContext>();
 
             builder.Services.AddScoped<IMealPlanner, MealPlanner>();
+            builder.Services.AddScoped<IEventHandler, RecipeEventHandler>();
+            builder.AddEventBus("meal-planner-api");
         }
     }
 }

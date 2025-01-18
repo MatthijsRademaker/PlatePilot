@@ -23,7 +23,9 @@
   <ItemGroup>
     <ProjectReference Include="../Domain/MealPlannerDomain.csproj" />
     <ProjectReference Include="../Infrastructure/MealPlannerInfrastructure.csproj" />
-    <ProjectReference Include="..\..\ServiceDefaults\ServiceDefaults.csproj" />
+    <ProjectReference Include="../../ServiceDefaults/ServiceDefaults.csproj" />
+    <ProjectReference Include="../../AzureServiceBusEventBus/AzureServiceBusEventBus.csproj" />
+    <ProjectReference Include="../../Common/Common.csproj" />
   </ItemGroup>
 
 </Project>

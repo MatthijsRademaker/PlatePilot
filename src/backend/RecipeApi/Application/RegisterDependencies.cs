@@ -1,3 +1,5 @@
+using AzureServiceBusEventBus.Abstractions;
+using Common.Events;
 using Domain;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +25,9 @@ namespace Application
             builder.EnrichNpgsqlDbContext<RecipeContext>();
 
             builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
+            // TODO event handler
+            // builder.Services.AddScoped<IEventHandler, RecipeEventHandler>();
+            // builder.AddEventBus("recipe-api");
         }
     }
 }

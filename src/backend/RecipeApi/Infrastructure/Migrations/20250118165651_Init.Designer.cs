@@ -13,7 +13,7 @@ using Pgvector;
 namespace RecipeInfrastructure.Migrations
 {
     [DbContext(typeof(RecipeContext))]
-    [Migration("20250117221823_Init")]
+    [Migration("20250118165651_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -193,18 +193,7 @@ namespace RecipeInfrastructure.Migrations
                             b1.Property<Guid>("RecipeId")
                                 .HasColumnType("uuid");
 
-                            b1.Property<Guid>("AggregateId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("Author")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<Guid>("Id")
-                                .HasColumnType("uuid");
-
                             b1.Property<string>("ImageUrl")
-                                .IsRequired()
                                 .HasColumnType("text");
 
                             b1.Property<DateTime>("PublishedDate")

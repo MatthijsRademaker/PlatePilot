@@ -1,0 +1,55 @@
+meta {
+  name: CreateRecipe
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{RecipeApiUrl}}/api/recipes/create
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Spaghetti Carbonara",
+    "description": "Classic Italian pasta dish with eggs, cheese, pancetta and black pepper",
+    "prepTime": "10 minutes",
+    "cookTime": "20 minutes",
+    "mainIngredient": {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "name": "Spaghetti",
+      "description": "Long, thin pasta noodles"
+    },
+    "cuisine": {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "name": "Italian",
+      "description": "Traditional Italian cuisine"
+    },
+    "ingredients": [
+      {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "name": "Eggs",
+        "description": "Fresh eggs"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "name": "Pecorino Romano",
+        "description": "Hard Italian cheese"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "name": "Pancetta",
+        "description": "Italian cured pork belly"
+      }
+    ],
+    "directions": [
+      "Bring a large pot of salted water to boil",
+      "Cook spaghetti according to package instructions",
+      "Meanwhile, mix eggs and cheese in a bowl",
+      "Fry pancetta until crispy",
+      "Combine pasta with egg mixture and pancetta",
+      "Season with black pepper"
+    ]
+  }
+}

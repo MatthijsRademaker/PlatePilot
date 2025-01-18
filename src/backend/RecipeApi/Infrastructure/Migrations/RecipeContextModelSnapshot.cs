@@ -190,18 +190,7 @@ namespace RecipeInfrastructure.Migrations
                             b1.Property<Guid>("RecipeId")
                                 .HasColumnType("uuid");
 
-                            b1.Property<Guid>("AggregateId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("Author")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<Guid>("Id")
-                                .HasColumnType("uuid");
-
                             b1.Property<string>("ImageUrl")
-                                .IsRequired()
                                 .HasColumnType("text");
 
                             b1.Property<DateTime>("PublishedDate")
