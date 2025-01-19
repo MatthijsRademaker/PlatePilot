@@ -10,6 +10,7 @@
     <!-- <PackageReference Include="Aspire.Azure.AI.OpenAI" />
     <PackageReference Include="Microsoft.Extensions.AI" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" /> -->
+    <PackageReference Include="MediatR" Version="12.4.1" />
     <PackageReference Include="Pgvector" Version="0.3.0" />
     <PackageReference Include="Pgvector.EntityFrameworkCore" Version="0.2.1" />
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />

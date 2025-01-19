@@ -3,12 +3,14 @@ using Common.Events;
 using Domain;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Application
 {
-    public static class RegisterDependencies
+    public static class DependencyInjection
     {
-        public static void AddApplicationServices(this IHostApplicationBuilder builder)
+        public static void AddInfrastructure(this IHostApplicationBuilder builder)
         {
             builder.AddNpgsqlDbContext<RecipeContext>(
                 "recipedb",
@@ -24,10 +26,12 @@ namespace Application
 
             builder.EnrichNpgsqlDbContext<RecipeContext>();
 
-            builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
+            builder.Services.AddMediatR(cfg =>
+                cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly)
+            );
             // TODO event handler
             // builder.Services.AddScoped<IEventHandler, RecipeEventHandler>();
-            // builder.AddEventBus("recipe-api");
+            builder.AddEventBus("recipe-api");
         }
     }
 }

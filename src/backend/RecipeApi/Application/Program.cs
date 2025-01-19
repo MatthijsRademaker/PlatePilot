@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
+builder.AddInfrastructure();
 builder.AddApplicationServices();
 builder.Services.AddCors();
 
@@ -32,7 +33,6 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<RecipeContext>();
-        // var eventBus = services.GetRequiredService<IEventBus>();
         await context.MigrateAsync();
 
         var seeder = new DatabaseSeeder(context);

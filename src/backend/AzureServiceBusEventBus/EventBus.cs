@@ -16,13 +16,18 @@ public class EventBus(
     IOptions<ServiceBusOptions> serviceBusOptions
 ) : IEventBus, IHostedService
 {
-    private ServiceBusProcessor _processor;
+    private ServiceBusProcessor _processor = serviceBusClient.CreateProcessor(
+        serviceBusOptions.Value.TopicName,
+        serviceBusOptions.Value.SubscriptionName,
+        new ServiceBusProcessorOptions()
+    );
 
-    private ServiceBusSender _sender;
+    private ServiceBusSender _sender = serviceBusClient.CreateSender(
+        serviceBusOptions.Value.TopicName
+    );
 
-    private readonly string topicName = serviceBusOptions.Value.TopicName;
-
-    private readonly string subscriptionName = serviceBusOptions.Value.SubscriptionName;
+    private JsonSerializerOptions jsonSerializerOptions =
+        new() { PropertyNameCaseInsensitive = true, IncludeFields = true };
 
     public async Task PublishAsync(IEvent @event)
     {
@@ -36,25 +41,31 @@ public class EventBus(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _processor = serviceBusClient.CreateProcessor(
-            topicName,
-            subscriptionName,
-            new ServiceBusProcessorOptions()
-        );
-        _sender = serviceBusClient.CreateSender(topicName);
-
         _processor.ProcessMessageAsync += async (args) =>
         {
-            var @event = JsonSerializer.Deserialize<IEvent>(args.Message.Body.ToString());
+            logger.LogInformation("Received message: {Message}", args.Message.Body.ToString());
+
+            // Get the type based on the subject name
+            var eventType =
+                Type.GetType($"Common.Events.{args.Message.Subject}, Common")
+                ?? throw new InvalidOperationException($"Type {args.Message.Subject} not found");
+
+            var @event = (IEvent)
+                JsonSerializer.Deserialize(
+                    args.Message.Body.ToString(),
+                    eventType,
+                    jsonSerializerOptions
+                )!;
 
             using var scope = serviceScopeFactory.CreateScope();
 
             // Already made for multiple event handlers
             var handlerType = typeof(IEventHandler).MakeGenericType(@event!.GetType());
-            var handler = scope.ServiceProvider.GetRequiredService(handlerType);
+            var handler = scope.ServiceProvider.GetService(handlerType);
 
-            await (Task)
-                handler.GetType().GetMethod("Handle").Invoke(handler, new object[] { @event });
+            if (handler != null)
+                await (Task)
+                    handler.GetType().GetMethod("Handle").Invoke(handler, new object[] { @event });
         };
 
         _processor.ProcessErrorAsync += (args) =>

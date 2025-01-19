@@ -1,6 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using Domain;
+using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,12 +26,9 @@ public static class RecipeApi
         StatusCodes.Status400BadRequest,
         "application/problem+json"
     )]
-    public static async Task<Ok<RecipeResponse>> getRecipeById(
-        IRecipeRepository recipeRepository,
-        Guid id
-    )
+    public static async Task<Ok<RecipeResponse>> getRecipeById(IMediator mediator, Guid id)
     {
-        var item = await recipeRepository.GetRecipeAsync(id);
+        var item = await mediator.Send(new RecipeQuery(id));
         return TypedResults.Ok(RecipeResponse.FromRecipe(item));
     }
 
@@ -39,12 +37,12 @@ public static class RecipeApi
         "application/problem+json"
     )]
     public static async Task<Ok<IEnumerable<RecipeResponse>>> getAllRecipes(
-        IRecipeRepository recipeRepository,
+        IMediator mediator,
         [FromQuery] int pageIndex,
         [FromQuery] int pageSize
     )
     {
-        var items = await recipeRepository.GetRecipesAsync(pageIndex * pageSize, pageSize);
+        var items = await mediator.Send(new RecipesQuery(pageIndex, pageSize));
         return TypedResults.Ok(items.Select(RecipeResponse.FromRecipe));
     }
 
@@ -53,36 +51,36 @@ public static class RecipeApi
         "application/problem+json"
     )]
     public static async Task<Ok<RecipeResponse>> createRecipe(
-        IRecipeRepository recipeRepository,
+        IMediator mediator,
         CreateRecipeRequest request
     )
     {
-        var item = new Domain.Recipe
-        {
-            Name = request.Name,
-            Description = request.Description,
-            PrepTime = request.PrepTime,
-            CookTime = request.CookTime,
-            MainIngredient = request.MainIngredient,
-            Cuisine = request.Cuisine,
-            Ingredients = request.Ingredients,
-            Directions = request.Directions,
-        };
-
-        await recipeRepository.CreateRecipeAsync(item);
+        var item = await mediator.Send(
+            new CreateRecipeCommand(
+                Name: request.Name,
+                Description: request.Description,
+                PrepTime: request.PrepTime,
+                CookTime: request.CookTime,
+                MainIngredientId: request.MainIngredient,
+                CuisineId: request.Cuisine,
+                IngredientIds: request.Ingredients,
+                Directions: request.Directions
+            )
+        );
         return TypedResults.Ok(RecipeResponse.FromRecipe(item));
     }
 }
 
+// TODO add metadata and nutritional info
 public class CreateRecipeRequest
 {
     public string Name { get; set; }
     public string Description { get; set; }
     public string PrepTime { get; set; }
     public string CookTime { get; set; }
-    public Ingredient MainIngredient { get; set; }
-    public Cuisine Cuisine { get; set; }
-    public ICollection<Ingredient> Ingredients { get; set; }
+    public Guid MainIngredient { get; set; }
+    public Guid Cuisine { get; set; }
+    public ICollection<Guid> Ingredients { get; set; }
     public ICollection<string> Directions { get; set; }
 }
 

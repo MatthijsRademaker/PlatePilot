@@ -19,7 +19,14 @@ public interface IEvent
     public Guid AggregateId { get; }
 }
 
-public record RecipeCreated(Guid AggregateId) : IEvent
+public record RecipeCreatedEvent(Guid AggregateId) : IEvent
+{
+    public DateTime OccurredOn { get; } = DateTime.UtcNow;
+
+    public Guid Id { get; } = Guid.NewGuid();
+}
+
+public record RecipeUpdatedEvent(Guid AggregateId) : IEvent
 {
     public DateTime OccurredOn { get; } = DateTime.UtcNow;
 
