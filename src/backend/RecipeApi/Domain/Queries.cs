@@ -1,3 +1,4 @@
+using Common.Domain;
 using MediatR;
 
 namespace Domain;

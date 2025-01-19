@@ -1,11 +1,10 @@
-using Domain;
 using Pgvector;
 
-namespace RecipeApi.Infrastructure;
+namespace Common.Recipe;
 
 public static class VectorExtensions
 {
-    public static Vector ToVector(this Recipe recipe)
+    public static Vector ToVector(this Domain.Recipe recipe)
     {
         // Combine text features into vector
         var text = $"{recipe.Name} {recipe.Description} {recipe.MainIngredient?.Name}";

@@ -13,7 +13,7 @@ using Pgvector;
 namespace RecipeInfrastructure.Migrations
 {
     [DbContext(typeof(RecipeContext))]
-    [Migration("20250118165651_Init")]
+    [Migration("20250119132818_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -42,7 +42,7 @@ namespace RecipeInfrastructure.Migrations
                     b.ToTable("AllergyIngredient");
                 });
 
-            modelBuilder.Entity("Domain.Allergy", b =>
+            modelBuilder.Entity("Common.Domain.Allergy", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -53,14 +53,19 @@ namespace RecipeInfrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<Guid?>("RecipeId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name");
 
+                    b.HasIndex("RecipeId");
+
                     b.ToTable("Allergies", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Cuisine", b =>
+            modelBuilder.Entity("Common.Domain.Cuisine", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -78,7 +83,7 @@ namespace RecipeInfrastructure.Migrations
                     b.ToTable("Cuisines", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Ingredient", b =>
+            modelBuilder.Entity("Common.Domain.Ingredient", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -100,7 +105,7 @@ namespace RecipeInfrastructure.Migrations
                     b.ToTable("Ingredients", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Recipe", b =>
+            modelBuilder.Entity("Common.Domain.Recipe", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -161,34 +166,41 @@ namespace RecipeInfrastructure.Migrations
 
             modelBuilder.Entity("AllergyIngredient", b =>
                 {
-                    b.HasOne("Domain.Allergy", null)
+                    b.HasOne("Common.Domain.Allergy", null)
                         .WithMany()
                         .HasForeignKey("AllergiesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Ingredient", null)
+                    b.HasOne("Common.Domain.Ingredient", null)
                         .WithMany()
                         .HasForeignKey("IngredientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Recipe", b =>
+            modelBuilder.Entity("Common.Domain.Allergy", b =>
                 {
-                    b.HasOne("Domain.Cuisine", "Cuisine")
+                    b.HasOne("Common.Domain.Recipe", null)
+                        .WithMany("Allergies")
+                        .HasForeignKey("RecipeId");
+                });
+
+            modelBuilder.Entity("Common.Domain.Recipe", b =>
+                {
+                    b.HasOne("Common.Domain.Cuisine", "Cuisine")
                         .WithMany()
                         .HasForeignKey("CuisineId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Ingredient", "MainIngredient")
+                    b.HasOne("Common.Domain.Ingredient", "MainIngredient")
                         .WithMany()
                         .HasForeignKey("MainIngredientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.OwnsOne("Domain.Metadata", "Metadata", b1 =>
+                    b.OwnsOne("Common.Domain.Metadata", "Metadata", b1 =>
                         {
                             b1.Property<Guid>("RecipeId")
                                 .HasColumnType("uuid");
@@ -215,7 +227,7 @@ namespace RecipeInfrastructure.Migrations
                                 .HasForeignKey("RecipeId");
                         });
 
-                    b.OwnsOne("Domain.NutritionalInfo", "NutritionalInfo", b1 =>
+                    b.OwnsOne("Common.Domain.NutritionalInfo", "NutritionalInfo", b1 =>
                         {
                             b1.Property<Guid>("RecipeId")
                                 .HasColumnType("uuid");
@@ -244,17 +256,22 @@ namespace RecipeInfrastructure.Migrations
 
             modelBuilder.Entity("IngredientRecipe", b =>
                 {
-                    b.HasOne("Domain.Ingredient", null)
+                    b.HasOne("Common.Domain.Ingredient", null)
                         .WithMany()
                         .HasForeignKey("IngredientsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Recipe", null)
+                    b.HasOne("Common.Domain.Recipe", null)
                         .WithMany()
                         .HasForeignKey("RecipeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Common.Domain.Recipe", b =>
+                {
+                    b.Navigation("Allergies");
                 });
 #pragma warning restore 612, 618
         }

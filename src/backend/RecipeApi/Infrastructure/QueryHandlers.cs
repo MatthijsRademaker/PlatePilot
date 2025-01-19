@@ -1,3 +1,4 @@
+using Common.Domain;
 using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

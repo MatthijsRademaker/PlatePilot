@@ -1,5 +1,6 @@
 using System.Collections;
 using System.ComponentModel;
+using Common.Domain;
 using Domain;
 using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -13,7 +14,7 @@ public static class RecipeApi
     {
         var api = endpoints.MapGroup("/api/recipes").HasApiVersion(1.0);
 
-        api.MapGet("/{id:int}", getRecipeById);
+        api.MapGet("/{id:guid}", getRecipeById);
         api.MapGet("/all", getAllRecipes);
         api.MapPost("/create", createRecipe);
 
@@ -96,7 +97,7 @@ public class RecipeResponse
     public ICollection<Ingredient> Ingredients { get; set; }
     public ICollection<string> Directions { get; set; }
 
-    public static RecipeResponse FromRecipe(Domain.Recipe recipe)
+    public static RecipeResponse FromRecipe(Recipe recipe)
     {
         return new RecipeResponse
         {

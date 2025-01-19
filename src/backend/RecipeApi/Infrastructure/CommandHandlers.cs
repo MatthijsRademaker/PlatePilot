@@ -1,8 +1,9 @@
+using Common.Domain;
 using Common.Events;
+using Common.Recipe;
 using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using RecipeApi.Infrastructure;
 
 namespace Infrastructure.CommandHandlers;
 
@@ -53,7 +54,7 @@ public class RecipeCommandHandler(IEventBus eventBus, RecipeContext recipeContex
         recipeContext.Recipes.Add(recipe);
         await recipeContext.SaveChangesAsync(cancellationToken);
 
-        await eventBus.PublishAsync(new RecipeCreatedEvent(recipe.Id));
+        await eventBus.PublishAsync(new RecipeCreatedEvent(RecipeDTO.FromRecipe(recipe)));
         return recipe;
     }
 }

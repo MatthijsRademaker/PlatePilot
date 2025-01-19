@@ -8,7 +8,7 @@ namespace Infrastructure;
 /// <remarks>
 /// Add migrations using the following command inside the 'MealPlannerInfrastructure' project directory:
 ///
-/// dotnet ef migrations add --startup-project ../../Hosting --context RecipeContext [migration-name]
+/// dotnet ef migrations add --startup-project ../Application --context RecipeContext [migration-name]
 /// </remarks>
 public class RecipeContext(DbContextOptions<RecipeContext> options) : DbContext(options)
 {

@@ -9,36 +9,22 @@ using Microsoft.Extensions.Options;
 
 namespace AzureServiceBusEventBus;
 
-public class EventBus(
-    ILogger<EventBus> logger,
+public class EventProcessor(
+    ILogger<EventProcessor> logger,
     IServiceScopeFactory serviceScopeFactory,
     ServiceBusClient serviceBusClient,
     IOptions<ServiceBusOptions> serviceBusOptions
-) : IEventBus, IHostedService
+) :  IHostedService
 {
-    private ServiceBusProcessor _processor = serviceBusClient.CreateProcessor(
+    private ServiceBusProcessor _processor= serviceBusClient.CreateProcessor(
         serviceBusOptions.Value.TopicName,
         serviceBusOptions.Value.SubscriptionName,
         new ServiceBusProcessorOptions()
     );
 
-    private ServiceBusSender _sender = serviceBusClient.CreateSender(
-        serviceBusOptions.Value.TopicName
-    );
-
     private JsonSerializerOptions jsonSerializerOptions =
         new() { PropertyNameCaseInsensitive = true, IncludeFields = true };
-
-    public async Task PublishAsync(IEvent @event)
-    {
-        var message = new ServiceBusMessage(JsonSerializer.Serialize(@event))
-        {
-            Subject = @event.GetType().Name,
-        };
-
-        await _sender.SendMessageAsync(message);
-    }
-
+    
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _processor.ProcessMessageAsync += async (args) =>
@@ -49,14 +35,17 @@ public class EventBus(
             var eventType =
                 Type.GetType($"Common.Events.{args.Message.Subject}, Common")
                 ?? throw new InvalidOperationException($"Type {args.Message.Subject} not found");
-
+            
+            logger.LogInformation("Event type: {eventType}", eventType);
             var @event = (IEvent)
                 JsonSerializer.Deserialize(
                     args.Message.Body.ToString(),
                     eventType,
                     jsonSerializerOptions
                 )!;
-
+            
+            logger.LogInformation("Parsed event to: {Event}", @event);  
+            
             using var scope = serviceScopeFactory.CreateScope();
 
             // Already made for multiple event handlers

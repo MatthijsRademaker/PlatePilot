@@ -24,20 +24,6 @@ public partial class InitialCreate : Migration
             }
         );
 
-        // Create materialized view
-        migrationBuilder.Sql(
-            @"
-            CREATE SCHEMA materialized;
-            
-            CREATE MATERIALIZED VIEW materialized.recipe_view AS 
-            SELECT *
-            FROM recipes;
-
-            CREATE UNIQUE INDEX recipe_view_id_idx ON materialized.recipe_view(id);
-            CREATE INDEX recipe_view_search_idx ON materialized.recipe_view 
-            USING ivfflat (search_vector vector_cosine_ops);
-        "
-        );
 
         migrationBuilder.Sql(
             @"

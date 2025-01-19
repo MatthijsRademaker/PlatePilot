@@ -29,9 +29,8 @@ namespace Application
             builder.Services.AddMediatR(cfg =>
                 cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly)
             );
-            // TODO event handler
-            // builder.Services.AddScoped<IEventHandler, RecipeEventHandler>();
-            builder.AddEventBus("recipe-api");
+            
+            builder.AddEventBus("recipe-api", false);
         }
     }
 }

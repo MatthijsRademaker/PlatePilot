@@ -1,6 +1,6 @@
 using Pgvector;
 
-namespace Domain;
+namespace Common.Domain;
 
 public class Recipe
 {
@@ -17,7 +17,10 @@ public class Recipe
     public Cuisine Cuisine { get; set; }
 
     public ICollection<Ingredient> Ingredients { get; set; }
-
+    
+    // TODO
+    // public ICollection<Allergy> Allergies => Ingredients.SelectMany(i => i.Allergies).ToList();
+    public ICollection<Allergy> Allergies => [];
     public ICollection<string> Directions { get; set; }
 
     public NutritionalInfo NutritionalInfo { get; set; }

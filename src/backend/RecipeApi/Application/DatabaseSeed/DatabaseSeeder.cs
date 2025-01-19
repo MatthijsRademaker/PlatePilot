@@ -1,9 +1,10 @@
 using System.Text.Json;
+using Common.Domain;
 using Common.Events;
+using Common.Recipe;
 using Domain;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using RecipeApi.Infrastructure;
 
 namespace Application.DatabaseSeed;
 
@@ -17,7 +18,7 @@ public class DatabaseSeeder(RecipeContext context)
             var recipesJson = await File.ReadAllTextAsync("DatabaseSeed/recipes.json");
             var recipesData = JsonSerializer.Deserialize<RecipeData>(
                 recipesJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true, IncludeFields = true}
             );
 
             if (recipesData == null)

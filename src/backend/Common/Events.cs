@@ -1,8 +1,10 @@
+using Common.Recipe;
+
 namespace Common.Events;
 
 public interface IEventBus
 {
-    public Task PublishAsync(IEvent @event);
+    public Task PublishAsync<TEvent>(TEvent @event) where TEvent : IEvent;
 }
 
 public interface IEventHandler<in TEvent>
@@ -19,8 +21,10 @@ public interface IEvent
     public Guid AggregateId { get; }
 }
 
-public record RecipeCreatedEvent(Guid AggregateId) : IEvent
+public record RecipeCreatedEvent(RecipeDTO Recipe) : IEvent
 {
+    public Guid AggregateId { get; } = Recipe.Id;
+    
     public DateTime OccurredOn { get; } = DateTime.UtcNow;
 
     public Guid Id { get; } = Guid.NewGuid();

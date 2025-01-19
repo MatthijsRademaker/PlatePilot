@@ -4,14 +4,15 @@ var postgres = builder
     .AddPostgres("postgres")
     .WithImage("ankane/pgvector")
     .WithImageTag("latest")
-    .WithLifetime(ContainerLifetime.Persistent)
+    .WithLifetime(ContainerLifetime.Session)
+    .WithDataBindMount("Volumes/Postgres")
     .WithPgAdmin(
         (builder) =>
         {
             builder.WithHostPort(5050);
         }
     );
-
+var mealPlannerDb = postgres.AddDatabase("mealplannerdb");
 var recipeDb = postgres.AddDatabase("recipedb");
 
 var mssqlInstance = builder
@@ -52,8 +53,8 @@ var recipeApi = builder
 
 var mealPlannerApi = builder
     .AddProject<Projects.MealPlannerApplication>("meal-planner-api")
-    .WithReference(recipeDb)
-    .WaitFor(recipeDb)
+    .WithReference(mealPlannerDb)
+    .WaitFor(mealPlannerDb)
     .WaitFor(serviceBusInstance)
     .WithReference(serviceBus);
 

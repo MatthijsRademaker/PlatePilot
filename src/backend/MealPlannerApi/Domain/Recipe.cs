@@ -4,14 +4,14 @@ namespace Domain;
 
 public class Recipe
 {
-    public Guid Id { get; private set; }
-    public Vector SearchVector { get; private set; }
-    public int CuisineId { get; private set; }
-    public int MainIngredientId { get; private set; }
+    public Guid Id { get;  init; }
+    public Vector SearchVector { get;  init; }
+    public Guid CuisineId { get;  init; }
+    public Guid MainIngredientId { get;  init; }
 
-    public List<int> IngredientIds { get; private set; }
+    public List<Guid> IngredientIds { get;  init; }
 
-    public List<int> AllergyIds { get; private set; }
+    public List<Guid> AllergyIds { get;  init; }
 
     public override bool Equals(object? obj)
     {

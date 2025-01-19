@@ -8,7 +8,7 @@ class RecipeEntityTypeConfiguration : IEntityTypeConfiguration<Recipe>
 {
     public void Configure(EntityTypeBuilder<Recipe> builder)
     {
-        builder.ToTable("recipe_view", schema: "materialized").ToView(null);
+        builder.ToTable("recipes");
 
         builder.HasKey(ci => ci.Id);
 

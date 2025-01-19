@@ -11,12 +11,17 @@ public static class Abstractions
     // TODO if necessary, add a way to configure the topic name and multiple event handlers for different type of events/topics
     public static IHostApplicationBuilder AddEventBus(
         this IHostApplicationBuilder builder,
-        string subscriptionName
+        string subscriptionName,
+        bool withProcessor
     )
     {
         builder.AddAzureServiceBusClient("messaging");
         builder.Services.AddSingleton<IEventBus, EventBus>();
-        builder.Services.AddHostedService<EventBus>();
+        if (withProcessor)
+        {
+            builder.Services.AddHostedService<EventProcessor>();
+        }
+
         builder
             .Services.AddOptions<ServiceBusOptions>()
             .Configure<IHostEnvironment>(

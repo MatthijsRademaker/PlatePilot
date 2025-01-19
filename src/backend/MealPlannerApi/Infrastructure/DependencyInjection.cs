@@ -13,7 +13,7 @@ public static class DependencyInjection
     public static void AddInfrastructure(this IHostApplicationBuilder builder)
     {
         builder.AddNpgsqlDbContext<RecipeContext>(
-            "recipedb",
+            "mealplannerdb",
             configureDbContextOptions: dbContextOptionsBuilder =>
             {
                 dbContextOptionsBuilder.UseNpgsql(builder =>
@@ -28,6 +28,6 @@ public static class DependencyInjection
 
         builder.Services.AddScoped<IMealPlanner, MealPlanner>();
         builder.Services.AddScoped<IEventHandler<RecipeCreatedEvent>, RecipeEventHandler>();
-        builder.AddEventBus("meal-planner-api");
+        builder.AddEventBus("meal-planner-api", true);
     }
 }
