@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{MealPlanApiUrl}}/recipes/mealplanner
+  url: {{MealPlanApiUrl}}/v1/plan-meal
   body: json
   auth: none
 }
@@ -15,19 +15,19 @@ body:json {
     "constraints": {
       "ingredientConstraints": [
           [{
-            "entityId": 8
+            "entityId": "19a127cf-cde3-456f-aad2-8d7169ea08d2"
           }]
       ],
       "cuisineConstraints": [
         [
           {
-            "entityId": 3
+            "entityId": "46644f03-2bef-4aae-a53a-26c002f0515e"
           }
         ]
       ]
     },
     "alreadySelectedRecipeIds": [
-      2
+     
     ],
     "amount": 10
   }

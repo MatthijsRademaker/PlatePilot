@@ -5,9 +5,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Infrastructure;
 
-public class RecipeEventHandler(ILogger<RecipeEventHandler> logger) : IEventHandler
+public class RecipeEventHandler(ILogger<RecipeEventHandler> logger) : IEventHandler<RecipeCreatedEvent>
 {
-    public Task Handle(IEvent @event)
+    public Task Handle(RecipeCreatedEvent @event)
     {
         logger.LogInformation("Handling event: {Event}", @event);
         throw new NotImplementedException();

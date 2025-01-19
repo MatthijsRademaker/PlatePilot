@@ -4,7 +4,7 @@ var postgres = builder
     .AddPostgres("postgres")
     .WithImage("ankane/pgvector")
     .WithImageTag("latest")
-    .WithLifetime(ContainerLifetime.Session)
+    .WithLifetime(ContainerLifetime.Persistent)
     .WithPgAdmin(
         (builder) =>
         {

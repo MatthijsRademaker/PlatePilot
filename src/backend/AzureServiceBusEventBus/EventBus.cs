@@ -60,7 +60,7 @@ public class EventBus(
             using var scope = serviceScopeFactory.CreateScope();
 
             // Already made for multiple event handlers
-            var handlerType = typeof(IEventHandler).MakeGenericType(@event!.GetType());
+            var handlerType = typeof(IEventHandler<>).MakeGenericType(@event!.GetType());
             var handler = scope.ServiceProvider.GetService(handlerType);
 
             if (handler != null)

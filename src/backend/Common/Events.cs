@@ -5,9 +5,9 @@ public interface IEventBus
     public Task PublishAsync(IEvent @event);
 }
 
-public interface IEventHandler
+public interface IEventHandler<in TEvent>
 {
-    Task Handle(IEvent @event);
+    Task Handle(TEvent @event);
 }
 
 public interface IEvent
