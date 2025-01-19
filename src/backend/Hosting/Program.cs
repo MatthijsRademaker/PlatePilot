@@ -60,7 +60,7 @@ var mealPlannerApi = builder
 
 // TODO caching layer for recipe api
 builder
-    .AddProject<Projects.WebApiBffApplication>("web-api-bff")
+    .AddProject<Projects.MobileBffApplication>("mobile-bff")
     .WithReference(recipeApi)
     .WithReference(mealPlannerApi)
     .WaitFor(serviceBusInstance)
