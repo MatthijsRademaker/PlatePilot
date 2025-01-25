@@ -1,3 +1,4 @@
+using System.Reflection;
 using AzureServiceBusEventBus.Abstractions;
 using Common.Events;
 using Domain;
@@ -28,6 +29,10 @@ public static class DependencyInjection
 
         builder.Services.AddScoped<IMealPlanner, MealPlanner>();
         builder.Services.AddScoped<IEventHandler<RecipeCreatedEvent>, RecipeEventHandler>();
-        builder.AddEventBus("meal-planner-api", true);
+        
+        if (Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider")
+        {
+            builder.AddEventBus("meal-planner-api", true);
+        }
     }
 }

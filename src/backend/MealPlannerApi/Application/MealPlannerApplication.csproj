@@ -4,12 +4,17 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <OpenApiDocumentsDirectory>./</OpenApiDocumentsDirectory>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- <PackageReference Include="Aspire.Azure.AI.OpenAI" />
     <PackageReference Include="Microsoft.Extensions.AI" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" /> -->
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server" Version="9.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Pgvector" Version="0.3.0" />
     <PackageReference Include="Pgvector.EntityFrameworkCore" Version="0.2.1" />
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
@@ -19,7 +24,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="../Domain/MealPlannerDomain.csproj" />
     <ProjectReference Include="../Infrastructure/MealPlannerInfrastructure.csproj" />
