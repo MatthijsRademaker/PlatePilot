@@ -1,11 +1,14 @@
+using Application.Endpoints.V1;
 using Asp.Versioning;
 using Infrastructure;
+using MobileBFF.Infrastructure;
 using ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
+
 builder.AddInfrastructure();
 builder.Services.AddCors();
 
@@ -25,6 +28,7 @@ var app = builder.Build();
 app.UseExceptionHandler();
 
 app.MapDefaultEndpoints();
+app.MapRecipeApiV1();
 
 app.UseCors(options =>
 {

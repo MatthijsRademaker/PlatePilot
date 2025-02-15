@@ -12,7 +12,8 @@ public static class DependencyInjection
         builder.Services.AddMediatR(cfg =>
             cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly)
         );
-
+        builder.Services.AddGrpc();
         builder.Services.RegisterRecipeApi();
+        builder.Services.RegisterMealPlannerApi();
     }
 }

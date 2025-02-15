@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package recipe.v1;
+
+option csharp_namespace = "Application.Endpoints.V1.Protos";
+
+// Service definition for recipe management
+service RecipeService {
+  // Gets a recipe by its ID
+  rpc GetRecipeById (GetRecipeByIdRequest) returns (RecipeResponse);
+  
+  // Gets a paginated list of all recipes
+  rpc GetAllRecipes (GetAllRecipesRequest) returns (GetAllRecipesResponse);
+  
+  // Creates a new recipe
+  rpc CreateRecipe (CreateRecipeRequest) returns (RecipeResponse);
+}
+
+// Request for getting a recipe by ID
+message GetRecipeByIdRequest {
+  string recipe_id = 1; // UUID string
+}
+
+// Request for getting all recipes with pagination
+message GetAllRecipesRequest {
+  int32 page_index = 1;
+  int32 page_size = 2;
+}
+
+// Response containing multiple recipes
+message GetAllRecipesResponse {
+  repeated RecipeResponse recipes = 1;
+}
+
+// Request for creating a new recipe
+message CreateRecipeRequest {
+  string name = 1;
+  string description = 2;
+  string prep_time = 3;
+  string cook_time = 4;
+  string main_ingredient_id = 5; // UUID string
+  string cuisine_id = 6; // UUID string
+  repeated string ingredient_ids = 7; // UUID strings
+  repeated string directions = 8;
+}
+
+// Response containing recipe details
+message RecipeResponse {
+  string id = 1; // UUID string
+  string name = 2;
+  string description = 3;
+  string prep_time = 4;
+  string cook_time = 5;
+  Ingredient main_ingredient = 6;
+  Cuisine cuisine = 7;
+  repeated Ingredient ingredients = 8;
+  repeated string directions = 9;
+}
+
+// Ingredient entity
+message Ingredient {
+  string id = 1; // UUID string
+  string name = 2;
+}
+
+// Cuisine entity
+message Cuisine {
+  string id = 1; // UUID string
+  string name = 2;
+}

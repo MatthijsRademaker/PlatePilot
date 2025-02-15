@@ -57,6 +57,6 @@ app.UseCors(options =>
 
 app.UseStatusCodePages();
 
-app.NewVersionedApi("Recipe").MapRecipeV1();
+app.MapGrpcService<RecipeGrpcService>();
 app.UseDefaultOpenApi();
 app.Run();

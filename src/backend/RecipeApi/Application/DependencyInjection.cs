@@ -10,6 +10,7 @@ namespace Application
     {
         public static void AddApplicationServices(this IHostApplicationBuilder builder)
         {
+            builder.Services.AddGrpc();
             // TODO event handler
             // builder.Services.AddScoped<IEventHandler, RecipeEventHandler>();
             // builder.AddEventBus("recipe-api");

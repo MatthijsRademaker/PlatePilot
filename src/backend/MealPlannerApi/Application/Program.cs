@@ -52,6 +52,6 @@ app.UseCors(options =>
 
 app.UseStatusCodePages();
 
-app.NewVersionedApi("Recipe").MapMealPlannerV1();
+app.MapGrpcService<MealPlannerGrpcService>();
 app.UseDefaultOpenApi();
 app.Run();
