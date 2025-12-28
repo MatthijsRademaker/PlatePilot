@@ -127,7 +127,7 @@ Phase 1: Common Layer              [Week 1-2]   ✅ COMPLETE
     ↓
 Phase 2: Mobile BFF                [Week 2-3]   ✅ COMPLETE
     ↓
-Phase 3: MealPlanner API           [Week 3-5]
+Phase 3: MealPlanner API           [Week 3-5]   ✅ COMPLETE
     ↓
 Phase 4: Recipe API                [Week 5-8]
     ↓
@@ -881,38 +881,38 @@ internal/bff/
 
 ### 6.1 Tasks
 
-- [ ] **P3-1: Set up gRPC server**
+- [x] **P3-1: Set up gRPC server**
   - `cmd/mealplanner-api/main.go`
   - gRPC server configuration
   - Health check service
 
-- [ ] **P3-2: Create database repository**
+- [x] **P3-2: Create database repository**
   - `internal/mealplanner/repository/postgres.go`
-  - sqlc queries for read model
+  - Raw SQL queries for read model
   - Vector similarity queries
 
-- [ ] **P3-3: Implement meal planner domain logic**
+- [x] **P3-3: Implement meal planner domain logic**
   - `internal/mealplanner/domain/planner.go`
   - Suggestion algorithm with diversity scoring
   - Constraint filtering logic
 
-- [ ] **P3-4: Implement gRPC handlers**
+- [x] **P3-4: Implement gRPC handlers**
   - `internal/mealplanner/handler/grpc.go`
   - SuggestRecipes implementation
   - Error handling and logging
 
-- [ ] **P3-5: Implement event consumer**
+- [x] **P3-5: Implement event consumer**
   - `internal/mealplanner/events/consumer.go`
-  - Subscribe to recipe-events topic
+  - Subscribe to recipe-events topic via RabbitMQ
   - Handle RecipeCreatedEvent
   - Update read model
 
-- [ ] **P3-6: Write SQL migrations**
+- [x] **P3-6: Write SQL migrations** (done in Phase 0)
   - `migrations/mealplanner/000001_init.up.sql`
   - Read model table schema
   - Vector index for similarity search
 
-- [ ] **P3-7: Write tests**
+- [ ] **P3-7: Write tests** (deferred)
   - Unit tests for planner algorithm
   - Integration tests for repository
   - Event handler tests
