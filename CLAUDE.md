@@ -28,7 +28,7 @@ See `MIGRATION_PLAN.md` for the detailed migration history.
 | MealPlanner API | `src/backend-go/cmd/mealplanner-api/` | Read service, vector search, event consuming |
 | Mobile BFF | `src/backend-go/cmd/mobile-bff/` | REST gateway for clients |
 | Common | `src/backend-go/internal/common/` | Shared domain, events, config |
-| Frontend | `src/frontend/` | Vue/Quasar (planned) |
+| Frontend | `src/frontend/` | Vue/Quasar app with vertical slice architecture |
 
 ### Completed Migration Phases
 1. **Phase 0: Foundation** ✅ - Go project setup, tooling, Docker, migrations
@@ -58,10 +58,11 @@ See `MIGRATION_PLAN.md` for the detailed migration history.
 - **Containers**: Docker, docker-compose
 - **CI/CD**: GitHub Actions
 
-### Frontend (Planned)
-- **Framework**: Vue.js 3 + Quasar
-- **Mobile**: Capacitor for iOS/Android
-- **Status**: Not yet started
+### Frontend
+- **Framework**: Vue.js 3 + Quasar 2
+- **State**: Pinia stores
+- **Mobile**: Capacitor (planned)
+- **Architecture**: Feature-based vertical slices
 
 ## Build & Development Commands
 
@@ -229,20 +230,139 @@ src/backend-go/
 - Run with: `make seed` or `recipe-api -seed data/recipes.json`
 - Handles deduplication for ingredients and cuisines
 
-## Frontend (Planned)
+## Frontend
 
-### Technology Choice: Vue.js + Quasar
-- **Framework**: Vue.js 3 with Quasar Framework
-- **Mobile**: Capacitor for native iOS/Android apps
-- **Web**: PWA support out of the box
-- **Status**: Not yet started
+### Technology Stack
+- **Framework**: Vue.js 3 with Quasar 2
+- **State Management**: Pinia
+- **Language**: TypeScript
+- **Mobile**: Capacitor for iOS/Android (planned)
+- **Styling**: Quasar components + SCSS
 
-### Why Quasar?
-- Single codebase for web, iOS, and Android
-- 70+ Material Design components built-in
-- Capacitor integration for native device APIs
-- TypeScript support matches Go backend contracts
-- Smaller bundle size than Flutter web
+### Frontend Commands
+
+```bash
+cd src/frontend
+
+# Development
+npm install              # Install dependencies
+npm run dev              # Start dev server (hot reload)
+
+# Build
+npm run build            # Production build
+npm run lint             # Run ESLint
+npm run format           # Format with Prettier
+```
+
+### Vertical Slice Architecture
+
+The frontend follows a **feature-based vertical slice** pattern where each feature is self-contained with its own types, API, store, composables, components, and pages.
+
+```
+src/frontend/src/
+├── features/                    # Feature modules (vertical slices)
+│   ├── recipe/                  # Recipe feature
+│   │   ├── api/                 # API calls (recipeApi.ts)
+│   │   ├── components/          # Feature components (RecipeCard, RecipeList)
+│   │   ├── composables/         # Vue composables (useRecipeList, useRecipeDetail)
+│   │   ├── pages/               # Route pages (RecipeListPage, RecipeDetailPage)
+│   │   ├── store/               # Pinia store (recipeStore.ts)
+│   │   ├── types/               # TypeScript types (Recipe, Ingredient)
+│   │   ├── routes.ts            # Feature routes
+│   │   └── index.ts             # Barrel export
+│   ├── mealplan/                # Meal planning feature
+│   │   ├── api/
+│   │   ├── components/          # WeekView, MealSlotCard
+│   │   ├── composables/
+│   │   ├── pages/
+│   │   ├── store/
+│   │   ├── types/
+│   │   ├── routes.ts
+│   │   └── index.ts
+│   ├── search/                  # Search feature
+│   │   ├── pages/
+│   │   ├── types/
+│   │   ├── routes.ts
+│   │   └── index.ts
+│   └── home/                    # Home/dashboard feature
+│       ├── pages/
+│       ├── routes.ts
+│       └── index.ts
+├── shared/                      # Shared/common code
+│   ├── api/                     # HTTP client (apiClient)
+│   ├── components/              # Shared UI components
+│   ├── composables/             # Shared composables
+│   ├── types/                   # Shared types (pagination)
+│   └── utils/                   # Utility functions
+├── layouts/                     # App layouts (MainLayout)
+├── router/                      # Vue Router setup
+├── stores/                      # Pinia setup
+├── boot/                        # Quasar boot files
+└── i18n/                        # Internationalization
+```
+
+### Feature Slice Structure
+
+Each feature follows this pattern:
+
+```
+feature/
+├── types/           # Domain types and DTOs
+│   └── index.ts     # Barrel export
+├── api/             # API layer - calls to backend
+│   └── featureApi.ts
+├── store/           # Pinia store - state management
+│   └── featureStore.ts
+├── composables/     # Vue composables - reusable logic
+│   └── useFeature.ts
+├── components/      # Feature-specific components
+│   └── FeatureCard.vue
+├── pages/           # Route pages
+│   └── FeaturePage.vue
+├── routes.ts        # Feature route definitions
+└── index.ts         # Public API (barrel export)
+```
+
+### Key Frontend Patterns
+
+```typescript
+// Feature barrel export (index.ts)
+export * from './types';
+export { featureApi } from './api';
+export { useFeatureStore } from './store';
+export { useFeature } from './composables';
+export { FeatureCard } from './components';
+export { featureRoutes } from './routes';
+
+// Composable pattern
+export function useRecipeList() {
+  const store = useRecipeStore();
+  const { recipes, loading, error } = storeToRefs(store);
+
+  onMounted(() => store.fetchRecipes());
+
+  return { recipes, loading, error };
+}
+
+// Store pattern (Pinia composition API)
+export const useRecipeStore = defineStore('recipe', () => {
+  const recipes = ref<Recipe[]>([]);
+  const loading = ref(false);
+
+  async function fetchRecipes() { /* ... */ }
+
+  return { recipes, loading, fetchRecipes };
+});
+```
+
+### Frontend Best Practices
+
+- **Import from feature index**: `import { Recipe, useRecipeStore } from '@/features/recipe'`
+- **Keep features isolated**: Features should not import from other features' internal modules
+- **Shared code in shared/**: Cross-feature utilities go in `shared/`
+- **Composables for logic**: Extract reusable logic into composables
+- **Types first**: Define types before implementing API/store
+- **Barrel exports**: Use index.ts to control public API
 
 ## Key Architectural Patterns
 
@@ -293,7 +413,7 @@ type MealPlanner interface {           // NOT: VectorSimilaritySearcher
 
 - **Hash-based vectors**: POC only, real embeddings planned
 - **No authentication**: Auth/authz not yet implemented
-- **Frontend**: Not yet implemented (Vue/Quasar planned)
+- **Mobile apps**: Capacitor integration not yet configured
 
 ### Hobby Project Philosophy
 
