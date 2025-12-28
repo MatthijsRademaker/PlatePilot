@@ -1,0 +1,219 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/backend-go/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/backend-go/**'
+      - '.github/workflows/ci.yml'
+
+env:
+  GO_VERSION: '1.24'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/backend-go
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: src/backend-go/go.sum
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: src/backend-go
+          args: --timeout=5m
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/backend-go
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: src/backend-go/go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: src/backend-go/coverage.out
+          flags: unittests
+          fail_ci_if_error: false
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    defaults:
+      run:
+        working-directory: src/backend-go
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: src/backend-go/go.sum
+
+      - name: Build binaries
+        run: |
+          CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o bin/recipe-api ./cmd/recipe-api
+          CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o bin/mealplanner-api ./cmd/mealplanner-api
+          CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o bin/mobile-bff ./cmd/mobile-bff
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: src/backend-go/bin/
+          retention-days: 7
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Recipe API image
+        uses: docker/build-push-action@v6
+        with:
+          context: src/backend-go
+          file: src/backend-go/deployments/Dockerfile
+          target: recipe-api
+          push: false
+          tags: platepilot/recipe-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build MealPlanner API image
+        uses: docker/build-push-action@v6
+        with:
+          context: src/backend-go
+          file: src/backend-go/deployments/Dockerfile
+          target: mealplanner-api
+          push: false
+          tags: platepilot/mealplanner-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Mobile BFF image
+        uses: docker/build-push-action@v6
+        with:
+          context: src/backend-go
+          file: src/backend-go/deployments/Dockerfile
+          target: mobile-bff
+          push: false
+          tags: platepilot/mobile-bff:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  integration:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    services:
+      postgres:
+        image: ankane/pgvector:latest
+        env:
+          POSTGRES_USER: platepilot
+          POSTGRES_PASSWORD: platepilot
+          POSTGRES_DB: platepilot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U platepilot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: platepilot
+          RABBITMQ_DEFAULT_PASS: platepilot
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics check_running"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: src/backend-go
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: src/backend-go/go.sum
+
+      - name: Install migrate
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.17.0/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate /usr/local/bin/
+
+      - name: Create databases
+        run: |
+          PGPASSWORD=platepilot psql -h localhost -U platepilot -d platepilot -c "CREATE DATABASE recipedb;"
+          PGPASSWORD=platepilot psql -h localhost -U platepilot -d platepilot -c "CREATE DATABASE mealplannerdb;"
+
+      - name: Run migrations
+        run: |
+          migrate -path migrations/recipe -database "postgres://platepilot:platepilot@localhost:5432/recipedb?sslmode=disable" up
+          migrate -path migrations/mealplanner -database "postgres://platepilot:platepilot@localhost:5432/mealplannerdb?sslmode=disable" up
+
+      - name: Run integration tests
+        run: go test -v -tags=integration ./...
+        env:
+          PLATEPILOT_DATABASE_RECIPE_DB: postgres://platepilot:platepilot@localhost:5432/recipedb?sslmode=disable
+          PLATEPILOT_DATABASE_MEALPLANNER_DB: postgres://platepilot:platepilot@localhost:5432/mealplannerdb?sslmode=disable
+          PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@localhost:5672/

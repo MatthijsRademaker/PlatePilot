@@ -1,6 +1,10 @@
 version: '3.8'
 
 services:
+  # =============================================================================
+  # Infrastructure
+  # =============================================================================
+
   # PostgreSQL with pgvector extension
   postgres:
     image: ankane/pgvector:latest
@@ -42,7 +46,94 @@ services:
     networks:
       - platepilot
 
-  # pgAdmin for database management (optional)
+  # =============================================================================
+  # Application Services
+  # =============================================================================
+
+  # Recipe API - Write service for recipe management
+  recipe-api:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile
+      target: recipe-api
+    container_name: platepilot-recipe-api
+    environment:
+      PLATEPILOT_ENVIRONMENT: docker
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_RECIPE_API_GRPC_ADDRESS: ":50051"
+      PLATEPILOT_DATABASE_RECIPE_DB: postgres://platepilot:platepilot@postgres:5432/recipedb?sslmode=disable
+      PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq:5672/
+      PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - platepilot
+    restart: unless-stopped
+
+  # MealPlanner API - Read service with vector search
+  mealplanner-api:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile
+      target: mealplanner-api
+    container_name: platepilot-mealplanner-api
+    environment:
+      PLATEPILOT_ENVIRONMENT: docker
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_MEALPLANNER_API_GRPC_ADDRESS: ":50052"
+      PLATEPILOT_DATABASE_MEALPLANNER_DB: postgres://platepilot:platepilot@postgres:5432/mealplannerdb?sslmode=disable
+      PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq:5672/
+      PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
+    ports:
+      - "50052:50052"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - platepilot
+    restart: unless-stopped
+
+  # Mobile BFF - REST gateway for clients
+  mobile-bff:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile
+      target: mobile-bff
+    container_name: platepilot-mobile-bff
+    environment:
+      PLATEPILOT_ENVIRONMENT: docker
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_BFF_HTTP_ADDRESS: ":8080"
+      PLATEPILOT_BFF_RECIPE_API_ADDRESS: recipe-api:50051
+      PLATEPILOT_BFF_MEALPLAN_API_ADDRESS: mealplanner-api:50052
+      PLATEPILOT_BFF_CORS_ALLOWED_ORIGINS: "*"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - recipe-api
+      - mealplanner-api
+    networks:
+      - platepilot
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+  # =============================================================================
+  # Development Tools (use with: docker-compose --profile tools up)
+  # =============================================================================
+
+  # pgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: platepilot-pgadmin
@@ -62,7 +153,11 @@ services:
     profiles:
       - tools
 
-  # Redis for caching (optional, for future use)
+  # =============================================================================
+  # Optional Services (use with: docker-compose --profile full up)
+  # =============================================================================
+
+  # Redis for caching (future use)
   redis:
     image: redis:7-alpine
     container_name: platepilot-redis

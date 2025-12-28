@@ -1,6 +1,7 @@
 .PHONY: all build run test lint proto sqlc migrate-up migrate-down clean help
 .PHONY: dev dev-recipe dev-mealplanner dev-bff
-.PHONY: docker-up docker-down docker-build generate
+.PHONY: docker-up docker-down docker-build docker-run docker-run-all generate
+.PHONY: test-e2e test-integration test-coverage
 
 # Variables
 GO := go
@@ -163,9 +164,25 @@ docker-build:
 	docker build -f deployments/Dockerfile --target mealplanner-api -t platepilot/mealplanner-api:latest .
 	docker build -f deployments/Dockerfile --target mobile-bff -t platepilot/mobile-bff:latest .
 
-## docker-run: Run all services in Docker
+## docker-run: Run all services in Docker (infrastructure only)
 docker-run:
-	docker-compose -f deployments/docker-compose.yml up
+	docker-compose -f deployments/docker-compose.yml up postgres rabbitmq
+
+## docker-run-all: Build and run the complete stack
+docker-run-all:
+	@echo "$(GREEN)Building and running complete stack...$(NC)"
+	docker-compose -f deployments/docker-compose.yml up --build
+
+## docker-run-detached: Run complete stack in background
+docker-run-detached:
+	@echo "$(GREEN)Starting complete stack in background...$(NC)"
+	docker-compose -f deployments/docker-compose.yml up --build -d
+	@echo "$(GREEN)Stack started! Services:$(NC)"
+	@echo "  BFF (REST):     http://localhost:8080"
+	@echo "  Recipe API:     localhost:50051 (gRPC)"
+	@echo "  MealPlanner:    localhost:50052 (gRPC)"
+	@echo "  PostgreSQL:     localhost:5432"
+	@echo "  RabbitMQ:       localhost:5672 (AMQP), http://localhost:15672 (UI)"
 
 ## clean: Clean build artifacts
 clean:
@@ -207,3 +224,21 @@ verify:
 	@which docker > /dev/null 2>&1 && echo "✓ docker" || echo "✗ docker"
 	@echo ""
 	@echo "$(GREEN)Verification complete!$(NC)"
+
+## test-e2e: Run end-to-end integration tests
+test-e2e:
+	@echo "$(GREEN)Running E2E tests...$(NC)"
+	./scripts/e2e-test.sh
+
+## seed: Seed the database with sample data (requires running services)
+seed:
+	@echo "$(GREEN)Seeding database...$(NC)"
+	$(GO) run ./cmd/recipe-api -seed data/recipes.json
+
+## docker-logs: Show logs from all services
+docker-logs:
+	docker-compose -f deployments/docker-compose.yml logs -f
+
+## docker-ps: Show running containers
+docker-ps:
+	docker-compose -f deployments/docker-compose.yml ps

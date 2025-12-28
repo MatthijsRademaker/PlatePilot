@@ -8,9 +8,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **This is a hobby project** - no backwards compatibility requirements, no legacy constraints. We can make breaking changes freely and choose the simplest solutions.
 
-## Migration Status: .NET → Go
+## Migration Status: COMPLETE ✅
 
-**IMPORTANT**: This project is actively being migrated from .NET to Go. See `MIGRATION_PLAN.md` for the detailed migration plan, phases, and progress.
+The backend migration from .NET to Go is **complete**. The .NET code has been removed and the project is now Go-only.
+
+See `MIGRATION_PLAN.md` for the detailed migration history.
 
 ### Why Go?
 - **AI Agent Friendly**: Explicit control flow, no magic/reflection, errors as values
@@ -18,34 +20,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Lower Resource Usage**: ~50MB memory vs ~150-200MB per service
 - **Faster Cold Starts**: <500ms vs 2-3s for .NET
 
-### Key Migration Decisions
-- **No backwards compatibility**: Break anything, delete freely, no migration paths needed
-- **RabbitMQ over Azure Service Bus**: Simpler, better local dev experience, no emulator issues
-- **Delete .NET code when Go equivalent works**: No need to maintain both
-- **Functional naming over technical naming**: Name types/packages by what they do, not how they do it (e.g., `mealplanner` not `vectordbsearch`, `SuggestRecipes` not `CosineSimilaritySearch`). This keeps code readable for LLMs and humans alike.
+### Architecture
 
-### Current State
+| Component | Location | Description |
+|-----------|----------|-------------|
+| Recipe API | `src/backend-go/cmd/recipe-api/` | Write service, gRPC, event publishing |
+| MealPlanner API | `src/backend-go/cmd/mealplanner-api/` | Read service, vector search, event consuming |
+| Mobile BFF | `src/backend-go/cmd/mobile-bff/` | REST gateway for clients |
+| Common | `src/backend-go/internal/common/` | Shared domain, events, config |
+| Frontend | `src/frontend/` | Flutter POC (Vue migration planned) |
 
-| Component | .NET (Legacy) | Go (Target) | Status |
-|-----------|---------------|-------------|--------|
-| Recipe API | `src/backend/RecipeApi/` | `src/backend-go/cmd/recipe-api/` | Phase 4 Complete |
-| MealPlanner API | `src/backend/MealPlannerApi/` | `src/backend-go/cmd/mealplanner-api/` | Phase 3 Complete |
-| Mobile BFF | `src/backend/MobileBFF/` | `src/backend-go/cmd/mobile-bff/` | Phase 2 Complete |
-| Common | `src/backend/Common/` | `src/backend-go/internal/common/` | Phase 1 Complete |
-| Frontend | Flutter (iOS) | Vue/Quasar | Not Started |
-
-### Migration Phases (from MIGRATION_PLAN.md)
+### Completed Migration Phases
 1. **Phase 0: Foundation** ✅ - Go project setup, tooling, Docker, migrations
-2. **Phase 1: Common Layer** ✅ - Domain models, events, vector utilities, sqlc
+2. **Phase 1: Common Layer** ✅ - Domain models, events, vector utilities
 3. **Phase 2: Mobile BFF** ✅ - REST gateway, gRPC clients, handlers
 4. **Phase 3: MealPlanner API** ✅ - Read model, gRPC server, RabbitMQ consumer
 5. **Phase 4: Recipe API** ✅ - Write model, gRPC server, RabbitMQ publisher, seeder
-6. **Phase 5: Integration** - E2E testing, cleanup
+6. **Phase 5: Integration** ✅ - Docker, CI/CD, E2E testing, .NET cleanup
 
 ## Technology Stack
 
-### Target Stack (Go) - PREFERRED FOR NEW WORK
-- **Language**: Go 1.21+
+### Backend (Go)
+- **Language**: Go 1.23+
 - **Web Framework**: `chi` router
 - **gRPC**: `google.golang.org/grpc`
 - **Database**: `pgx` + raw SQL (no ORM magic)
@@ -53,68 +49,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Configuration**: `viper`
 - **Logging**: `slog` (stdlib)
 - **Vector Search**: `pgvector-go`
+- **Messaging**: `rabbitmq/amqp091-go`
 
-### Legacy Stack (.NET) - REFERENCE ONLY
-- **Backend**: .NET 9.0 (C# 12+) with ASP.NET Core
-- **Orchestration**: .NET Aspire for local development
-- **ORM**: Entity Framework Core 9.0
-- **CQRS**: MediatR 12.4.1
+### Infrastructure
+- **Database**: PostgreSQL with pgvector extension
+- **Message Broker**: RabbitMQ
+- **Inter-service**: gRPC (proto3)
+- **Containers**: Docker, docker-compose
+- **CI/CD**: GitHub Actions
 
-### Shared Infrastructure
-- **Databases**: PostgreSQL with pgvector extension
-- **Messaging**: RabbitMQ (replacing Azure Service Bus)
-- **Inter-service Communication**: gRPC (proto3)
-- **Frontend**: Vue/Quasar (planned)
+### Frontend (Planned)
+- **Current**: Flutter POC
+- **Target**: Vue/Quasar
 
 ## Build & Development Commands
-
-### Go Backend (Target) - Use This
 
 ```bash
 cd src/backend-go
 
 # First time setup
 make tools              # Install dev tools (golangci-lint, air, protoc plugins)
-make docker-up          # Start PostgreSQL with pgvector
+make docker-up          # Start PostgreSQL + RabbitMQ
 make migrate-up         # Run database migrations
 
-# Development
+# Development (local with hot reload)
 make dev                # Run all services with hot reload
-make build              # Build all service binaries
-make test               # Run tests
-make lint               # Run linter
-make proto              # Generate gRPC code from protos
+make dev-recipe         # Run recipe-api only
+make dev-mealplanner    # Run mealplanner-api only
+make dev-bff            # Run mobile-bff only
 
-# Individual services
-make dev-recipe         # Run recipe-api with hot reload
-make dev-mealplanner    # Run mealplanner-api with hot reload
-make dev-bff            # Run mobile-bff with hot reload
+# Docker (full stack)
+make docker-run-all     # Build and run complete stack
+make docker-run-detached # Run in background
+make docker-logs        # View logs
+make docker-down        # Stop everything
+
+# Build & Test
+make build              # Build all binaries
+make test               # Run unit tests
+make test-e2e           # Run E2E integration tests
+make lint               # Run linter
 
 # Database
 make migrate-up         # Apply all migrations
 make migrate-down       # Rollback last migration
-make migrate-create name=add_users service=recipe  # Create new migration
-```
+make seed               # Seed with sample recipes
 
-### .NET Backend (Legacy) - Reference Only
-
-```bash
-# Run all services with .NET Aspire orchestration
-dotnet run --project src/backend/Hosting/Hosting.csproj
-
-# Database migrations (EF Core)
-cd src/backend/RecipeApi/Infrastructure
-dotnet ef migrations add <MigrationName> --startup-project ../Application --context RecipeContext
-```
-
-### Testing
-
-```bash
-# Go tests
-cd src/backend-go
-make test               # Unit tests
-make test-coverage      # With coverage report
-make test-integration   # Integration tests (requires Docker)
+# Code generation
+make proto              # Generate gRPC code from protos
 ```
 
 ## Architecture Overview
@@ -123,30 +105,24 @@ make test-integration   # Integration tests (requires Docker)
 
 The backend follows **CQRS pattern** with event-driven architecture:
 
-1. **Recipe API** (Write Service)
+1. **Recipe API** (Write Service) - `cmd/recipe-api/` + `internal/recipe/`
    - Handles recipe creation, updates, and command operations
    - PostgreSQL database with pgvector for embeddings
-   - Publishes events to Azure Service Bus on recipe changes
+   - Publishes events to RabbitMQ on recipe changes
    - gRPC service for inter-service communication
-   - Go: `src/backend-go/cmd/recipe-api/` + `internal/recipe/`
-   - .NET (legacy): `src/backend/RecipeApi/`
 
-2. **MealPlanner API** (Read Service)
+2. **MealPlanner API** (Read Service) - `cmd/mealplanner-api/` + `internal/mealplanner/`
    - Handles meal planning queries and recipe suggestions
    - Denormalized read model for query performance
    - Vector similarity search using pgvector
    - Consumes recipe events to update read model
-   - Go: `src/backend-go/cmd/mealplanner-api/` + `internal/mealplanner/`
-   - .NET (legacy): `src/backend/MealPlannerApi/`
 
-3. **Mobile BFF** (Backend-for-Frontend)
+3. **Mobile BFF** (Backend-for-Frontend) - `cmd/mobile-bff/` + `internal/bff/`
    - REST API gateway for mobile/web clients
    - Aggregates calls to RecipeApi and MealPlannerApi via gRPC
-   - OpenAPI/Swagger documentation
-   - Go: `src/backend-go/cmd/mobile-bff/` + `internal/bff/`
-   - .NET (legacy): `src/backend/MobileBFF/`
+   - Health/ready endpoints for orchestration
 
-### Go Project Structure (Target)
+### Project Structure
 
 ```
 src/backend-go/
@@ -211,45 +187,28 @@ src/backend-go/
 - `GET /v1/recipe/allergy/{id}` - Recipes avoiding allergen
 - `POST /v1/recipe/create` - Create new recipe
 
-## Azure OpenAI & LLM Integration (Planned)
+## AI & Vector Search (Planned Enhancement)
 
 ### Current State
 
-**Vector embeddings**: Currently using placeholder hash-based vectors in `src/backend/Common/Recipe/VectorExtensions.cs:14-27`
-- Simple TF-IDF implementation using word hashing
-- 128-dimensional vectors
-- **Not production-ready** - intended for POC/architecture validation
+**Vector embeddings**: Currently using placeholder hash-based vectors in `internal/common/vector/generator.go`
+- Simple TF-IDF implementation using word hashing (128-dimensional)
+- **POC only** - intended for architecture validation
 
-### Future Integration Plan
+### Future: Azure OpenAI Integration
 
-**Commented package references** in `src/backend/RecipeApi/Application/RecipeApplication.csproj:11-13`:
-```xml
-<!-- <PackageReference Include="Aspire.Azure.AI.OpenAI" />
-<PackageReference Include="Microsoft.Extensions.AI" />
-<PackageReference Include="Microsoft.Extensions.AI.OpenAI" /> -->
-```
-
-**Implementation Steps** (when ready):
-1. Uncomment Azure OpenAI package references
-2. Configure Azure OpenAI service in Aspire host
-3. Replace `VectorExtensions.GenerateVector()` with Azure OpenAI embedding API calls
-4. Use `text-embedding-ada-002` or newer model for recipe embeddings
-5. Update vector dimensions in database schema if needed (currently 128)
-6. Consider batch embedding for seed data and new recipes
-7. Implement embedding caching strategy
+**Implementation Steps**:
+1. Replace `HashGenerator` with Azure OpenAI embedding client
+2. Use `text-embedding-ada-002` or newer model (1536 dimensions)
+3. Update database schema for larger vectors
+4. Implement batch embedding for seeding
+5. Add embedding caching strategy
 
 **Planned Use Cases**:
-- Recipe similarity search based on semantic understanding
-- Ingredient substitution suggestions
-- Personalized meal plan generation based on user history
+- Semantic recipe similarity search
 - Natural language recipe search
-- Dietary restriction analysis and suggestions
-
-**Configuration Notes**:
-- Use Azure OpenAI service endpoints (not OpenAI direct)
-- Store API keys in Azure Key Vault or Aspire secrets
-- Consider embedding caching to reduce API costs
-- Implement retry policies for API resilience
+- Personalized meal suggestions
+- Ingredient substitution recommendations
 
 ## Database Schema
 
@@ -258,15 +217,15 @@ src/backend-go/
 - **Ingredients**: Ingredient master list
 - **Cuisines**: Cuisine types
 - **Allergies**: Allergen tracking
-- **Migrations**: `src/backend/RecipeApi/Infrastructure/Migrations/`
+- **Migrations**: `migrations/recipe/`
 
 ### MealPlannerApi Database (`mealplannerdb`)
-- **Materialized View**: Denormalized recipe data for queries
-- **Migrations**: `src/backend/MealPlannerApi/Infrastructure/Migrations/`
+- **Recipes**: Denormalized recipe data for queries
+- **Migrations**: `migrations/mealplanner/`
 
 ### Seeding Data
-- JSON seed file: `src/backend/RecipeApi/Application/DatabaseSeed/recipes.json`
-- Auto-seeded on application startup
+- JSON seed file: `data/recipes.json`
+- Run with: `make seed` or `recipe-api -seed data/recipes.json`
 - Handles deduplication for ingredients and cuisines
 
 ## Frontend
@@ -288,81 +247,50 @@ src/backend-go/
 ## Key Architectural Patterns
 
 1. **CQRS**: Separate read (MealPlanner) and write (Recipe) models
-2. **Event Sourcing Foundation**: Event-driven updates via Service Bus
-3. **Clean Architecture**: Application/Domain/Infrastructure separation
-4. **Repository Pattern**: Data access abstraction with EF Core
-5. **Mediator Pattern**: MediatR for command/query handling
-6. **Backend-for-Frontend**: BFF gateway for mobile clients
-7. **Domain-Driven Design**: Rich domain models with aggregates
+2. **Event-Driven**: RabbitMQ for service communication
+3. **Repository Pattern**: Data access abstraction with raw SQL
+4. **Backend-for-Frontend**: BFF gateway for mobile clients
+5. **Explicit over Magic**: No ORM, no DI containers, no reflection
 
-## Important Development Notes
+## Development Guidelines
 
-### When Working on Go Code (Preferred)
-
-- **Consult MIGRATION_PLAN.md**: Check the migration plan for context and current phase
-- **Read before modifying**: Always read existing Go and .NET files for reference
-- **Use explicit patterns**: No magic, no reflection, explicit error handling
-- **Write tests**: Add table-driven tests for new functionality
-- **SQL over ORM**: Write explicit SQL queries, avoid abstractions
-- **Update protos**: Modify `api/proto/` files when changing gRPC contracts
-- **Run migrations**: Use `make migrate-create` for schema changes
-
-### Go Code Style
+### Code Style
 
 ```go
-// Good: Explicit error handling
+// Explicit error handling
 result, err := repo.GetByID(ctx, id)
 if err != nil {
     return nil, fmt.Errorf("get recipe: %w", err)
 }
 
-// Good: Interface-based dependencies
+// Interface-based dependencies
 type RecipeRepository interface {
     GetByID(ctx context.Context, id uuid.UUID) (*Recipe, error)
 }
 
-// Good: Structured logging
+// Structured logging
 slog.Info("recipe created", "id", recipe.ID, "name", recipe.Name)
 
-// Good: Functional naming (what it does, not how)
+// Functional naming (what it does, not how)
 type MealPlanner interface {           // NOT: VectorSimilaritySearcher
     SuggestRecipes(ctx, constraints)   // NOT: FindByCosineSimilarity
 }
-func (p *Planner) SuggestRecipes(...)  // NOT: QueryPgvectorIndex
 ```
 
-### When Referencing .NET Code (Legacy)
+### Best Practices
 
-- **.NET is reference only**: Use to understand business logic, then reimplement in Go
-- **Don't modify .NET**: Focus all new development on Go codebase
-- **Pattern translation**: MediatR handlers → Go handler functions, EF Core → raw SQL
-
-### Code Quality Considerations
-
-- **Security**: Parameterized queries, input validation at boundaries
-- **Vector operations**: Hash-based vectors are POC - plan for Azure OpenAI embeddings
+- **Read before modifying**: Always read existing code first
+- **Use explicit patterns**: No magic, no reflection, explicit error handling
+- **Write tests**: Add table-driven tests for new functionality
+- **SQL over ORM**: Write explicit SQL queries, avoid abstractions
+- **Update protos**: Modify `api/proto/` files when changing gRPC contracts
+- **Run migrations**: Use `make migrate-create` for schema changes
 - **Error handling**: Wrap errors with context using `fmt.Errorf("context: %w", err)`
 - **Timeouts**: Set context timeouts for all external calls
 - **Graceful shutdown**: Handle SIGTERM, drain connections
 
-### Local Development
-
-```bash
-# Start infrastructure
-cd src/backend-go
-make docker-up          # PostgreSQL with pgvector
-make migrate-up         # Apply migrations
-
-# Run services
-make dev                # All services with hot reload
-
-# Or run individually
-make dev-bff            # Just the BFF on :8080
-```
-
 ### Known Limitations
 
-- **Go migration in progress**: Not all functionality ported yet
 - **Hash-based vectors**: POC only, real embeddings planned
 - **No authentication**: Auth/authz not yet implemented
 - **Frontend**: Flutter POC exists, Vue migration not started
@@ -372,4 +300,3 @@ make dev-bff            # Just the BFF on :8080
 - **Keep it simple**: Choose boring, proven solutions
 - **No enterprise patterns**: Skip abstractions until needed
 - **Delete freely**: No deprecation cycles, just remove
-- **Learn by doing**: Experiment with Go patterns
