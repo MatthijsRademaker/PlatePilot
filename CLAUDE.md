@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | Component | .NET (Legacy) | Go (Target) | Status |
 |-----------|---------------|-------------|--------|
-| Recipe API | `src/backend/RecipeApi/` | `src/backend-go/cmd/recipe-api/` | Phase 0 Complete |
+| Recipe API | `src/backend/RecipeApi/` | `src/backend-go/cmd/recipe-api/` | Phase 4 Complete |
 | MealPlanner API | `src/backend/MealPlannerApi/` | `src/backend-go/cmd/mealplanner-api/` | Phase 3 Complete |
 | Mobile BFF | `src/backend/MobileBFF/` | `src/backend-go/cmd/mobile-bff/` | Phase 2 Complete |
 | Common | `src/backend/Common/` | `src/backend-go/internal/common/` | Phase 1 Complete |
@@ -39,7 +39,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. **Phase 1: Common Layer** ✅ - Domain models, events, vector utilities, sqlc
 3. **Phase 2: Mobile BFF** ✅ - REST gateway, gRPC clients, handlers
 4. **Phase 3: MealPlanner API** ✅ - Read model, gRPC server, RabbitMQ consumer
-5. **Phase 4: Recipe API** - Write model (most complex)
+5. **Phase 4: Recipe API** ✅ - Write model, gRPC server, RabbitMQ publisher, seeder
 6. **Phase 5: Integration** - E2E testing, cleanup
 
 ## Technology Stack

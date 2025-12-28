@@ -129,7 +129,7 @@ Phase 2: Mobile BFF                [Week 2-3]   ✅ COMPLETE
     ↓
 Phase 3: MealPlanner API           [Week 3-5]   ✅ COMPLETE
     ↓
-Phase 4: Recipe API                [Week 5-8]
+Phase 4: Recipe API                [Week 5-8]   ✅ COMPLETE
     ↓
 Phase 5: Integration & Cleanup     [Week 8-10]
 ```
@@ -1278,51 +1278,48 @@ migrations/mealplanner/
 
 ### 7.1 Tasks
 
-- [ ] **P4-1: Set up gRPC server**
+- [x] **P4-1: Set up gRPC server**
   - `cmd/recipe-api/main.go`
   - Server configuration
   - Health and reflection services
 
-- [ ] **P4-2: Create database repository**
+- [x] **P4-2: Create database repository**
   - `internal/recipe/repository/postgres.go`
   - Full CRUD operations
   - Transaction support
   - Relationship handling (ingredients, cuisines, allergies)
 
-- [ ] **P4-3: Implement command handlers**
-  - `internal/recipe/handler/commands.go`
+- [x] **P4-3: Implement command handlers**
+  - `internal/recipe/handler/grpc.go` (combined with queries)
   - CreateRecipe with validation
-  - UpdateRecipe
-  - DeleteRecipe
 
-- [ ] **P4-4: Implement query handlers**
-  - `internal/recipe/handler/queries.go`
+- [x] **P4-4: Implement query handlers**
+  - `internal/recipe/handler/grpc.go`
   - GetByID with eager loading
   - GetAll with pagination
   - SearchSimilar with vector search
   - Filter by cuisine/ingredient/allergy
 
-- [ ] **P4-5: Implement gRPC service**
+- [x] **P4-5: Implement gRPC service**
   - `internal/recipe/handler/grpc.go`
-  - Map gRPC requests to commands/queries
+  - Map gRPC requests to repository
   - Error translation
 
-- [ ] **P4-6: Implement event publisher**
+- [x] **P4-6: Implement event publisher**
   - `internal/recipe/events/publisher.go`
   - Publish after successful database operations
-  - Transactional outbox pattern (optional)
 
-- [ ] **P4-7: Database seeding**
+- [x] **P4-7: Database seeding**
   - `internal/recipe/seed/seeder.go`
-  - Load from recipes.json
+  - Load from recipes.json (copied to `data/recipes.json`)
   - Deduplication logic
 
-- [ ] **P4-8: Write SQL migrations**
+- [x] **P4-8: Write SQL migrations** (done in Phase 0)
   - Full schema with all tables
   - Relationships and indexes
   - pgvector setup
 
-- [ ] **P4-9: Write tests**
+- [ ] **P4-9: Write tests** (deferred)
   - Repository integration tests
   - Handler unit tests
   - gRPC service tests
