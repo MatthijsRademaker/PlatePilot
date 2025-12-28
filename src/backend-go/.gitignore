@@ -1,0 +1,41 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Air tmp directory
+tmp/
+
+# Environment files
+.env
+.env.local
+*.env
+
+# Vendor (if not committed)
+# vendor/
+
+# Generated protobuf (optional - remove if you want to commit)
+# internal/*/pb/

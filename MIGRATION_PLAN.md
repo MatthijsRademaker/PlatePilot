@@ -8,6 +8,13 @@ This document outlines the migration strategy for PlatePilot from .NET 9.0 to Go
 **Target State:** ~2,500-3,000 LOC across Go packages
 **Estimated Duration:** 6-10 weeks (incremental, service-by-service)
 
+### Key Decisions
+
+- **Hobby Project**: No backwards compatibility needed, delete freely, keep it simple
+- **RabbitMQ**: Replacing Azure Service Bus (simpler, better local dev)
+- **No ORM**: Use pgx with raw SQL for explicit, maintainable queries
+- **Delete .NET**: Remove legacy code once Go equivalent works
+
 ---
 
 ## 1. Technology Stack Decisions
@@ -22,7 +29,7 @@ This document outlines the migration strategy for PlatePilot from .NET 9.0 to Go
 | **Migrations** | EF Core Migrations | `golang-migrate` | SQL-based, version controlled |
 | **DI Container** | Microsoft.Extensions.DI | Manual / `wire` | Explicit wiring, compile-time safety |
 | **CQRS** | MediatR | Custom dispatcher | Simple interface-based handlers |
-| **Message Bus** | Azure.Messaging.ServiceBus | `azure-sdk-for-go` | Official Azure SDK |
+| **Message Bus** | Azure Service Bus | `rabbitmq/amqp091-go` | Simple, great local dev |
 | **Vector Search** | Pgvector.EntityFrameworkCore | `pgvector-go` | Native pgvector support |
 | **Config** | appsettings.json + Aspire | `viper` + env vars | 12-factor app compliance |
 | **Logging** | ILogger | `slog` (stdlib) | Structured logging, zero deps |
@@ -114,11 +121,11 @@ src/backend-go/
 ### Phase Overview
 
 ```
-Phase 0: Foundation Setup          [Week 1]
+Phase 0: Foundation Setup          [Week 1]     ✅ COMPLETE
     ↓
-Phase 1: Common Layer              [Week 1-2]
+Phase 1: Common Layer              [Week 1-2]   ✅ COMPLETE
     ↓
-Phase 2: Mobile BFF                [Week 2-3]
+Phase 2: Mobile BFF                [Week 2-3]   ✅ COMPLETE
     ↓
 Phase 3: MealPlanner API           [Week 3-5]
     ↓
@@ -251,31 +258,31 @@ sqlc:
 
 ### 4.1 Tasks
 
-- [ ] **P1-1: Migrate domain models**
+- [x] **P1-1: Migrate domain models**
   - `internal/common/domain/recipe.go` - Recipe, Ingredient, Cuisine, Allergy structs
   - `internal/common/domain/metadata.go` - Metadata, NutritionalInfo
   - Add JSON tags and validation tags
 
-- [ ] **P1-2: Migrate event types**
+- [x] **P1-2: Migrate event types**
   - `internal/common/events/types.go` - Event interfaces and concrete types
   - `RecipeCreatedEvent`, `RecipeUpdatedEvent`
   - JSON serialization for Service Bus
 
-- [ ] **P1-3: Create event bus abstraction**
+- [x] **P1-3: Create event bus abstraction**
   - `internal/common/events/bus.go` - Publisher/Subscriber interfaces
   - `internal/common/events/servicebus.go` - Azure implementation
   - Consider adding in-memory implementation for testing
 
-- [ ] **P1-4: Migrate vector utilities**
-  - `internal/common/vector/extensions.go` - Vector generation
+- [x] **P1-4: Migrate vector utilities**
+  - `internal/common/vector/generator.go` - Vector generation
   - Port hash-based POC implementation
   - Add interface for future Azure OpenAI integration
 
-- [ ] **P1-5: Create DTO types**
+- [x] **P1-5: Create DTO types**
   - `internal/common/dto/recipe.go` - RecipeDTO for events
   - Conversion functions: `ToDTO()`, `FromDTO()`
 
-- [ ] **P1-6: Set up sqlc for type-safe queries**
+- [x] **P1-6: Set up sqlc for type-safe queries**
   - Create `sqlc.yaml` configuration
   - Define query files per service
   - Generate Go code from SQL
@@ -517,33 +524,33 @@ internal/common/
 
 ### 5.1 Tasks
 
-- [ ] **P2-1: Set up HTTP server**
+- [x] **P2-1: Set up HTTP server**
   - `cmd/mobile-bff/main.go` - Entry point
   - Chi router setup with middleware
   - Graceful shutdown handling
 
-- [ ] **P2-2: Create gRPC clients**
-  - `internal/bff/client/recipe_client.go`
-  - `internal/bff/client/mealplanner_client.go`
+- [x] **P2-2: Create gRPC clients**
+  - `internal/bff/client/recipe.go`
+  - `internal/bff/client/mealplanner.go`
   - Connection pooling and retry logic
 
-- [ ] **P2-3: Implement REST handlers**
+- [x] **P2-3: Implement REST handlers**
   - `internal/bff/handler/recipe.go` - All recipe endpoints
   - `internal/bff/handler/mealplan.go` - Meal planning endpoints
   - Request validation and error handling
 
-- [ ] **P2-4: Add middleware**
+- [x] **P2-4: Add middleware**
   - Logging middleware (request/response)
   - Recovery middleware (panic handling)
   - CORS middleware
   - Request ID middleware
 
-- [ ] **P2-5: OpenAPI documentation**
+- [ ] **P2-5: OpenAPI documentation** (deferred)
   - Add swaggo annotations to handlers
   - Generate OpenAPI spec
   - Serve Swagger UI
 
-- [ ] **P2-6: Write tests**
+- [ ] **P2-6: Write tests** (deferred)
   - Unit tests for handlers (mock gRPC clients)
   - Integration tests with testcontainers
 

@@ -1,0 +1,36 @@
+# PlatePilot Configuration
+# Override these values with environment variables prefixed with PLATEPILOT_
+# Example: PLATEPILOT_DATABASE_RECIPE_DB=postgres://...
+
+environment: development
+log_level: info
+
+recipe_api:
+  http_address: ":8081"
+  grpc_address: ":9091"
+  timeout: 30s
+
+mealplanner_api:
+  http_address: ":8082"
+  grpc_address: ":9092"
+  timeout: 30s
+
+bff:
+  http_address: ":8080"
+  timeout: 30s
+  recipe_api_address: "localhost:9091"
+  mealplan_api_address: "localhost:9092"
+  cors_allowed_origins:
+    - "*"
+
+database:
+  recipe_db: "postgres://platepilot:platepilot@localhost:5432/recipedb?sslmode=disable"
+  mealplanner_db: "postgres://platepilot:platepilot@localhost:5432/mealplannerdb?sslmode=disable"
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_life: 5m
+
+rabbitmq:
+  url: "amqp://platepilot:platepilot@localhost:5672/"
+  exchange_name: "recipe-events"
+  exchange_type: "topic"

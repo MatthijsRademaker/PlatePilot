@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package mealplanner.v1;
+
+option go_package = "github.com/platepilot/backend/internal/mealplanner/pb";
+
+// Service definition for meal planning
+service MealPlannerService {
+  // Suggests recipes based on given constraints
+  rpc SuggestRecipes (SuggestionsRequest) returns (SuggestionsResponse);
+}
+
+// Request message for suggesting recipes
+message SuggestionsRequest {
+  repeated DailyConstraints daily_constraints = 1;
+  repeated string already_selected_recipe_ids = 2; // UUID strings
+  int32 amount = 3;
+}
+
+// Response message containing suggested recipe IDs
+message SuggestionsResponse {
+  repeated string recipe_ids = 1; // UUID strings
+}
+
+// Constraints that apply to a single day
+message DailyConstraints {
+  repeated IngredientConstraint ingredient_constraints = 1;
+  repeated CuisineConstraint cuisine_constraints = 2;
+}
+
+// Constraint for ingredients
+message IngredientConstraint {
+  string entity_id = 1; // UUID string
+}
+
+// Constraint for cuisines
+message CuisineConstraint {
+  string entity_id = 1; // UUID string
+}

@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector extension
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: platepilot-postgres
+    environment:
+      POSTGRES_USER: platepilot
+      POSTGRES_PASSWORD: platepilot
+      POSTGRES_DB: platepilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U platepilot -d platepilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platepilot
+
+  # RabbitMQ for event messaging
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: platepilot-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: platepilot
+      RABBITMQ_DEFAULT_PASS: platepilot
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platepilot
+
+  # pgAdmin for database management (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: platepilot-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@platepilot.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - platepilot
+    profiles:
+      - tools
+
+  # Redis for caching (optional, for future use)
+  redis:
+    image: redis:7-alpine
+    container_name: platepilot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platepilot
+    profiles:
+      - full
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  pgadmin_data:
+  redis_data:
+
+networks:
+  platepilot:
+    driver: bridge
