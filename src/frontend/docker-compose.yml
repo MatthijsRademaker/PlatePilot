@@ -1,9 +1,0 @@
-services:
-  redis:
-    image: 'redis:alpine'
-    networks:
-      - plate-pilot-network
-
-networks:
-  plate-pilot-network:
-    driver: bridge

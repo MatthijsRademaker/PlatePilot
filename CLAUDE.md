@@ -28,7 +28,7 @@ See `MIGRATION_PLAN.md` for the detailed migration history.
 | MealPlanner API | `src/backend-go/cmd/mealplanner-api/` | Read service, vector search, event consuming |
 | Mobile BFF | `src/backend-go/cmd/mobile-bff/` | REST gateway for clients |
 | Common | `src/backend-go/internal/common/` | Shared domain, events, config |
-| Frontend | `src/frontend/` | Flutter POC (Vue migration planned) |
+| Frontend | `src/frontend/` | Vue/Quasar (planned) |
 
 ### Completed Migration Phases
 1. **Phase 0: Foundation** ✅ - Go project setup, tooling, Docker, migrations
@@ -59,8 +59,9 @@ See `MIGRATION_PLAN.md` for the detailed migration history.
 - **CI/CD**: GitHub Actions
 
 ### Frontend (Planned)
-- **Current**: Flutter POC
-- **Target**: Vue/Quasar
+- **Framework**: Vue.js 3 + Quasar
+- **Mobile**: Capacitor for iOS/Android
+- **Status**: Not yet started
 
 ## Build & Development Commands
 
@@ -228,21 +229,20 @@ src/backend-go/
 - Run with: `make seed` or `recipe-api -seed data/recipes.json`
 - Handles deduplication for ingredients and cuisines
 
-## Frontend
+## Frontend (Planned)
 
-### Current Implementation (Flutter)
-- **Location**: `src/frontend/IosApp/plate_pilot/`
-- **Platform**: iOS/macOS
-- **Status**: Early POC with basic UI structure
-- **Features**:
-  - 4-tab navigation: Home, Mealplan, All Recipes, Search
-  - Basic recipe display components
-  - HTTP client for backend communication
-
-### Planned Migration
-- **Target**: Quasar/Vue.js framework
-- **Goal**: Cross-platform web app with native iOS support
+### Technology Choice: Vue.js + Quasar
+- **Framework**: Vue.js 3 with Quasar Framework
+- **Mobile**: Capacitor for native iOS/Android apps
+- **Web**: PWA support out of the box
 - **Status**: Not yet started
+
+### Why Quasar?
+- Single codebase for web, iOS, and Android
+- 70+ Material Design components built-in
+- Capacitor integration for native device APIs
+- TypeScript support matches Go backend contracts
+- Smaller bundle size than Flutter web
 
 ## Key Architectural Patterns
 
@@ -293,7 +293,7 @@ type MealPlanner interface {           // NOT: VectorSimilaritySearcher
 
 - **Hash-based vectors**: POC only, real embeddings planned
 - **No authentication**: Auth/authz not yet implemented
-- **Frontend**: Flutter POC exists, Vue migration not started
+- **Frontend**: Not yet implemented (Vue/Quasar planned)
 
 ### Hobby Project Philosophy
 
