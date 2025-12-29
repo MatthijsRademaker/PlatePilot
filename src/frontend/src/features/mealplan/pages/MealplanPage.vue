@@ -23,10 +23,61 @@
         </q-card-section>
 
         <q-card-section class="q-pt-none">
-          <q-input v-model="searchQuery" dense outlined placeholder="Search recipes..." />
+          <div class="row q-gutter-sm q-mb-md">
+            <q-input
+              v-model="searchQuery"
+              dense
+              outlined
+              placeholder="Search recipes..."
+              class="col"
+            />
+            <q-btn
+              color="primary"
+              icon="auto_awesome"
+              label="Get AI Suggestions"
+              :loading="suggestionsLoading"
+              @click="handleGetSuggestions"
+            />
+          </div>
         </q-card-section>
 
-        <q-card-section class="scroll" style="max-height: 400px">
+        <!-- AI Suggestions Section -->
+        <q-card-section v-if="suggestionsError" class="q-pt-none">
+          <q-banner class="bg-negative text-white">
+            {{ suggestionsError }}
+          </q-banner>
+        </q-card-section>
+
+        <q-card-section v-if="suggestions.length > 0" class="q-pt-none">
+          <div class="q-mb-sm row items-center justify-between">
+            <span class="text-subtitle2 text-primary">
+              <q-icon name="auto_awesome" class="q-mr-xs" />
+              AI Suggestions
+            </span>
+            <q-btn flat dense size="sm" icon="close" @click="clearSuggestions" />
+          </div>
+          <q-list bordered separator class="rounded-borders bg-blue-1">
+            <q-item
+              v-for="recipe in suggestions"
+              :key="'suggestion-' + recipe.id"
+              clickable
+              v-ripple
+              @click="selectRecipe(recipe)"
+            >
+              <q-item-section avatar>
+                <q-icon name="auto_awesome" color="primary" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ recipe.name }}</q-item-label>
+                <q-item-label caption>{{ recipe.description }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+
+        <!-- All Recipes Section -->
+        <q-card-section class="scroll q-pt-none" style="max-height: 300px">
+          <div class="text-subtitle2 text-grey-7 q-mb-sm">All Recipes</div>
           <q-list separator>
             <q-item
               v-for="recipe in filteredRecipes"
@@ -69,6 +120,11 @@ const {
   navigateWeek,
   goToCurrentWeek,
   clearWeek,
+  suggestions,
+  suggestionsLoading,
+  suggestionsError,
+  fetchSuggestions,
+  clearSuggestions,
 } = useMealplan();
 
 const selectorOpen = ref(false);
@@ -94,6 +150,7 @@ onMounted(() => {
 function openRecipeSelector(slot: MealSlot) {
   selectedSlot.value = slot;
   searchQuery.value = '';
+  clearSuggestions();
   selectorOpen.value = true;
 }
 
@@ -103,6 +160,10 @@ function selectRecipe(recipe: Recipe) {
   }
   selectorOpen.value = false;
   selectedSlot.value = null;
+}
+
+function handleGetSuggestions() {
+  void fetchSuggestions(5);
 }
 
 function confirmClearWeek() {
