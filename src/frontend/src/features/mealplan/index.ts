@@ -11,7 +11,7 @@ export { useMealplanStore } from './store';
 export { useMealplan } from './composables';
 
 // Components
-export { MealSlotCard, WeekView } from './components';
+export { MealSlotCard, WeekView, SuggestionsDialog } from './components';
 
 // Pages
 export { MealplanPage } from './pages';

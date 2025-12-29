@@ -14,6 +14,7 @@
       @next="navigateWeek('next')"
       @slot-click="openRecipeSelector"
       @slot-clear="clearSlot($event.id)"
+      @slot-suggest="openSuggestions"
     />
 
     <q-dialog v-model="selectorOpen">
@@ -48,13 +49,24 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <SuggestionsDialog
+      v-model="suggestionsOpen"
+      :meal-slot="suggestingSlot"
+      :suggestions="suggestions"
+      :loading="suggestionsLoading"
+      :error="error"
+      @select="selectSuggestion"
+      @retry="retrySuggestions"
+      @update:model-value="!$event && closeSuggestions()"
+    />
   </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
-import { WeekView } from '../components';
+import { WeekView, SuggestionsDialog } from '../components';
 import { useMealplan } from '../composables';
 import { useRecipeStore } from '@/features/recipe/store';
 import type { Recipe } from '@/features/recipe/types';
@@ -69,11 +81,18 @@ const {
   navigateWeek,
   goToCurrentWeek,
   clearWeek,
+  suggestions,
+  suggestionsLoading,
+  error,
+  fetchSuggestions,
+  clearSuggestions,
 } = useMealplan();
 
 const selectorOpen = ref(false);
 const selectedSlot = ref<MealSlot | null>(null);
 const searchQuery = ref('');
+const suggestionsOpen = ref(false);
+const suggestingSlot = ref<MealSlot | null>(null);
 
 const filteredRecipes = computed(() => {
   const query = searchQuery.value.toLowerCase();
@@ -114,5 +133,28 @@ function confirmClearWeek() {
   }).onOk(() => {
     clearWeek();
   });
+}
+
+function openSuggestions(slot: MealSlot) {
+  suggestingSlot.value = slot;
+  suggestionsOpen.value = true;
+  void fetchSuggestions();
+}
+
+function closeSuggestions() {
+  suggestionsOpen.value = false;
+  suggestingSlot.value = null;
+  clearSuggestions();
+}
+
+function selectSuggestion(recipe: Recipe) {
+  if (suggestingSlot.value) {
+    setRecipeForSlot(suggestingSlot.value.id, recipe);
+  }
+  closeSuggestions();
+}
+
+function retrySuggestions() {
+  void fetchSuggestions();
 }
 </script>

@@ -28,9 +28,10 @@
             <MealSlotCard
               v-for="meal in day.meals"
               :key="meal.id"
-              :slot="meal"
+              :meal-slot="meal"
               @click="$emit('slot-click', meal)"
               @clear="$emit('slot-clear', meal)"
+              @suggest="$emit('slot-suggest', meal)"
             />
           </q-card-section>
         </q-card>
@@ -52,6 +53,7 @@ defineEmits<{
   next: [];
   'slot-click': [slot: MealSlot];
   'slot-clear': [slot: MealSlot];
+  'slot-suggest': [slot: MealSlot];
 }>();
 
 function formatDayName(dateStr: string): string {

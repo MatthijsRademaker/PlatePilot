@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { Recipe } from '@/features/recipe/types';
 import type { WeekPlan, DayPlan, MealSlot, MealType } from '../types';
+import { mealplanApi } from '../api';
 
 function generateWeekPlan(startDate: Date): WeekPlan {
   const days: DayPlan[] = [];
@@ -45,6 +46,7 @@ export const useMealplanStore = defineStore('mealplan', () => {
   // State
   const currentWeek = ref<WeekPlan>(generateWeekPlan(getWeekStart(new Date())));
   const suggestions = ref<Recipe[]>([]);
+  const suggestionsLoading = ref(false);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -97,10 +99,32 @@ export const useMealplanStore = defineStore('mealplan', () => {
     });
   }
 
+  async function fetchSuggestions(amount = 5): Promise<void> {
+    suggestionsLoading.value = true;
+    error.value = null;
+    try {
+      suggestions.value = await mealplanApi.suggestRecipes({
+        excludeRecipeIds: plannedRecipeIds.value,
+        amount,
+      });
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to fetch suggestions';
+      suggestions.value = [];
+    } finally {
+      suggestionsLoading.value = false;
+    }
+  }
+
+  function clearSuggestions() {
+    suggestions.value = [];
+    error.value = null;
+  }
+
   return {
     // State
     currentWeek,
     suggestions,
+    suggestionsLoading,
     loading,
     error,
     // Getters
@@ -112,5 +136,7 @@ export const useMealplanStore = defineStore('mealplan', () => {
     navigateWeek,
     goToCurrentWeek,
     clearWeek,
+    fetchSuggestions,
+    clearSuggestions,
   };
 });
