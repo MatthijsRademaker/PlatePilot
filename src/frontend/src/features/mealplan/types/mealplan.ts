@@ -26,3 +26,11 @@ export interface SuggestRecipesRequest {
   excludeAllergyIds?: string[];
   amount?: number;
 }
+
+/**
+ * Response from the backend suggest recipes endpoint.
+ * Contains only recipe IDs, not full recipe objects.
+ */
+export interface SuggestRecipesResponse {
+  recipeIds: string[];
+}
