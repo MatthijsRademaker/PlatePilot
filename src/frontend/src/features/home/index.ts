@@ -1,3 +1,6 @@
+// Components
+export { TodayPlanCard } from './components';
+
 // Pages
 export { HomePage } from './pages';
 

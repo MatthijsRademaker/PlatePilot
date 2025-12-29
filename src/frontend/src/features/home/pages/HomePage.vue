@@ -6,6 +6,13 @@
       <p class="text-subtitle1 text-grey">Your intelligent meal planning companion</p>
     </div>
 
+    <!-- Today's Plan Card -->
+    <div class="row justify-center q-mb-lg">
+      <div class="col-12 col-md-8 col-lg-6">
+        <TodayPlanCard />
+      </div>
+    </div>
+
     <div class="row q-col-gutter-lg justify-center q-mt-lg">
       <div class="col-12 col-sm-6 col-md-4">
         <q-card class="cursor-pointer" @click="$router.push({ name: 'recipes' })">
@@ -47,4 +54,5 @@
 </template>
 
 <script setup lang="ts">
+import { TodayPlanCard } from '../components';
 </script>
