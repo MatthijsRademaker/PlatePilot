@@ -1,0 +1,13 @@
+# Swarm agent execution logs
+# These are runtime artifacts and should not be committed
+logs/
+
+# Manager logs (when running locally)
+manager.log
+swarm.db
+swarm.db-journal
+
+# Design assets directory
+# NOTE: You may want to commit your design files (mockups, wireframes, diagrams)
+# Remove the line below if you want to track designs in version control
+# designs/
