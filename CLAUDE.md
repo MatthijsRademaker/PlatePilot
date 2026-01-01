@@ -402,7 +402,6 @@ type MealPlanner interface {           // NOT: VectorSimilaritySearcher
 - **Read before modifying**: Always read existing code first
 - **Use explicit patterns**: No magic, no reflection, explicit error handling
 - **Write tests**: Add table-driven tests for new functionality
-- **SQL over ORM**: Write explicit SQL queries, avoid abstractions
 - **Update protos**: Modify `api/proto/` files when changing gRPC contracts
 - **Run migrations**: Use `make migrate-create` for schema changes
 - **Error handling**: Wrap errors with context using `fmt.Errorf("context: %w", err)`
@@ -417,8 +416,6 @@ type MealPlanner interface {           // NOT: VectorSimilaritySearcher
 
 ### Hobby Project Philosophy
 
-- **Keep it simple**: Choose boring, proven solutions
-- **No enterprise patterns**: Skip abstractions until needed
 - **Delete freely**: No deprecation cycles, just remove
 
 ## Pommel - Semantic Code Search

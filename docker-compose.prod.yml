@@ -1,0 +1,153 @@
+# PlatePilot Production Docker Compose
+# Optimized production builds with multi-stage Dockerfiles
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up --build
+#   docker compose -f docker-compose.prod.yml up -d
+
+services:
+  # =============================================================================
+  # Infrastructure
+  # =============================================================================
+
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: platepilot-postgres
+    environment:
+      POSTGRES_USER: platepilot
+      POSTGRES_PASSWORD: platepilot
+      POSTGRES_DB: platepilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/backend-go/deployments/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U platepilot -d platepilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platepilot
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: platepilot-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: platepilot
+      RABBITMQ_DEFAULT_PASS: platepilot
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platepilot
+    restart: unless-stopped
+
+  # =============================================================================
+  # Application Services (Production builds)
+  # =============================================================================
+
+  recipe-api:
+    build:
+      context: ./src/backend-go
+      dockerfile: deployments/Dockerfile
+      target: recipe-api
+    container_name: platepilot-recipe-api
+    environment:
+      PLATEPILOT_ENVIRONMENT: docker
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_RECIPE_API_GRPC_ADDRESS: ":50051"
+      PLATEPILOT_DATABASE_RECIPE_DB: postgres://platepilot:platepilot@postgres:5432/recipedb?sslmode=disable
+      PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq:5672/
+      PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
+    ports:
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - platepilot
+    restart: unless-stopped
+
+  mealplanner-api:
+    build:
+      context: ./src/backend-go
+      dockerfile: deployments/Dockerfile
+      target: mealplanner-api
+    container_name: platepilot-mealplanner-api
+    environment:
+      PLATEPILOT_ENVIRONMENT: docker
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_MEALPLANNER_API_GRPC_ADDRESS: ":50052"
+      PLATEPILOT_DATABASE_MEALPLANNER_DB: postgres://platepilot:platepilot@postgres:5432/mealplannerdb?sslmode=disable
+      PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq:5672/
+      PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
+    ports:
+      - "50052:50052"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - platepilot
+    restart: unless-stopped
+
+  mobile-bff:
+    build:
+      context: ./src/backend-go
+      dockerfile: deployments/Dockerfile
+      target: mobile-bff
+    container_name: platepilot-mobile-bff
+    environment:
+      PLATEPILOT_ENVIRONMENT: docker
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_BFF_HTTP_ADDRESS: ":8080"
+      PLATEPILOT_BFF_RECIPE_API_ADDRESS: recipe-api:50051
+      PLATEPILOT_BFF_MEALPLAN_API_ADDRESS: mealplanner-api:50052
+      PLATEPILOT_BFF_CORS_ALLOWED_ORIGINS: "*"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - recipe-api
+      - mealplanner-api
+    networks:
+      - platepilot
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: platepilot-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - mobile-bff
+    networks:
+      - platepilot
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  platepilot:
+    driver: bridge

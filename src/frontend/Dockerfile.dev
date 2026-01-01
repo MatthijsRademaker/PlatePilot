@@ -1,0 +1,16 @@
+# Development Dockerfile for PlatePilot Frontend
+# Uses Vite dev server with HMR
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install dependencies first for caching
+COPY package*.json ./
+RUN npm install
+
+# Source code will be mounted as volume
+# Quasar dev server will handle hot reloading
+
+# Expose Vite dev server port
+EXPOSE 9000

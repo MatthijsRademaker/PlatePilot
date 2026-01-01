@@ -1,7 +1,226 @@
-include:
-  - src/frontend/docker-compose.yml
-  - src/backend/docker-compose.yml
+# PlatePilot Development Docker Compose
+# Hot reload enabled for all services
+#
+# Usage:
+#   docker compose up              # Start all services with hot reload
+#   docker compose up -d           # Start in background
+#   docker compose logs -f         # Follow logs
+#   docker compose down            # Stop all services
+#   docker compose down -v         # Stop and remove volumes
+
+services:
+  # =============================================================================
+  # Infrastructure
+  # =============================================================================
+
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: platepilot-postgres
+    environment:
+      POSTGRES_USER: platepilot
+      POSTGRES_PASSWORD: platepilot
+      POSTGRES_DB: platepilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/backend-go/deployments/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U platepilot -d platepilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platepilot
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: platepilot-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: platepilot
+      RABBITMQ_DEFAULT_PASS: platepilot
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platepilot
+
+  # =============================================================================
+  # Database Migrations (runs once on startup)
+  # =============================================================================
+
+  migrate:
+    build:
+      context: ./src/backend-go
+      dockerfile: deployments/Dockerfile.dev
+    container_name: platepilot-migrate
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Running recipe migrations...' &&
+        migrate -path migrations/recipe -database 'postgres://platepilot:platepilot@postgres:5432/recipedb?sslmode=disable' up &&
+        echo 'Running mealplanner migrations...' &&
+        migrate -path migrations/mealplanner -database 'postgres://platepilot:platepilot@postgres:5432/mealplannerdb?sslmode=disable' up &&
+        echo 'Migrations complete!'
+      "
+    volumes:
+      - ./src/backend-go:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - platepilot
+
+  # =============================================================================
+  # Backend Services (Hot Reload with Air)
+  # =============================================================================
+
+  recipe-api:
+    build:
+      context: ./src/backend-go
+      dockerfile: deployments/Dockerfile.dev
+    container_name: platepilot-recipe-api
+    working_dir: /app
+    command: air -c .air.recipe.toml
+    environment:
+      PLATEPILOT_ENVIRONMENT: docker
+      PLATEPILOT_LOG_LEVEL: debug
+      PLATEPILOT_RECIPE_API_GRPC_ADDRESS: ":50051"
+      PLATEPILOT_DATABASE_RECIPE_DB: postgres://platepilot:platepilot@postgres:5432/recipedb?sslmode=disable
+      PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq:5672/
+      PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
+    ports:
+      - "50051:50051"
+    volumes:
+      - ./src/backend-go:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - platepilot
+
+  mealplanner-api:
+    build:
+      context: ./src/backend-go
+      dockerfile: deployments/Dockerfile.dev
+    container_name: platepilot-mealplanner-api
+    working_dir: /app
+    command: air -c .air.mealplanner.toml
+    environment:
+      PLATEPILOT_ENVIRONMENT: docker
+      PLATEPILOT_LOG_LEVEL: debug
+      PLATEPILOT_MEALPLANNER_API_GRPC_ADDRESS: ":50052"
+      PLATEPILOT_DATABASE_MEALPLANNER_DB: postgres://platepilot:platepilot@postgres:5432/mealplannerdb?sslmode=disable
+      PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq:5672/
+      PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
+    ports:
+      - "50052:50052"
+    volumes:
+      - ./src/backend-go:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - platepilot
+
+  mobile-bff:
+    build:
+      context: ./src/backend-go
+      dockerfile: deployments/Dockerfile.dev
+    container_name: platepilot-mobile-bff
+    working_dir: /app
+    command: air -c .air.bff.toml
+    environment:
+      PLATEPILOT_ENVIRONMENT: docker
+      PLATEPILOT_LOG_LEVEL: debug
+      PLATEPILOT_BFF_HTTP_ADDRESS: ":8080"
+      PLATEPILOT_BFF_RECIPE_API_ADDRESS: recipe-api:50051
+      PLATEPILOT_BFF_MEALPLAN_API_ADDRESS: mealplanner-api:50052
+      PLATEPILOT_BFF_CORS_ALLOWED_ORIGINS: "*"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./src/backend-go:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    depends_on:
+      - recipe-api
+      - mealplanner-api
+    networks:
+      - platepilot
+
+  # =============================================================================
+  # Frontend (Hot Reload with Vite HMR)
+  # =============================================================================
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile.dev
+    container_name: platepilot-frontend
+    working_dir: /app
+    command: npm run dev -- --host 0.0.0.0
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+    depends_on:
+      - mobile-bff
+    networks:
+      - platepilot
+
+  # =============================================================================
+  # Development Tools (optional)
+  # =============================================================================
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: platepilot-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@platepilot.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - platepilot
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  pgadmin_data:
+  go_mod_cache:
+  go_build_cache:
 
 networks:
-  plate-pilot-network:
+  platepilot:
     driver: bridge

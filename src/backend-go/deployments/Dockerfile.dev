@@ -1,0 +1,22 @@
+# Development Dockerfile for PlatePilot Go services
+# Uses Air for hot reloading
+
+FROM golang:1.24-alpine
+
+# Install development tools
+RUN apk add --no-cache git ca-certificates tzdata
+
+# Install Air for hot reload
+RUN go install github.com/air-verse/air@latest
+
+# Install golang-migrate for running migrations
+RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+WORKDIR /app
+
+# Copy go mod files first for dependency caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Source code will be mounted as volume
+# Air will handle rebuilding on changes
