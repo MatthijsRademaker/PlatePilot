@@ -37,7 +37,9 @@ export default defineConfig((ctx) => {
         browser: ['es2022', 'firefox115', 'chrome115', 'safari14'],
         node: 'node20',
       },
-
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
       typescript: {
         strict: true,
         vueShim: true,
