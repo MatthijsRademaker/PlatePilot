@@ -1,0 +1,13 @@
+{
+  "name": "platepilot",
+  "version": "0.0.1",
+  "description": "Intelligent meal planning and recipe management app",
+  "author": "Matthijs Rademaker <matthijsrademaker33@gmail.com>",
+  "private": true,
+  "dependencies": {
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  }
+}

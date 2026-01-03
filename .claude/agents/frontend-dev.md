@@ -200,6 +200,8 @@ Common Quasar components:
 
 ## Development Workflow (MANDATORY)
 
+Determine if a story is related to a design, if so use the appropriate design image in .devagent/designs/*, always design frontend components/pages based on these designs.
+
 Execute these steps IN ORDER before completing any task:
 
 ```bash
