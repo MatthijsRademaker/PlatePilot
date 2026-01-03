@@ -9,7 +9,14 @@ import (
 	"github.com/platepilot/backend/internal/common/domain"
 )
 
-const VectorDimensions = 128
+// VectorDimensions is the default dimension for vector embeddings.
+// For LLM embeddings, this is configurable via config.LLM.EmbedDimensions.
+// 1536 is used for OpenAI text-embedding-3-small, smaller models are padded.
+const VectorDimensions = 1536
+
+// LegacyVectorDimensions is the original hash-based vector dimension.
+// Used for backwards compatibility with HashGenerator.
+const LegacyVectorDimensions = 128
 
 // Generator creates vector embeddings for recipes
 type Generator interface {
@@ -27,21 +34,26 @@ func NewHashGenerator() *HashGenerator {
 }
 
 // Generate creates a vector embedding from text using hash-based approach
+// Note: Uses LegacyVectorDimensions (128) and pads to VectorDimensions (1536)
 func (g *HashGenerator) Generate(text string) pgvector.Vector {
 	words := strings.Fields(strings.ToLower(text))
-	vector := make([]float32, VectorDimensions)
+	vector := make([]float32, LegacyVectorDimensions)
 
 	for _, word := range words {
 		h := fnv.New32a()
 		h.Write([]byte(word))
-		idx := h.Sum32() % uint32(VectorDimensions)
+		idx := h.Sum32() % uint32(LegacyVectorDimensions)
 		vector[idx] += 1.0
 	}
 
 	// Normalize the vector
 	normalize(vector)
 
-	return pgvector.NewVector(vector)
+	// Pad to VectorDimensions for compatibility with LLM embeddings
+	paddedVector := make([]float32, VectorDimensions)
+	copy(paddedVector, vector)
+
+	return pgvector.NewVector(paddedVector)
 }
 
 // GenerateForRecipe creates a vector embedding for a recipe

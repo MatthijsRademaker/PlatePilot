@@ -64,6 +64,28 @@ See `MIGRATION_PLAN.md` for the detailed migration history.
 - **Mobile**: Capacitor (planned)
 - **Architecture**: Feature-based vertical slices
 
+## Docker Compose Convention
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `docker-compose.yml` | Project root | **Local development** - hot reload, debug logging |
+| `docker-compose.prod.yml` | Project root | Production builds - optimized images |
+| `deployments/docker-compose.yml` | `src/backend-go/` | Backend-only production (legacy, prefer root files) |
+
+**For local development**, always run from the project root:
+```bash
+docker compose up              # Start all services with hot reload
+docker compose up -d           # Start in background
+docker compose logs -f         # Follow logs
+docker compose down            # Stop all services
+docker compose down -v         # Stop and remove volumes
+```
+
+**For production builds**:
+```bash
+docker compose -f docker-compose.prod.yml up --build
+```
+
 ## Build & Development Commands
 
 ```bash
@@ -71,16 +93,16 @@ cd src/backend-go
 
 # First time setup
 make tools              # Install dev tools (golangci-lint, air, protoc plugins)
-make docker-up          # Start PostgreSQL + RabbitMQ
+make docker-up          # Start PostgreSQL + RabbitMQ (infrastructure only)
 make migrate-up         # Run database migrations
 
-# Development (local with hot reload)
-make dev                # Run all services with hot reload
+# Development (local with hot reload - prefer root docker-compose)
+make dev                # Run all services with hot reload (without Docker)
 make dev-recipe         # Run recipe-api only
 make dev-mealplanner    # Run mealplanner-api only
 make dev-bff            # Run mobile-bff only
 
-# Docker (full stack)
+# Docker (full stack) - prefer root docker-compose.yml
 make docker-run-all     # Build and run complete stack
 make docker-run-detached # Run in background
 make docker-logs        # View logs
@@ -91,6 +113,7 @@ make build              # Build all binaries
 make test               # Run unit tests
 make test-e2e           # Run E2E integration tests
 make lint               # Run linter
+make verify             # Verify setup + generated code is up-to-date (run in CI)
 
 # Database
 make migrate-up         # Apply all migrations
@@ -99,7 +122,10 @@ make seed               # Seed with sample recipes
 
 # Code generation
 make proto              # Generate gRPC code from protos
+make verify-proto       # Check if proto code is up-to-date (fails if stale)
 ```
+
+**Important**: Generated protobuf code is committed to the repo. After modifying `.proto` files, run `make proto` and commit the regenerated `*.pb.go` files. CI runs `make verify` to catch forgotten regenerations.
 
 ## Architecture Overview
 

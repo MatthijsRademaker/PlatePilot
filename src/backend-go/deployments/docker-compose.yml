@@ -1,4 +1,8 @@
-version: '3.8'
+# PlatePilot Production Docker Compose (Backend Only)
+# Run from src/backend-go directory with: docker-compose -f deployments/docker-compose.yml up
+#
+# NOTE: For local development, use the root docker-compose.yml instead:
+#   cd /path/to/PlatePilot && docker compose up
 
 services:
   # =============================================================================
@@ -25,6 +29,7 @@ services:
       retries: 5
     networks:
       - platepilot
+    restart: unless-stopped
 
   # RabbitMQ for event messaging
   rabbitmq:
@@ -45,9 +50,10 @@ services:
       retries: 5
     networks:
       - platepilot
+    restart: unless-stopped
 
   # =============================================================================
-  # Application Services
+  # Application Services (Production builds)
   # =============================================================================
 
   # Recipe API - Write service for recipe management

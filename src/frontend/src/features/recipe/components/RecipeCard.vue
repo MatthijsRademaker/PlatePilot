@@ -1,7 +1,9 @@
 <template>
   <q-card class="recipe-card" @click="$emit('click', recipe)">
     <q-img v-if="recipe.imageUrl" :src="recipe.imageUrl" :ratio="16 / 9" />
-    <q-img v-else src="~assets/placeholder-recipe.png" :ratio="16 / 9" />
+    <div v-else class="placeholder-image">
+      <q-icon name="restaurant_menu" size="64px" color="grey-5" />
+    </div>
 
     <q-card-section>
       <div class="text-h6 ellipsis">{{ recipe.name }}</div>
@@ -59,6 +61,14 @@ const totalTime = computed(() => props.recipe.preparationTime + props.recipe.coo
   &:hover {
     transform: translateY(-4px);
   }
+}
+
+.placeholder-image {
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--q-grey-3);
 }
 
 .ellipsis-2-lines {

@@ -17,6 +17,7 @@ type Config struct {
 	BFF         BFFAPI         `mapstructure:"bff"`
 	Database    Database       `mapstructure:"database"`
 	RabbitMQ    RabbitMQ       `mapstructure:"rabbitmq"`
+	LLM         LLM            `mapstructure:"llm"`
 }
 
 // RecipeAPI configuration
@@ -56,6 +57,23 @@ type RabbitMQ struct {
 	URL          string `mapstructure:"url"`
 	ExchangeName string `mapstructure:"exchange_name"`
 	ExchangeType string `mapstructure:"exchange_type"`
+}
+
+// LLM configuration for OpenAI-compatible APIs (Ollama, OpenAI, Azure)
+type LLM struct {
+	BaseURL         string        `mapstructure:"base_url"`         // API base URL (Ollama: http://localhost:11434/v1)
+	APIKey          string        `mapstructure:"api_key"`          // API key (Ollama: "ollama", OpenAI: real key)
+	Model           string        `mapstructure:"model"`            // Chat model (llama3.1, gpt-4o-mini)
+	EmbedModel      string        `mapstructure:"embed_model"`      // Embedding model (nomic-embed-text, text-embedding-3-small)
+	EmbedDimensions int           `mapstructure:"embed_dimensions"` // Embedding dimensions (768 for nomic, 1536 for OpenAI)
+	Timeout         time.Duration `mapstructure:"timeout"`          // Request timeout
+	MaxTokens       int           `mapstructure:"max_tokens"`       // Max response tokens
+	Temperature     float32       `mapstructure:"temperature"`      // Response temperature (0.0-2.0)
+}
+
+// IsConfigured returns true if LLM is properly configured
+func (l *LLM) IsConfigured() bool {
+	return l.BaseURL != "" && l.APIKey != ""
 }
 
 // Load reads configuration from file and environment variables
@@ -136,6 +154,16 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("rabbitmq.url", "amqp://platepilot:platepilot@localhost:5672/")
 	v.SetDefault("rabbitmq.exchange_name", "recipe-events")
 	v.SetDefault("rabbitmq.exchange_type", "topic")
+
+	// LLM (defaults for local Ollama development)
+	v.SetDefault("llm.base_url", "http://localhost:11434/v1")
+	v.SetDefault("llm.api_key", "ollama")
+	v.SetDefault("llm.model", "llama3.1")
+	v.SetDefault("llm.embed_model", "nomic-embed-text")
+	v.SetDefault("llm.embed_dimensions", 768)
+	v.SetDefault("llm.timeout", "60s")
+	v.SetDefault("llm.max_tokens", 2000)
+	v.SetDefault("llm.temperature", 0.7)
 }
 
 // IsDevelopment returns true if running in development mode

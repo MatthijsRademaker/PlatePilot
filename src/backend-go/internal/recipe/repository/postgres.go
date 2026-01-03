@@ -152,12 +152,18 @@ func (r *Repository) Create(ctx context.Context, recipe *domain.Recipe) error {
 		imageURL = &recipe.Metadata.ImageURL
 	}
 
+	// Ensure tags is not nil (PostgreSQL requires non-null for TEXT[] with NOT NULL)
+	tags := recipe.Metadata.Tags
+	if tags == nil {
+		tags = []string{}
+	}
+
 	_, err = tx.Exec(ctx, query,
 		recipe.ID, recipe.Name, recipe.Description,
 		recipe.PrepTime, recipe.CookTime,
 		recipe.MainIngredient.ID, recipe.Cuisine.ID, recipe.Directions,
 		recipe.NutritionalInfo.Calories, recipe.Metadata.SearchVector,
-		imageURL, recipe.Metadata.Tags, recipe.Metadata.PublishedDate,
+		imageURL, tags, recipe.Metadata.PublishedDate,
 	)
 	if err != nil {
 		return fmt.Errorf("insert recipe: %w", err)

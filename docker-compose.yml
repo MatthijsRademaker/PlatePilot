@@ -52,6 +52,24 @@ services:
     networks:
       - platepilot
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: platepilot-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - platepilot
+    profiles:
+      - llm
+
   # =============================================================================
   # Database Migrations (runs once on startup)
   # =============================================================================
@@ -88,7 +106,7 @@ services:
       dockerfile: deployments/Dockerfile.dev
     container_name: platepilot-recipe-api
     working_dir: /app
-    command: air -c .air.recipe.toml
+    command: sh -c "mkdir -p tmp/recipe-api && air -c .air.recipe.toml"
     environment:
       PLATEPILOT_ENVIRONMENT: docker
       PLATEPILOT_LOG_LEVEL: debug
@@ -96,8 +114,13 @@ services:
       PLATEPILOT_DATABASE_RECIPE_DB: postgres://platepilot:platepilot@postgres:5432/recipedb?sslmode=disable
       PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq:5672/
       PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
-    ports:
-      - "50051:50051"
+      # LLM Configuration (Ollama for local development)
+      PLATEPILOT_LLM_BASE_URL: http://ollama:11434/v1
+      PLATEPILOT_LLM_API_KEY: ollama
+      PLATEPILOT_LLM_MODEL: llama3.1
+      PLATEPILOT_LLM_EMBED_MODEL: nomic-embed-text
+      PLATEPILOT_LLM_EMBED_DIMENSIONS: "768"
+      PLATEPILOT_LLM_TIMEOUT: "60s"
     volumes:
       - ./src/backend-go:/app
       - go_mod_cache:/go/pkg/mod
@@ -118,7 +141,7 @@ services:
       dockerfile: deployments/Dockerfile.dev
     container_name: platepilot-mealplanner-api
     working_dir: /app
-    command: air -c .air.mealplanner.toml
+    command: sh -c "mkdir -p tmp/mealplanner-api && air -c .air.mealplanner.toml"
     environment:
       PLATEPILOT_ENVIRONMENT: docker
       PLATEPILOT_LOG_LEVEL: debug
@@ -126,8 +149,13 @@ services:
       PLATEPILOT_DATABASE_MEALPLANNER_DB: postgres://platepilot:platepilot@postgres:5432/mealplannerdb?sslmode=disable
       PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq:5672/
       PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
-    ports:
-      - "50052:50052"
+      # LLM Configuration (Ollama for local development)
+      PLATEPILOT_LLM_BASE_URL: http://ollama:11434/v1
+      PLATEPILOT_LLM_API_KEY: ollama
+      PLATEPILOT_LLM_MODEL: llama3.1
+      PLATEPILOT_LLM_EMBED_MODEL: nomic-embed-text
+      PLATEPILOT_LLM_EMBED_DIMENSIONS: "768"
+      PLATEPILOT_LLM_TIMEOUT: "60s"
     volumes:
       - ./src/backend-go:/app
       - go_mod_cache:/go/pkg/mod
@@ -148,7 +176,7 @@ services:
       dockerfile: deployments/Dockerfile.dev
     container_name: platepilot-mobile-bff
     working_dir: /app
-    command: air -c .air.bff.toml
+    command: sh -c "mkdir -p tmp/mobile-bff && air -c .air.bff.toml"
     environment:
       PLATEPILOT_ENVIRONMENT: docker
       PLATEPILOT_LOG_LEVEL: debug
@@ -217,6 +245,7 @@ services:
 volumes:
   postgres_data:
   rabbitmq_data:
+  ollama_data:
   pgadmin_data:
   go_mod_cache:
   go_build_cache:

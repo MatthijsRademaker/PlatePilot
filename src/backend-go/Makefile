@@ -2,6 +2,9 @@
 .PHONY: dev dev-recipe dev-mealplanner dev-bff
 .PHONY: docker-up docker-down docker-build docker-run docker-run-all generate
 .PHONY: test-e2e test-integration test-coverage
+.PHONY: verify-proto verify-generated
+.PHONY: ollama-start ollama-stop ollama-pull ollama-status
+.PHONY: up down up-no-llm logs restart
 
 # Variables
 GO := go
@@ -16,6 +19,7 @@ MEALPLANNER_DB_URL ?= postgres://platepilot:platepilot@localhost:5432/mealplanne
 
 # Colors for output
 GREEN := \033[0;32m
+RED := \033[0;31m
 NC := \033[0m # No Color
 
 ## help: Show this help message
@@ -23,6 +27,69 @@ help:
 	@echo "PlatePilot Go Backend - Available commands:"
 	@echo ""
 	@sed -n 's/^##//p' $(MAKEFILE_LIST) | column -t -s ':' | sed -e 's/^/ /'
+
+# =============================================================================
+# Quick Start (recommended for local development)
+# =============================================================================
+
+## up: Start complete dev environment (Ollama + all services with hot reload)
+up:
+	@echo "$(GREEN)Starting PlatePilot development environment...$(NC)"
+	@echo ""
+	@echo "Step 1/4: Starting Ollama..."
+	@cd ../.. && docker compose --profile llm up -d ollama
+	@echo "Waiting for Ollama to be ready..."
+	@sleep 5
+	@echo ""
+	@echo "Step 2/4: Pulling LLM models (first run may take a few minutes)..."
+	@docker exec platepilot-ollama ollama pull llama3.1 2>/dev/null || echo "  llama3.1 already available or pulling..."
+	@docker exec platepilot-ollama ollama pull nomic-embed-text 2>/dev/null || echo "  nomic-embed-text already available or pulling..."
+	@echo ""
+	@echo "Step 3/4: Starting infrastructure and services..."
+	@cd ../.. && docker compose up -d
+	@echo ""
+	@echo "Step 4/4: Waiting for services to be healthy..."
+	@sleep 10
+	@echo ""
+	@echo "$(GREEN)==============================================$(NC)"
+	@echo "$(GREEN)PlatePilot is ready!$(NC)"
+	@echo "$(GREEN)==============================================$(NC)"
+	@echo ""
+	@echo "  Frontend:     http://localhost:9000"
+	@echo "  API (BFF):    http://localhost:8080"
+	@echo "  RabbitMQ UI:  http://localhost:15672 (platepilot/platepilot)"
+	@echo "  Ollama:       http://localhost:11434"
+	@echo ""
+	@echo "Logs: docker compose logs -f"
+	@echo "Stop: make down"
+	@echo ""
+
+## down: Stop all services including Ollama
+down:
+	@echo "$(GREEN)Stopping PlatePilot...$(NC)"
+	@cd ../.. && docker compose --profile llm down
+	@echo "$(GREEN)All services stopped.$(NC)"
+
+## up-no-llm: Start dev environment without Ollama (for when using external LLM)
+up-no-llm:
+	@echo "$(GREEN)Starting PlatePilot (without local LLM)...$(NC)"
+	@cd ../.. && docker compose up -d
+	@echo ""
+	@echo "$(GREEN)PlatePilot is ready (LLM features disabled)$(NC)"
+	@echo ""
+	@echo "  Frontend:     http://localhost:9000"
+	@echo "  API (BFF):    http://localhost:8080"
+	@echo ""
+
+## logs: Follow logs from all services
+logs:
+	@cd ../.. && docker compose --profile llm logs -f
+
+## restart: Restart all services (keeps Ollama running)
+restart:
+	@echo "$(GREEN)Restarting services...$(NC)"
+	@cd ../.. && docker compose restart recipe-api mealplanner-api mobile-bff frontend
+	@echo "$(GREEN)Services restarted.$(NC)"
 
 ## all: Build all services
 all: build
@@ -209,8 +276,8 @@ tools:
 	@echo "  - protoc (Protocol Buffers compiler)"
 	@echo "  - golang-migrate (database migrations)"
 
-## verify: Verify project setup
-verify:
+## verify: Verify project setup (tools + generated code)
+verify: verify-proto
 	@echo "$(GREEN)Verifying project setup...$(NC)"
 	@echo "Go version:"
 	@go version
@@ -224,6 +291,30 @@ verify:
 	@which docker > /dev/null 2>&1 && echo "✓ docker" || echo "✗ docker"
 	@echo ""
 	@echo "$(GREEN)Verification complete!$(NC)"
+
+## verify-proto: Verify generated protobuf code is up-to-date
+verify-proto:
+	@echo "$(GREEN)Verifying protobuf code is up-to-date...$(NC)"
+	@# Create temp directory for comparison
+	@mkdir -p /tmp/proto-verify
+	@# Copy current generated files
+	@cp internal/recipe/pb/*.go /tmp/proto-verify/ 2>/dev/null || true
+	@cp internal/mealplanner/pb/*.go /tmp/proto-verify/ 2>/dev/null || true
+	@# Regenerate
+	@./scripts/generate-proto.sh > /dev/null 2>&1
+	@# Compare
+	@if ! diff -q internal/recipe/pb/recipe.pb.go /tmp/proto-verify/recipe.pb.go > /dev/null 2>&1; then \
+		echo "$(RED)ERROR: recipe.pb.go is out of date. Run 'make proto' to regenerate.$(NC)"; \
+		rm -rf /tmp/proto-verify; \
+		exit 1; \
+	fi
+	@if ! diff -q internal/mealplanner/pb/mealplanner.pb.go /tmp/proto-verify/mealplanner.pb.go > /dev/null 2>&1; then \
+		echo "$(RED)ERROR: mealplanner.pb.go is out of date. Run 'make proto' to regenerate.$(NC)"; \
+		rm -rf /tmp/proto-verify; \
+		exit 1; \
+	fi
+	@rm -rf /tmp/proto-verify
+	@echo "$(GREEN)✓ Protobuf code is up-to-date$(NC)"
 
 ## test-e2e: Run end-to-end integration tests
 test-e2e:
@@ -242,3 +333,38 @@ docker-logs:
 ## docker-ps: Show running containers
 docker-ps:
 	docker-compose -f deployments/docker-compose.yml ps
+
+# =============================================================================
+# Ollama (Local LLM)
+# =============================================================================
+
+## ollama-start: Start Ollama service in Docker
+ollama-start:
+	@echo "$(GREEN)Starting Ollama...$(NC)"
+	cd ../.. && docker compose --profile llm up -d ollama
+	@echo "Waiting for Ollama to be ready..."
+	@sleep 10
+	@echo "$(GREEN)Ollama ready at http://localhost:11434$(NC)"
+
+## ollama-stop: Stop Ollama service
+ollama-stop:
+	@echo "$(GREEN)Stopping Ollama...$(NC)"
+	cd ../.. && docker compose --profile llm stop ollama
+
+## ollama-pull: Pull required LLM models
+ollama-pull:
+	@echo "$(GREEN)Pulling LLM models...$(NC)"
+	@echo "Pulling llama3.1 (chat model)..."
+	docker exec platepilot-ollama ollama pull llama3.1
+	@echo "Pulling nomic-embed-text (embedding model)..."
+	docker exec platepilot-ollama ollama pull nomic-embed-text
+	@echo "$(GREEN)Models ready!$(NC)"
+
+## ollama-status: Show Ollama status and available models
+ollama-status:
+	@echo "$(GREEN)Ollama Status:$(NC)"
+	@docker exec platepilot-ollama ollama list 2>/dev/null || echo "Ollama is not running. Use 'make ollama-start' to start it."
+
+## ollama-logs: Show Ollama logs
+ollama-logs:
+	docker logs -f platepilot-ollama
