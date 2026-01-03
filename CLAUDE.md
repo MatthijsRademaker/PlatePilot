@@ -61,8 +61,10 @@ See `MIGRATION_PLAN.md` for the detailed migration history.
 ### Frontend
 - **Framework**: Vue.js 3 + Quasar 2
 - **State**: Pinia stores
+- **Styling**: UnoCSS with Wind preset (Tailwind-compatible, `tw-` prefix)
 - **Mobile**: Capacitor (planned)
 - **Architecture**: Feature-based vertical slices
+- **Package Manager**: bun (NEVER use npm)
 
 ## Docker Compose Convention
 
@@ -263,7 +265,8 @@ src/backend-go/
 - **State Management**: Pinia
 - **Language**: TypeScript
 - **Mobile**: Capacitor for iOS/Android (planned)
-- **Styling**: Quasar components + SCSS
+- **Styling**: UnoCSS with Wind preset (Tailwind-compatible)
+- **Package Manager**: bun (NEVER use npm)
 
 ### Frontend Commands
 
@@ -271,13 +274,70 @@ src/backend-go/
 cd src/frontend
 
 # Development
-npm install              # Install dependencies
-npm run dev              # Start dev server (hot reload)
+bun install              # Install dependencies
+bun run dev              # Start dev server (hot reload)
 
 # Build
-npm run build            # Production build
-npm run lint             # Run ESLint
-npm run format           # Format with Prettier
+bun run build            # Production build
+bun run lint             # Run ESLint
+bun run format           # Format with Prettier
+```
+
+### UnoCSS / Tailwind CSS Integration
+
+This project uses **UnoCSS** with the **Wind preset** for Tailwind-compatible utility classes. To avoid conflicts with Quasar's built-in classes, all Tailwind utilities use the `tw-` prefix.
+
+#### Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `uno.config.ts` | UnoCSS configuration with Wind preset and `tw-` prefix |
+| `src/boot/unocss.ts` | Boot file that imports UnoCSS virtual CSS |
+| `quasar.config.ts` | Registers UnoCSS Vite plugin and boot file |
+
+#### Usage Examples
+
+```vue
+<template>
+  <!-- Use tw- prefix for all Tailwind utilities -->
+  <div class="tw-flex tw-items-center tw-gap-4 tw-p-4">
+    <span class="tw-text-lg tw-font-bold">Title</span>
+  </div>
+
+  <!-- Modifiers: Place tw- AFTER the modifier -->
+  <button class="hover:tw-underline focus:tw-ring-2 md:tw-flex">
+    Hover me
+  </button>
+
+  <!-- Combining with Quasar (no prefix for Quasar classes) -->
+  <q-btn class="tw-mt-4" color="primary">Submit</q-btn>
+</template>
+```
+
+#### Common Patterns
+
+| Tailwind Class | UnoCSS Equivalent | Notes |
+|----------------|-------------------|-------|
+| `flex` | `tw-flex` | Always use prefix |
+| `hover:underline` | `hover:tw-underline` | Modifier BEFORE tw- |
+| `md:hidden` | `md:tw-hidden` | Responsive modifier BEFORE tw- |
+| `dark:bg-gray-800` | `dark:tw-bg-gray-800` | Dark mode modifier BEFORE tw- |
+
+#### When to Use Quasar vs UnoCSS
+
+- **Quasar components**: Complex UI elements (buttons, dialogs, forms, tables)
+- **UnoCSS/Tailwind**: Layout, spacing, typography, custom styling
+- **Combine them**: Apply Tailwind utilities to Quasar components for fine-tuning
+
+```vue
+<template>
+  <!-- Quasar component with Tailwind spacing/layout -->
+  <q-card class="tw-max-w-md tw-mx-auto tw-shadow-lg">
+    <q-card-section class="tw-space-y-4">
+      <h2 class="tw-text-xl tw-font-semibold">Card Title</h2>
+    </q-card-section>
+  </q-card>
+</template>
 ```
 
 ### Vertical Slice Architecture

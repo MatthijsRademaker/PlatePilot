@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "tailwindcss": {
+      "command": "bunx",
+      "args": ["@tailwindcss-mcp-server"]
+    },
+    "playwright": {
+      "command": "bunx",
+      "args": ["@playwright/mcp"]
+    }
+  }
+}
