@@ -9,7 +9,7 @@
 # Variables
 GO := go
 GOFLAGS := -v
-BACKEND_DIR := src/backend-go
+BACKEND_DIR := src/backend
 BIN_DIR := $(BACKEND_DIR)/bin
 PROTO_DIR := $(BACKEND_DIR)/api/proto
 MIGRATIONS_DIR := $(BACKEND_DIR)/migrations

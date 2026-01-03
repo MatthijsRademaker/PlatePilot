@@ -224,7 +224,32 @@ bun run lint && bun run build
 4. **NEVER** use `any` type - define proper types
 5. **NEVER** use Options API - always Composition API with `<script setup>`
 6. **PREFER** Quasar components over custom implementations for complex UI
+    - For Quasar component APIs, check the official docs or use WebFetch
+      - https://quasar.dev/quasar-api/<api>.json with <api> replaced by one of these values:
+       - ['AddressbarColor','AppFullscreen','AppVisibility','BottomSheet','Brand','CloseP
+          -opup','Cookies','Dark','Dialog','IconSet','Intersection','Lang','Loading','LoadingBar','Lo
+          -calStorage','Meta','Morph','Mutation','Notify','Platform','QAjaxBar','QAvatar','QBadge','Q
+          -Banner','QBar','QBreadcrumbs','QBreadcrumbsEl','QBtn','QBtnDropdown','QBtnGroup','QBtnTogg
+          -le','QCard','QCardActions','QCardSection','QCarousel','QCarouselControl','QCarouselSlide',
+          -'QChatMessage','QCheckbox','QChip','QCircularProgress','QColor','QDate','QDialog','QDrawer
+          -','QEditor','QExpansionItem','QFab','QFabAction','QField','QFile','QFooter','QForm','QForm
+          -ChildMixin','QHeader','QIcon','QImg','QInfiniteScroll','QInnerLoading','QInput','QIntersec
+          -tion','QItem','QItemLabel','QItemSection','QKnob','QLayout','QLinearProgress','QList','QMa
+          -rkupTable','QMenu','QNoSsr','QOptionGroup','QPage','QPageContainer','QPageScroller','QPage
+          -Sticky','QPagination','QParallax','QPopupEdit','QPopupProxy','QPullToRefresh','QRadio','QR
+          -ange','QRating','QResizeObserver','QResponsive','QRouteTab','QScrollArea','QScrollObserver
+          -','QSelect','QSeparator','QSkeleton','QSlideItem','QSlideTransition','QSlider','QSpace','Q
+          -Spinner','QSpinnerAudio','QSpinnerBall','QSpinnerBars','QSpinnerBox','QSpinnerClock','QSpi
+          -nnerComment','QSpinnerCube','QSpinnerDots','QSpinnerFacebook','QSpinnerGears','QSpinnerGri
+          -d','QSpinnerHearts','QSpinnerHourglass','QSpinnerInfinity','QSpinnerIos','QSpinnerOrbit','
+          -QSpinnerOval','QSpinnerPie','QSpinnerPuff','QSpinnerRadio','QSpinnerRings','QSpinnerTail',
+          -'QSplitter','QStep','QStepper','QStepperNavigation','QTab','QTabPanel','QTabPanels','QTabl
+          -e','QTabs','QTd','QTh','QTime','QTimeline','QTimelineEntry','QToggle','QToolbar','QToolbar
+          -Title','QTooltip','QTr','QTree','QUploader','QUploaderAddTrigger','QVideo','QVirtualScroll
+          -','Ripple','Screen','Scroll','ScrollFire','SessionStorage','TouchHold','TouchPan','TouchRe
+          -peat','TouchSwipe']
 7. **PREFER** UnoCSS/Tailwind utilities over custom CSS for spacing/layout
 8. **PREFER** importing from feature barrel exports (`@/features/recipe`)
 9. Use Tailwind MCP (`mcp__tailwindcss`) to look up correct utility classes
 10. Keep features isolated - don't import from other features' internal modules
+
