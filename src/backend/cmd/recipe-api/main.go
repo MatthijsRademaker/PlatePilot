@@ -113,7 +113,12 @@ func main() {
 	}
 
 	// Initialize gRPC handler
-	grpcHandler := handler.NewGRPCHandler(repo, vectorGen, publisher, logger)
+	// Explicitly handle nil publisher to avoid interface-wrapping-nil issue
+	var eventPublisher handler.EventPublisher
+	if publisher != nil {
+		eventPublisher = publisher
+	}
+	grpcHandler := handler.NewGRPCHandler(repo, vectorGen, eventPublisher, logger)
 
 	// Create gRPC server
 	grpcServer := grpc.NewServer()

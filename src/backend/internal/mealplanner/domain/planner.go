@@ -26,11 +26,11 @@ type DailyConstraints struct {
 
 // Planner suggests recipes based on constraints and diversity
 type Planner struct {
-	repo *repository.Repository
+	repo RecipeRepository
 }
 
 // NewPlanner creates a new meal planner
-func NewPlanner(repo *repository.Repository) *Planner {
+func NewPlanner(repo RecipeRepository) *Planner {
 	return &Planner{repo: repo}
 }
 

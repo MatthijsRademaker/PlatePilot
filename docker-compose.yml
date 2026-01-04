@@ -24,7 +24,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./src/backend-go/deployments/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - ./src/backend/deployments/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U platepilot -d platepilot"]
       interval: 5s
@@ -76,7 +76,7 @@ services:
 
   migrate:
     build:
-      context: ./src/backend-go
+      context: ./src/backend
       dockerfile: deployments/Dockerfile.dev
     container_name: platepilot-migrate
     working_dir: /app
@@ -89,7 +89,7 @@ services:
         echo 'Migrations complete!'
       "
     volumes:
-      - ./src/backend-go:/app
+      - ./src/backend:/app
     depends_on:
       postgres:
         condition: service_healthy
@@ -102,7 +102,7 @@ services:
 
   recipe-api:
     build:
-      context: ./src/backend-go
+      context: ./src/backend
       dockerfile: deployments/Dockerfile.dev
     container_name: platepilot-recipe-api
     working_dir: /app
@@ -122,7 +122,7 @@ services:
       PLATEPILOT_LLM_EMBED_DIMENSIONS: "768"
       PLATEPILOT_LLM_TIMEOUT: "60s"
     volumes:
-      - ./src/backend-go:/app
+      - ./src/backend:/app
       - go_mod_cache:/go/pkg/mod
       - go_build_cache:/root/.cache/go-build
     depends_on:
@@ -137,7 +137,7 @@ services:
 
   mealplanner-api:
     build:
-      context: ./src/backend-go
+      context: ./src/backend
       dockerfile: deployments/Dockerfile.dev
     container_name: platepilot-mealplanner-api
     working_dir: /app
@@ -157,7 +157,7 @@ services:
       PLATEPILOT_LLM_EMBED_DIMENSIONS: "768"
       PLATEPILOT_LLM_TIMEOUT: "60s"
     volumes:
-      - ./src/backend-go:/app
+      - ./src/backend:/app
       - go_mod_cache:/go/pkg/mod
       - go_build_cache:/root/.cache/go-build
     depends_on:
@@ -172,7 +172,7 @@ services:
 
   mobile-bff:
     build:
-      context: ./src/backend-go
+      context: ./src/backend
       dockerfile: deployments/Dockerfile.dev
     container_name: platepilot-mobile-bff
     working_dir: /app
@@ -187,7 +187,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./src/backend-go:/app
+      - ./src/backend:/app
       - go_mod_cache:/go/pkg/mod
       - go_build_cache:/root/.cache/go-build
     depends_on:

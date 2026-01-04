@@ -12,7 +12,6 @@ import (
 
 	"github.com/platepilot/backend/internal/common/domain"
 	"github.com/platepilot/backend/internal/common/vector"
-	"github.com/platepilot/backend/internal/recipe/events"
 	pb "github.com/platepilot/backend/internal/recipe/pb"
 	"github.com/platepilot/backend/internal/recipe/repository"
 )
@@ -20,14 +19,14 @@ import (
 // GRPCHandler implements the RecipeService gRPC interface
 type GRPCHandler struct {
 	pb.UnimplementedRecipeServiceServer
-	repo      *repository.Repository
+	repo      RecipeRepository
 	vectorGen vector.Generator
-	publisher *events.Publisher
+	publisher EventPublisher
 	logger    *slog.Logger
 }
 
 // NewGRPCHandler creates a new gRPC handler
-func NewGRPCHandler(repo *repository.Repository, vectorGen vector.Generator, publisher *events.Publisher, logger *slog.Logger) *GRPCHandler {
+func NewGRPCHandler(repo RecipeRepository, vectorGen vector.Generator, publisher EventPublisher, logger *slog.Logger) *GRPCHandler {
 	return &GRPCHandler{
 		repo:      repo,
 		vectorGen: vectorGen,

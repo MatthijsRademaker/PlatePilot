@@ -15,12 +15,12 @@ import (
 // GRPCHandler implements the MealPlannerService gRPC interface
 type GRPCHandler struct {
 	pb.UnimplementedMealPlannerServiceServer
-	planner *domain.Planner
+	planner MealPlanner
 	logger  *slog.Logger
 }
 
 // NewGRPCHandler creates a new gRPC handler
-func NewGRPCHandler(planner *domain.Planner, logger *slog.Logger) *GRPCHandler {
+func NewGRPCHandler(planner MealPlanner, logger *slog.Logger) *GRPCHandler {
 	return &GRPCHandler{
 		planner: planner,
 		logger:  logger,
