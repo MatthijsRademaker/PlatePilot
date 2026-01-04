@@ -28,7 +28,7 @@
             <MealSlotCard
               v-for="meal in day.meals"
               :key="meal.id"
-              :slot="meal"
+              :meal-slot="meal"
               @click="$emit('slot-click', meal)"
               @clear="$emit('slot-clear', meal)"
             />

@@ -143,7 +143,7 @@ const filteredRecipes = computed(() => {
 
 onMounted(() => {
   if (recipeStore.recipes.length === 0) {
-    recipeStore.fetchRecipes();
+    void recipeStore.fetchRecipes();
   }
 });
 

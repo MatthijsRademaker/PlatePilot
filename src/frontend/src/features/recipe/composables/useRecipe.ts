@@ -8,16 +8,16 @@ export function useRecipeList() {
 
   onMounted(() => {
     if (recipes.value.length === 0) {
-      store.fetchRecipes();
+      void store.fetchRecipes();
     }
   });
 
   function loadPage(page: number) {
-    store.fetchRecipes(page);
+    void store.fetchRecipes(page);
   }
 
   function refresh() {
-    store.fetchRecipes(1);
+    void store.fetchRecipes(1);
   }
 
   return {
@@ -37,11 +37,11 @@ export function useRecipeDetail(recipeId: () => string) {
   const { currentRecipe, loading, error } = storeToRefs(store);
 
   onMounted(() => {
-    store.fetchRecipeById(recipeId());
+    void store.fetchRecipeById(recipeId());
   });
 
   watch(recipeId, (newId) => {
-    store.fetchRecipeById(newId);
+    void store.fetchRecipeById(newId);
   });
 
   return {

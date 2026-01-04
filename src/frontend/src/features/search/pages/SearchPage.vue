@@ -78,6 +78,6 @@ watch(searchQuery, async (query) => {
 });
 
 function goToRecipe(recipe: Recipe) {
-  router.push({ name: 'recipe-detail', params: { id: recipe.id } });
+  void router.push({ name: 'recipe-detail', params: { id: recipe.id } });
 }
 </script>

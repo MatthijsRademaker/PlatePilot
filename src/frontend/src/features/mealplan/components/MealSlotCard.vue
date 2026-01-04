@@ -1,17 +1,17 @@
 <template>
   <q-card
     class="meal-slot-card"
-    :class="{ 'meal-slot-card--empty': !slot.recipe }"
-    @click="$emit('click', slot)"
+    :class="{ 'meal-slot-card--empty': !props.mealSlot.recipe }"
+    @click="$emit('click', props.mealSlot)"
   >
     <q-card-section class="q-pa-sm">
       <div class="text-caption text-weight-medium text-uppercase">
-        {{ slot.mealType }}
+        {{ props.mealSlot.mealType }}
       </div>
 
-      <template v-if="slot.recipe">
+      <template v-if="props.mealSlot.recipe">
         <div class="text-body2 ellipsis q-mt-xs">
-          {{ slot.recipe.name }}
+          {{ props.mealSlot.recipe.name }}
         </div>
         <q-btn
           flat
@@ -20,7 +20,7 @@
           size="sm"
           icon="close"
           class="absolute-top-right"
-          @click.stop="$emit('clear', slot)"
+          @click.stop="$emit('clear', props.mealSlot)"
         />
       </template>
 
@@ -36,8 +36,8 @@
 <script setup lang="ts">
 import type { MealSlot } from '@features/mealplan/types/mealplan';
 
-defineProps<{
-  slot: MealSlot;
+const props = defineProps<{
+  mealSlot: MealSlot;
 }>();
 
 defineEmits<{

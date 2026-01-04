@@ -28,10 +28,8 @@ class ApiClient {
 
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
-      const error: ApiError = {
-        message: `HTTP error: ${response.statusText}`,
-        status: response.status,
-      };
+      const error = new Error(`HTTP error: ${response.statusText}`) as Error & { status: number };
+      error.status = response.status;
       throw error;
     }
     return response.json() as Promise<T>;

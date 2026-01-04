@@ -28,6 +28,6 @@ const router = useRouter();
 const { recipes, loading, error, pageIndex, totalPages, loadPage, refresh } = useRecipeList();
 
 function goToRecipe(recipe: Recipe) {
-  router.push({ name: 'recipe-detail', params: { id: recipe.id } });
+  void router.push({ name: 'recipe-detail', params: { id: recipe.id } });
 }
 </script>
