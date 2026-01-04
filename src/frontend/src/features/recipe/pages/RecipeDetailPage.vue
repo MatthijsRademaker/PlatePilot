@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router';
 import { computed } from 'vue';
-import { useRecipeDetail } from '../composables';
+import { useRecipeDetail } from '@features/recipe/composables/useRecipe';
 
 const router = useRouter();
 const route = useRoute();

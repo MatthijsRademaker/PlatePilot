@@ -187,6 +187,9 @@ export function useRecipeList() {
 | Types/Interfaces | PascalCase | `Recipe`, `Ingredient` |
 | Constants | SCREAMING_SNAKE_CASE | `MAX_RECIPES_PER_PAGE` |
 
+## Mobile development 
+Mobile development is done through capacitor. Quasar handles this for us and therefore src-capacitor can be ignored alltogether
+
 ## Quasar Component Reference
 
 For Quasar component APIs, check the official docs or use WebFetch:

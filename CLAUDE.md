@@ -8,11 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **This is a hobby project** - no backwards compatibility requirements, no legacy constraints. We can make breaking changes freely and choose the simplest solutions.
 
-## Migration Status: COMPLETE ✅
-
-The backend migration from .NET to Go is **complete**. The .NET code has been removed and the project is now Go-only.
-
-See `MIGRATION_PLAN.md` for the detailed migration history.
+## Mobile development 
+Mobile development is done through capacitor. Quasar handles this for us and therefore src-capacitor can be ignored alltogether
 
 ### Why Go?
 - **AI Agent Friendly**: Explicit control flow, no magic/reflection, errors as values
@@ -354,8 +351,7 @@ src/frontend/src/
 │   │   ├── pages/               # Route pages (RecipeListPage, RecipeDetailPage)
 │   │   ├── store/               # Pinia store (recipeStore.ts)
 │   │   ├── types/               # TypeScript types (Recipe, Ingredient)
-│   │   ├── routes.ts            # Feature routes
-│   │   └── index.ts             # Barrel export
+│   │   └── routes.ts            # Feature routes
 │   ├── mealplan/                # Meal planning feature
 │   │   ├── api/
 │   │   ├── components/          # WeekView, MealSlotCard
@@ -363,17 +359,14 @@ src/frontend/src/
 │   │   ├── pages/
 │   │   ├── store/
 │   │   ├── types/
-│   │   ├── routes.ts
-│   │   └── index.ts
+│   │   └── routes.ts
 │   ├── search/                  # Search feature
 │   │   ├── pages/
 │   │   ├── types/
-│   │   ├── routes.ts
-│   │   └── index.ts
+│   │   └── routes.ts
 │   └── home/                    # Home/dashboard feature
 │       ├── pages/
-│       ├── routes.ts
-│       └── index.ts
+│       └── routes.ts
 ├── shared/                      # Shared/common code
 │   ├── api/                     # HTTP client (apiClient)
 │   ├── components/              # Shared UI components
@@ -394,7 +387,7 @@ Each feature follows this pattern:
 ```
 feature/
 ├── types/           # Domain types and DTOs
-│   └── index.ts     # Barrel export
+│   └── feature.ts   # Type definitions
 ├── api/             # API layer - calls to backend
 │   └── featureApi.ts
 ├── store/           # Pinia store - state management
@@ -405,20 +398,16 @@ feature/
 │   └── FeatureCard.vue
 ├── pages/           # Route pages
 │   └── FeaturePage.vue
-├── routes.ts        # Feature route definitions
-└── index.ts         # Public API (barrel export)
+└── routes.ts        # Feature route definitions
 ```
 
 ### Key Frontend Patterns
 
 ```typescript
-// Feature barrel export (index.ts)
-export * from './types';
-export { featureApi } from './api';
-export { useFeatureStore } from './store';
-export { useFeature } from './composables';
-export { FeatureCard } from './components';
-export { featureRoutes } from './routes';
+// Direct imports using @features alias
+import type { Recipe } from '@features/recipe/types/recipe';
+import { useRecipeStore } from '@features/recipe/store/recipeStore';
+import RecipeCard from '@features/recipe/components/RecipeCard.vue';
 
 // Composable pattern
 export function useRecipeList() {
@@ -443,12 +432,12 @@ export const useRecipeStore = defineStore('recipe', () => {
 
 ### Frontend Best Practices
 
-- **Import from feature index**: `import { Recipe, useRecipeStore } from '@/features/recipe'`
+- **Use @features alias**: `import type { Recipe } from '@features/recipe/types/recipe'`
+- **Direct file imports**: Import directly from the file, not via barrel exports
 - **Keep features isolated**: Features should not import from other features' internal modules
 - **Shared code in shared/**: Cross-feature utilities go in `shared/`
 - **Composables for logic**: Extract reusable logic into composables
 - **Types first**: Define types before implementing API/store
-- **Barrel exports**: Use index.ts to control public API
 
 ## Key Architectural Patterns
 

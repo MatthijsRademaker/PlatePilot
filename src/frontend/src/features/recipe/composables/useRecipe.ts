@@ -1,6 +1,6 @@
 import { storeToRefs } from 'pinia';
 import { onMounted, watch } from 'vue';
-import { useRecipeStore } from '../store';
+import { useRecipeStore } from '@features/recipe/store/recipeStore';
 
 export function useRecipeList() {
   const store = useRecipeStore();

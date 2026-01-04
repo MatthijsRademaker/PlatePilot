@@ -19,9 +19,7 @@
           <q-card-section class="text-center">
             <q-icon name="menu_book" size="48px" color="primary" />
             <div class="text-h6 q-mt-sm">Browse Recipes</div>
-            <div class="text-caption text-grey">
-              Explore our collection of delicious recipes
-            </div>
+            <div class="text-caption text-grey">Explore our collection of delicious recipes</div>
           </q-card-section>
         </q-card>
       </div>
@@ -31,9 +29,7 @@
           <q-card-section class="text-center">
             <q-icon name="calendar_month" size="48px" color="secondary" />
             <div class="text-h6 q-mt-sm">Meal Plan</div>
-            <div class="text-caption text-grey">
-              Plan your meals for the week
-            </div>
+            <div class="text-caption text-grey">Plan your meals for the week</div>
           </q-card-section>
         </q-card>
       </div>
@@ -43,9 +39,7 @@
           <q-card-section class="text-center">
             <q-icon name="search" size="48px" color="accent" />
             <div class="text-h6 q-mt-sm">Search</div>
-            <div class="text-caption text-grey">
-              Find the perfect recipe
-            </div>
+            <div class="text-caption text-grey">Find the perfect recipe</div>
           </q-card-section>
         </q-card>
       </div>
@@ -54,5 +48,5 @@
 </template>
 
 <script setup lang="ts">
-import { TodayPlanCard } from '../components';
+import TodayPlanCard from '@features/home/components/TodayPlanCard.vue';
 </script>

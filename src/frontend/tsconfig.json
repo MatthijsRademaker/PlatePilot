@@ -1,9 +1,10 @@
 {
     "extends": "./.quasar/tsconfig.json",
-    "compilerOpions": {
+    "compilerOptions": {
         "baseUrl": ".",
         "paths": {
-            "@/*": "src/*"
+            "@/*": ["src/*"],
+            "@features/*": ["src/features/*"]
         }
     }
 }

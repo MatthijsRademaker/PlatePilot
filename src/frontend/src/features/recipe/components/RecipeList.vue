@@ -38,8 +38,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Recipe } from '../types';
-import RecipeCard from './RecipeCard.vue';
+import type { Recipe } from '@features/recipe/types/recipe';
+import RecipeCard from '@features/recipe/components/RecipeCard.vue';
 
 defineProps<{
   recipes: Recipe[];

@@ -1,4 +1,4 @@
-import type { Recipe } from '@/features/recipe/types';
+import type { Recipe } from '@features/recipe/types/recipe';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 

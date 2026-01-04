@@ -105,11 +105,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
-import { WeekView } from '../components';
-import { useMealplan } from '../composables';
-import { useRecipeStore } from '@/features/recipe/store';
-import type { Recipe } from '@/features/recipe/types';
-import type { MealSlot } from '../types';
+import WeekView from '@features/mealplan/components/WeekView.vue';
+import { useMealplan } from '@features/mealplan/composables/useMealplan';
+import { useRecipeStore } from '@features/recipe/store/recipeStore';
+import type { Recipe } from '@features/recipe/types/recipe';
+import type { MealSlot } from '@features/mealplan/types/mealplan';
 
 const $q = useQuasar();
 const recipeStore = useRecipeStore();

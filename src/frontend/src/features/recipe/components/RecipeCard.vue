@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { Recipe } from '../types';
+import type { Recipe } from '@features/recipe/types/recipe';
 
 const props = defineProps<{
   recipe: Recipe;

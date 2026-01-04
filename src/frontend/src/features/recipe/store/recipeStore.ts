@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { recipeApi } from '../api';
-import type { Recipe } from '../types';
+import { recipeApi } from '@features/recipe/api/recipeApi';
+import type { Recipe } from '@features/recipe/types/recipe';
 
 export const useRecipeStore = defineStore('recipe', () => {
   // State

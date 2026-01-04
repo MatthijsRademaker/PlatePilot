@@ -1,6 +1,6 @@
 import { apiClient } from '@/shared/api';
 import type { PaginatedResponse } from '@/shared/types';
-import type { Recipe, CreateRecipeRequest } from '../types';
+import type { Recipe, CreateRecipeRequest } from '@features/recipe/types/recipe';
 
 const BASE_PATH = '/v1/recipe';
 

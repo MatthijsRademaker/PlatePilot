@@ -1,5 +1,5 @@
 import { storeToRefs } from 'pinia';
-import { useMealplanStore } from '../store';
+import { useMealplanStore } from '@features/mealplan/store/mealplanStore';
 
 export function useMealplan() {
   const store = useMealplanStore();

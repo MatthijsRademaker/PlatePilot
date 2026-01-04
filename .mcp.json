@@ -2,7 +2,7 @@
   "mcpServers": {
     "tailwindcss": {
       "command": "bunx",
-      "args": ["@tailwindcss-mcp-server"]
+      "args": ["tailwindcss-mcp-server"]
     },
     "playwright": {
       "command": "bunx",

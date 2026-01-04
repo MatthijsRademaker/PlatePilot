@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { Recipe } from '@/features/recipe/types';
-import type { WeekPlan, DayPlan, MealSlot, MealType } from '../types';
-import { mealplanApi } from '../api';
+import type { Recipe } from '@features/recipe/types/recipe';
+import type { WeekPlan, DayPlan, MealSlot, MealType } from '@features/mealplan/types/mealplan';
+import { mealplanApi } from '@features/mealplan/api/mealplanApi';
 
 function generateWeekPlan(startDate: Date): WeekPlan {
   const days: DayPlan[] = [];

@@ -20,9 +20,9 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { useRecipeList } from '../composables';
-import { RecipeList } from '../components';
-import type { Recipe } from '../types';
+import { useRecipeList } from '@features/recipe/composables/useRecipe';
+import RecipeList from '@features/recipe/components/RecipeList.vue';
+import type { Recipe } from '@features/recipe/types/recipe';
 
 const router = useRouter();
 const { recipes, loading, error, pageIndex, totalPages, loadPage, refresh } = useRecipeList();

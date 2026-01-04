@@ -43,9 +43,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { RecipeCard } from '@/features/recipe/components';
-import { useRecipeStore } from '@/features/recipe/store';
-import type { Recipe } from '@/features/recipe/types';
+import RecipeCard from '@features/recipe/components/RecipeCard.vue';
+import { useRecipeStore } from '@features/recipe/store/recipeStore';
+import type { Recipe } from '@features/recipe/types/recipe';
 
 const router = useRouter();
 const recipeStore = useRecipeStore();

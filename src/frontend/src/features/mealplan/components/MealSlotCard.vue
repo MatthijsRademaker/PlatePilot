@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import type { MealSlot } from '../types';
+import type { MealSlot } from '@features/mealplan/types/mealplan';
 
 defineProps<{
   slot: MealSlot;

@@ -40,8 +40,8 @@
 </template>
 
 <script setup lang="ts">
-import type { WeekPlan, MealSlot } from '../types';
-import MealSlotCard from './MealSlotCard.vue';
+import type { WeekPlan, MealSlot } from '@features/mealplan/types/mealplan';
+import MealSlotCard from '@features/mealplan/components/MealSlotCard.vue';
 
 defineProps<{
   weekPlan: WeekPlan;

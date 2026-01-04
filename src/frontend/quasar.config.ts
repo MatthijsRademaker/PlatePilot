@@ -39,6 +39,7 @@ export default defineConfig((ctx) => {
       },
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@features': fileURLToPath(new URL('./src/features', import.meta.url)),
       },
       typescript: {
         strict: true,
