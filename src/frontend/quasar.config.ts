@@ -89,11 +89,14 @@ export default defineConfig((ctx) => {
         [
           'vite-plugin-checker',
           {
-            vueTsc: true,
-            eslint: {
-              lintCommand: 'eslint -c ./eslint.config.js "./src*/**/*.{ts,js,mjs,cjs,vue}"',
-              useFlatConfig: true,
-            },
+            vueTsc: process.env.PLATEPILOT_ENVIRONMENT !== 'e2e',
+            eslint:
+              process.env.PLATEPILOT_ENVIRONMENT !== 'e2e'
+                ? {
+                    lintCommand: 'eslint -c ./eslint.config.js "./src*/**/*.{ts,js,mjs,cjs,vue}"',
+                    useFlatConfig: true,
+                  }
+                : false,
           },
           { server: false },
         ],

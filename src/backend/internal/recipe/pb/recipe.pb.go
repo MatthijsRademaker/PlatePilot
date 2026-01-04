@@ -119,10 +119,14 @@ func (x *GetAllRecipesRequest) GetPageSize() int32 {
 	return 0
 }
 
-// Response containing multiple recipes
+// Response containing multiple recipes with pagination
 type GetAllRecipesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Recipes       []*RecipeResponse      `protobuf:"bytes,1,rep,name=recipes,proto3" json:"recipes,omitempty"`
+	PageIndex     int32                  `protobuf:"varint,2,opt,name=page_index,json=pageIndex,proto3" json:"page_index,omitempty"`
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	TotalCount    int32                  `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	TotalPages    int32                  `protobuf:"varint,5,opt,name=total_pages,json=totalPages,proto3" json:"total_pages,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -162,6 +166,34 @@ func (x *GetAllRecipesResponse) GetRecipes() []*RecipeResponse {
 		return x.Recipes
 	}
 	return nil
+}
+
+func (x *GetAllRecipesResponse) GetPageIndex() int32 {
+	if x != nil {
+		return x.PageIndex
+	}
+	return 0
+}
+
+func (x *GetAllRecipesResponse) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *GetAllRecipesResponse) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
+}
+
+func (x *GetAllRecipesResponse) GetTotalPages() int32 {
+	if x != nil {
+		return x.TotalPages
+	}
+	return 0
 }
 
 // Request for creating a new recipe
@@ -678,9 +710,16 @@ const file_recipe_v1_recipe_proto_rawDesc = "" +
 	"\x14GetAllRecipesRequest\x12\x1d\n" +
 	"\n" +
 	"page_index\x18\x01 \x01(\x05R\tpageIndex\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"L\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\xca\x01\n" +
 	"\x15GetAllRecipesResponse\x123\n" +
-	"\arecipes\x18\x01 \x03(\v2\x19.recipe.v1.RecipeResponseR\arecipes\"\x99\x02\n" +
+	"\arecipes\x18\x01 \x03(\v2\x19.recipe.v1.RecipeResponseR\arecipes\x12\x1d\n" +
+	"\n" +
+	"page_index\x18\x02 \x01(\x05R\tpageIndex\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1f\n" +
+	"\vtotal_count\x18\x04 \x01(\x05R\n" +
+	"totalCount\x12\x1f\n" +
+	"\vtotal_pages\x18\x05 \x01(\x05R\n" +
+	"totalPages\"\x99\x02\n" +
 	"\x13CreateRecipeRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1b\n" +

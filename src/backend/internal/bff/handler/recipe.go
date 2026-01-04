@@ -44,6 +44,15 @@ func (h *RecipeHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, toRecipeJSON(recipe))
 }
 
+// PaginatedRecipesJSON is the paginated response for recipes
+type PaginatedRecipesJSON struct {
+	Items      []RecipeJSON `json:"items"`
+	PageIndex  int32        `json:"pageIndex"`
+	PageSize   int32        `json:"pageSize"`
+	TotalCount int32        `json:"totalCount"`
+	TotalPages int32        `json:"totalPages"`
+}
+
 // GetAll handles GET /v1/recipe/all
 func (h *RecipeHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	pageIndex := parseIntParam(r, "pageIndex", 1)
@@ -53,14 +62,20 @@ func (h *RecipeHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		pageSize = 100
 	}
 
-	recipes, err := h.client.GetAll(r.Context(), int32(pageIndex), int32(pageSize))
+	resp, err := h.client.GetAll(r.Context(), int32(pageIndex), int32(pageSize))
 	if err != nil {
 		h.logger.Error("failed to get recipes", "error", err)
 		writeError(w, http.StatusInternalServerError, "failed to fetch recipes")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toRecipesJSON(recipes))
+	writeJSON(w, http.StatusOK, PaginatedRecipesJSON{
+		Items:      toRecipesJSON(resp.Recipes),
+		PageIndex:  resp.PageIndex,
+		PageSize:   resp.PageSize,
+		TotalCount: resp.TotalCount,
+		TotalPages: resp.TotalPages,
+	})
 }
 
 // GetSimilar handles GET /v1/recipe/similar

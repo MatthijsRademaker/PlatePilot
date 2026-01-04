@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Home Page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/#/');
   });
 
   test('displays PlatePilot branding', async ({ page }) => {
@@ -16,18 +16,15 @@ test.describe('Home Page', () => {
   });
 
   test('displays navigation cards', async ({ page }) => {
-    // Check for Browse Recipes card
-    await expect(page.getByText('Browse Recipes')).toBeVisible();
+    // Check for Browse Recipes card - check the description which is unique
     await expect(
       page.getByText('Explore our collection of delicious recipes')
     ).toBeVisible();
 
-    // Check for Meal Plan card
-    await expect(page.getByText('Meal Plan')).toBeVisible();
+    // Check for Meal Plan card - check the description which is unique
     await expect(page.getByText('Plan your meals for the week')).toBeVisible();
 
-    // Check for Search card
-    await expect(page.getByText('Search')).toBeVisible();
+    // Check for Search card - check the description which is unique
     await expect(page.getByText('Find the perfect recipe')).toBeVisible();
   });
 
@@ -36,21 +33,23 @@ test.describe('Home Page', () => {
   }) => {
     await page.getByText('Browse Recipes').click();
 
-    await expect(page).toHaveURL(/.*recipes/);
+    await expect(page).toHaveURL(/.*#\/recipes/);
     await expect(page.getByRole('heading', { name: 'Recipes' })).toBeVisible();
   });
 
   test('navigates to meal plan page when clicking Meal Plan', async ({
     page,
   }) => {
-    await page.getByText('Meal Plan').click();
+    // Click the card (use description to find the right element)
+    await page.getByText('Plan your meals for the week').click();
 
-    await expect(page).toHaveURL(/.*mealplan/);
+    await expect(page).toHaveURL(/.*#\/mealplan/);
   });
 
   test('navigates to search page when clicking Search', async ({ page }) => {
-    await page.getByText('Search').click();
+    // Click the card (use description to find the right element)
+    await page.getByText('Find the perfect recipe').click();
 
-    await expect(page).toHaveURL(/.*search/);
+    await expect(page).toHaveURL(/.*#\/search/);
   });
 });

@@ -41,6 +41,9 @@ FROM recipes r
 ORDER BY r.created_at DESC
 LIMIT $1 OFFSET $2;
 
+-- name: CountRecipes :one
+SELECT COUNT(*) FROM recipes;
+
 -- name: GetRecipesByCuisine :many
 SELECT
     r.id,

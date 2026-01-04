@@ -39,9 +39,13 @@ message GetAllRecipesRequest {
   int32 page_size = 2;
 }
 
-// Response containing multiple recipes
+// Response containing multiple recipes with pagination
 message GetAllRecipesResponse {
   repeated RecipeResponse recipes = 1;
+  int32 page_index = 2;
+  int32 page_size = 3;
+  int32 total_count = 4;
+  int32 total_pages = 5;
 }
 
 // Request for creating a new recipe

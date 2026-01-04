@@ -3,7 +3,7 @@ import { TEST_RECIPES, RECIPE_COUNT } from '../fixtures/test-data';
 
 test.describe('Recipe List Page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/recipes');
+    await page.goto('/#/recipes');
   });
 
   test('displays recipes heading', async ({ page }) => {
@@ -41,7 +41,7 @@ test.describe('Recipe List Page', () => {
     await page.getByText(TEST_RECIPES.spaghettiCarbonara.name).click();
 
     // Should navigate to recipe detail page
-    await expect(page).toHaveURL(new RegExp(`.*recipes/${TEST_RECIPES.spaghettiCarbonara.id}`));
+    await expect(page).toHaveURL(new RegExp(`.*#/recipes/${TEST_RECIPES.spaghettiCarbonara.id}`));
   });
 
   test('has refresh button', async ({ page }) => {
@@ -67,7 +67,7 @@ test.describe('Recipe List Page', () => {
 test.describe('Recipe Detail Page', () => {
   test('displays recipe details', async ({ page }) => {
     // Navigate directly to a known recipe
-    await page.goto(`/recipes/${TEST_RECIPES.spaghettiCarbonara.id}`);
+    await page.goto(`/#/recipes/${TEST_RECIPES.spaghettiCarbonara.id}`);
 
     // Check for recipe name
     await expect(
@@ -81,7 +81,7 @@ test.describe('Recipe Detail Page', () => {
   });
 
   test('displays ingredients section', async ({ page }) => {
-    await page.goto(`/recipes/${TEST_RECIPES.spaghettiCarbonara.id}`);
+    await page.goto(`/#/recipes/${TEST_RECIPES.spaghettiCarbonara.id}`);
 
     // Wait for page to load
     await expect(
@@ -98,7 +98,7 @@ test.describe('Recipe Detail Page', () => {
   });
 
   test('displays instructions section', async ({ page }) => {
-    await page.goto(`/recipes/${TEST_RECIPES.spaghettiCarbonara.id}`);
+    await page.goto(`/#/recipes/${TEST_RECIPES.spaghettiCarbonara.id}`);
 
     // Wait for page to load
     await expect(
@@ -114,7 +114,7 @@ test.describe('Recipe Detail Page', () => {
   });
 
   test('displays cuisine information', async ({ page }) => {
-    await page.goto(`/recipes/${TEST_RECIPES.spaghettiCarbonara.id}`);
+    await page.goto(`/#/recipes/${TEST_RECIPES.spaghettiCarbonara.id}`);
 
     // Wait for page to load
     await expect(
@@ -127,7 +127,7 @@ test.describe('Recipe Detail Page', () => {
 
   test('has back button that navigates to list', async ({ page }) => {
     // Start at recipes list
-    await page.goto('/recipes');
+    await page.goto('/#/recipes');
     await expect(page.getByText(TEST_RECIPES.spaghettiCarbonara.name)).toBeVisible({
       timeout: 10000,
     });
@@ -142,13 +142,13 @@ test.describe('Recipe Detail Page', () => {
     await page.getByRole('button', { name: /back/i }).click();
 
     // Should be back at list
-    await expect(page).toHaveURL(/.*recipes$/);
+    await expect(page).toHaveURL(/.*#\/recipes$/);
   });
 
   test('handles non-existent recipe', async ({ page }) => {
-    await page.goto('/recipes/non-existent-recipe-id');
+    await page.goto('/#/recipes/non-existent-recipe-id');
 
-    // Should show error state
-    await expect(page.getByText(/error/i)).toBeVisible({ timeout: 10000 });
+    // Should show error state - look for specific error text
+    await expect(page.getByText('HTTP error: Not Found')).toBeVisible({ timeout: 10000 });
   });
 });

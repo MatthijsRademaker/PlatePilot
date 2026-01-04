@@ -59,6 +59,14 @@ async function waitForService(url: string, name: string): Promise<void> {
   );
 }
 
+interface PaginatedResponse {
+  items: unknown[];
+  pageIndex: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
 async function verifySeededData(url: string): Promise<void> {
   console.log("Verifying seeded data...");
 
@@ -72,13 +80,13 @@ async function verifySeededData(url: string): Promise<void> {
       throw new Error(`Failed to fetch recipes: ${response.status}`);
     }
 
-    const recipes = await response.json();
+    const data = (await response.json()) as PaginatedResponse;
 
-    if (!Array.isArray(recipes) || recipes.length === 0) {
+    if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
       throw new Error("No recipes found - seeding may have failed");
     }
 
-    console.log(`  ✓ Found ${recipes.length} seeded recipes`);
+    console.log(`  ✓ Found ${data.totalCount} seeded recipes`);
   } catch (error) {
     throw new Error(`Failed to verify seeded data: ${error}`);
   }

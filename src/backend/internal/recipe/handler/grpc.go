@@ -78,7 +78,15 @@ func (h *GRPCHandler) GetAllRecipes(ctx context.Context, req *pb.GetAllRecipesRe
 		return nil, status.Errorf(codes.Internal, "failed to get recipes")
 	}
 
-	return toRecipesResponse(recipes), nil
+	totalCount, err := h.repo.Count(ctx)
+	if err != nil {
+		h.logger.Error("failed to count recipes", "error", err)
+		return nil, status.Errorf(codes.Internal, "failed to count recipes")
+	}
+
+	totalPages := int32((totalCount + int64(pageSize) - 1) / int64(pageSize))
+
+	return toRecipesResponseWithPagination(recipes, int32(pageIndex), int32(pageSize), int32(totalCount), totalPages), nil
 }
 
 // CreateRecipe creates a new recipe
@@ -313,5 +321,14 @@ func toRecipesResponse(recipes []domain.Recipe) *pb.GetAllRecipesResponse {
 		resp.Recipes[i] = toRecipeResponse(&recipes[i])
 	}
 
+	return resp
+}
+
+func toRecipesResponseWithPagination(recipes []domain.Recipe, pageIndex, pageSize, totalCount, totalPages int32) *pb.GetAllRecipesResponse {
+	resp := toRecipesResponse(recipes)
+	resp.PageIndex = pageIndex
+	resp.PageSize = pageSize
+	resp.TotalCount = totalCount
+	resp.TotalPages = totalPages
 	return resp
 }

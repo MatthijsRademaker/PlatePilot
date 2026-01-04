@@ -4,6 +4,10 @@ import type { Recipe } from '@features/recipe/types/recipe';
 import type { WeekPlan, DayPlan, MealSlot, MealType } from '@features/mealplan/types/mealplan';
 import { mealplanApi } from '@features/mealplan/api/mealplanApi';
 
+function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0] as string;
+}
+
 function generateWeekPlan(startDate: Date): WeekPlan {
   const days: DayPlan[] = [];
   const mealTypes: MealType[] = ['breakfast', 'lunch', 'dinner'];
@@ -11,7 +15,7 @@ function generateWeekPlan(startDate: Date): WeekPlan {
   for (let i = 0; i < 7; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDate(date);
 
     const meals: MealSlot[] = mealTypes.map((mealType) => ({
       id: `${dateStr}-${mealType}`,
@@ -27,8 +31,8 @@ function generateWeekPlan(startDate: Date): WeekPlan {
   endDate.setDate(endDate.getDate() + 6);
 
   return {
-    startDate: startDate.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0],
+    startDate: formatDate(startDate),
+    endDate: formatDate(endDate),
     days,
   };
 }

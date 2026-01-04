@@ -53,8 +53,17 @@ func (c *RecipeClient) GetByID(ctx context.Context, id string) (*recipepb.Recipe
 	return resp, nil
 }
 
+// GetAllResponse contains the paginated recipes response
+type GetAllResponse struct {
+	Recipes    []*recipepb.RecipeResponse
+	PageIndex  int32
+	PageSize   int32
+	TotalCount int32
+	TotalPages int32
+}
+
 // GetAll retrieves all recipes with pagination
-func (c *RecipeClient) GetAll(ctx context.Context, pageIndex, pageSize int32) ([]*recipepb.RecipeResponse, error) {
+func (c *RecipeClient) GetAll(ctx context.Context, pageIndex, pageSize int32) (*GetAllResponse, error) {
 	c.logger.Debug("getting all recipes", "pageIndex", pageIndex, "pageSize", pageSize)
 
 	resp, err := c.client.GetAllRecipes(ctx, &recipepb.GetAllRecipesRequest{
@@ -65,7 +74,13 @@ func (c *RecipeClient) GetAll(ctx context.Context, pageIndex, pageSize int32) ([
 		return nil, fmt.Errorf("get all recipes: %w", err)
 	}
 
-	return resp.GetRecipes(), nil
+	return &GetAllResponse{
+		Recipes:    resp.GetRecipes(),
+		PageIndex:  resp.GetPageIndex(),
+		PageSize:   resp.GetPageSize(),
+		TotalCount: resp.GetTotalCount(),
+		TotalPages: resp.GetTotalPages(),
+	}, nil
 }
 
 // Create creates a new recipe

@@ -12,6 +12,7 @@ type RecipeRepository interface {
 	// Recipe operations
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Recipe, error)
 	GetAll(ctx context.Context, limit, offset int) ([]domain.Recipe, error)
+	Count(ctx context.Context) (int64, error)
 	Create(ctx context.Context, recipe *domain.Recipe) error
 	GetSimilar(ctx context.Context, recipeID uuid.UUID, limit int) ([]domain.Recipe, error)
 	GetByCuisine(ctx context.Context, cuisineID uuid.UUID, limit, offset int) ([]domain.Recipe, error)

@@ -27,12 +27,15 @@ test.describe('Recipe API', () => {
 
     expect(response.ok()).toBeTruthy();
 
-    const recipes = await response.json();
-    expect(Array.isArray(recipes)).toBeTruthy();
-    expect(recipes.length).toBeGreaterThan(0);
+    const data = await response.json();
+    expect(data.items).toBeDefined();
+    expect(Array.isArray(data.items)).toBeTruthy();
+    expect(data.items.length).toBeGreaterThan(0);
+    expect(data.totalCount).toBeGreaterThan(0);
+    expect(data.pageIndex).toBe(1);
 
     // Check for seeded recipe
-    const carbonara = recipes.find(
+    const carbonara = data.items.find(
       (r: { name: string }) => r.name === TEST_RECIPES.spaghettiCarbonara.name
     );
     expect(carbonara).toBeDefined();

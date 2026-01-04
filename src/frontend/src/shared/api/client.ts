@@ -50,29 +50,35 @@ class ApiClient {
 
   async post<T, D = unknown>(path: string, data?: D, options?: RequestOptions): Promise<T> {
     const url = this.buildUrl(path, options?.params);
-    const response = await fetch(url, {
+    const fetchOptions: RequestInit = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
       },
-      body: data ? JSON.stringify(data) : undefined,
       ...options,
-    });
+    };
+    if (data !== undefined) {
+      fetchOptions.body = JSON.stringify(data);
+    }
+    const response = await fetch(url, fetchOptions);
     return this.handleResponse<T>(response);
   }
 
   async put<T, D = unknown>(path: string, data?: D, options?: RequestOptions): Promise<T> {
     const url = this.buildUrl(path, options?.params);
-    const response = await fetch(url, {
+    const fetchOptions: RequestInit = {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
       },
-      body: data ? JSON.stringify(data) : undefined,
       ...options,
-    });
+    };
+    if (data !== undefined) {
+      fetchOptions.body = JSON.stringify(data);
+    }
+    const response = await fetch(url, fetchOptions);
     return this.handleResponse<T>(response);
   }
 

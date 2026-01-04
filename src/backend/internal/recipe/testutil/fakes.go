@@ -86,6 +86,14 @@ func (r *FakeRecipeRepository) GetAll(ctx context.Context, limit, offset int) ([
 	return recipes[offset:end], nil
 }
 
+// Count returns the total number of recipes
+func (r *FakeRecipeRepository) Count(ctx context.Context) (int64, error) {
+	if r.FailOnGetAll {
+		return 0, errors.New("fake repository error")
+	}
+	return int64(len(r.Recipes)), nil
+}
+
 // Create creates a new recipe
 func (r *FakeRecipeRepository) Create(ctx context.Context, recipe *domain.Recipe) error {
 	r.CreateCalls = append(r.CreateCalls, CreateCall{Recipe: recipe})
