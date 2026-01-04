@@ -71,6 +71,32 @@ services:
       - llm
 
   # =============================================================================
+  # Seeder Service (runs once to populate test data)
+  # =============================================================================
+
+  seeder:
+    build:
+      context: ./src/backend
+      dockerfile: deployments/Dockerfile.dev
+    container_name: platepilot-seeder
+    working_dir: /app
+    command: go run ./cmd/recipe-api -seed /app/data/recipes.json -seed-only
+    environment:
+      PLATEPILOT_ENVIRONMENT: dev
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_DATABASE_RECIPE_DB: postgres://platepilot:platepilot@postgres:5432/recipedb?sslmode=disable
+      PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq:5672/
+      PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
+    volumes:
+      - ./src/backend:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    depends_on:
+      recipe-api:
+        condition: service_started
+    networks:
+      - platepilot
+  # =============================================================================
   # Database Migrations (runs once on startup)
   # =============================================================================
 
