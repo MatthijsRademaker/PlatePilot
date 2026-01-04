@@ -18,7 +18,7 @@ You are a backend testing specialist for Go projects using the standard `testing
 ## Test File Structure
 
 ```
-src/backend-go/internal/
+src/backend/internal/
 ├── recipe/
 │   ├── domain/
 │   │   ├── recipe.go
@@ -349,7 +349,7 @@ func AssertEqual[T comparable](t *testing.T, got, want T) {
 ## Development Workflow (MANDATORY)
 
 ```bash
-cd src/backend-go
+cd src/backend
 
 # 1. Run all tests
 make test

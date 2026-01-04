@@ -1,0 +1,255 @@
+# PlatePilot E2E Testing Docker Compose
+# Isolated test environment with deterministic data seeding
+#
+# Usage:
+#   docker compose -f docker-compose.e2e.yml up -d       # Start E2E environment
+#   docker compose -f docker-compose.e2e.yml down -v     # Clean up with volumes
+#
+# This compose file:
+# - Uses isolated volumes (e2e_ prefix) to avoid conflicts with dev environment
+# - Runs seeder service to populate deterministic test data
+# - Does NOT include frontend (Playwright tests will run against dev server or served build)
+
+services:
+  # =============================================================================
+  # Infrastructure
+  # =============================================================================
+
+  postgres-e2e:
+    image: ankane/pgvector:latest
+    container_name: platepilot-postgres-e2e
+    environment:
+      POSTGRES_USER: platepilot
+      POSTGRES_PASSWORD: platepilot
+      POSTGRES_DB: platepilot
+    ports:
+      - "5433:5432"  # Different port to avoid conflict with dev
+    volumes:
+      - e2e_postgres_data:/var/lib/postgresql/data
+      - ./src/backend/deployments/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U platepilot -d platepilot"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    networks:
+      - platepilot-e2e
+
+  rabbitmq-e2e:
+    image: rabbitmq:3-management-alpine
+    container_name: platepilot-rabbitmq-e2e
+    environment:
+      RABBITMQ_DEFAULT_USER: platepilot
+      RABBITMQ_DEFAULT_PASS: platepilot
+    ports:
+      - "5673:5672"   # Different port to avoid conflict with dev
+      - "15674:15672"
+    volumes:
+      - e2e_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - platepilot-e2e
+
+  # =============================================================================
+  # Database Migrations
+  # =============================================================================
+
+  migrate-e2e:
+    build:
+      context: ./src/backend
+      dockerfile: deployments/Dockerfile.dev
+    container_name: platepilot-migrate-e2e
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Running recipe migrations...' &&
+        migrate -path migrations/recipe -database 'postgres://platepilot:platepilot@postgres-e2e:5432/recipedb?sslmode=disable' up &&
+        echo 'Running mealplanner migrations...' &&
+        migrate -path migrations/mealplanner -database 'postgres://platepilot:platepilot@postgres-e2e:5432/mealplannerdb?sslmode=disable' up &&
+        echo 'Migrations complete!'
+      "
+    volumes:
+      - ./src/backend:/app
+    depends_on:
+      postgres-e2e:
+        condition: service_healthy
+    networks:
+      - platepilot-e2e
+
+  # =============================================================================
+  # Backend Services (Production build for faster startup)
+  # =============================================================================
+
+  recipe-api-e2e:
+    build:
+      context: ./src/backend
+      dockerfile: deployments/Dockerfile.dev
+    container_name: platepilot-recipe-api-e2e
+    working_dir: /app
+    command: go run ./cmd/recipe-api
+    environment:
+      PLATEPILOT_ENVIRONMENT: e2e
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_RECIPE_API_GRPC_ADDRESS: ":50051"
+      PLATEPILOT_DATABASE_RECIPE_DB: postgres://platepilot:platepilot@postgres-e2e:5432/recipedb?sslmode=disable
+      PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq-e2e:5672/
+      PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
+    volumes:
+      - ./src/backend:/app
+      - e2e_go_mod_cache:/go/pkg/mod
+      - e2e_go_build_cache:/root/.cache/go-build
+    depends_on:
+      postgres-e2e:
+        condition: service_healthy
+      rabbitmq-e2e:
+        condition: service_healthy
+      migrate-e2e:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "/bin/grpc_health_probe", "-addr=:50051"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    networks:
+      - platepilot-e2e
+
+  mealplanner-api-e2e:
+    build:
+      context: ./src/backend
+      dockerfile: deployments/Dockerfile.dev
+    container_name: platepilot-mealplanner-api-e2e
+    working_dir: /app
+    command: go run ./cmd/mealplanner-api
+    environment:
+      PLATEPILOT_ENVIRONMENT: e2e
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_MEALPLANNER_API_GRPC_ADDRESS: ":50052"
+      PLATEPILOT_DATABASE_MEALPLANNER_DB: postgres://platepilot:platepilot@postgres-e2e:5432/mealplannerdb?sslmode=disable
+      PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq-e2e:5672/
+      PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
+    volumes:
+      - ./src/backend:/app
+      - e2e_go_mod_cache:/go/pkg/mod
+      - e2e_go_build_cache:/root/.cache/go-build
+    depends_on:
+      postgres-e2e:
+        condition: service_healthy
+      rabbitmq-e2e:
+        condition: service_healthy
+      migrate-e2e:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "/bin/grpc_health_probe", "-addr=:50052"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    networks:
+      - platepilot-e2e
+
+  mobile-bff-e2e:
+    build:
+      context: ./src/backend
+      dockerfile: deployments/Dockerfile.dev
+    container_name: platepilot-mobile-bff-e2e
+    working_dir: /app
+    command: go run ./cmd/mobile-bff
+    environment:
+      PLATEPILOT_ENVIRONMENT: e2e
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_BFF_HTTP_ADDRESS: ":8080"
+      PLATEPILOT_BFF_RECIPE_API_ADDRESS: recipe-api-e2e:50051
+      PLATEPILOT_BFF_MEALPLAN_API_ADDRESS: mealplanner-api-e2e:50052
+      PLATEPILOT_BFF_CORS_ALLOWED_ORIGINS: "*"
+    ports:
+      - "8081:8080"  # Different port to avoid conflict with dev
+    volumes:
+      - ./src/backend:/app
+      - e2e_go_mod_cache:/go/pkg/mod
+      - e2e_go_build_cache:/root/.cache/go-build
+    depends_on:
+      recipe-api-e2e:
+        condition: service_healthy
+      mealplanner-api-e2e:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - platepilot-e2e
+
+  # =============================================================================
+  # Seeder Service (runs once to populate test data)
+  # =============================================================================
+
+  seeder-e2e:
+    build:
+      context: ./src/backend
+      dockerfile: deployments/Dockerfile.dev
+    container_name: platepilot-seeder-e2e
+    working_dir: /app
+    command: go run ./cmd/recipe-api -seed /app/e2e-tests/fixtures/seed-data.json -seed-only
+    environment:
+      PLATEPILOT_ENVIRONMENT: e2e
+      PLATEPILOT_LOG_LEVEL: info
+      PLATEPILOT_DATABASE_RECIPE_DB: postgres://platepilot:platepilot@postgres-e2e:5432/recipedb?sslmode=disable
+      PLATEPILOT_RABBITMQ_URL: amqp://platepilot:platepilot@rabbitmq-e2e:5672/
+      PLATEPILOT_RABBITMQ_EXCHANGE_NAME: recipe-events
+    volumes:
+      - ./src/backend:/app
+      - ./e2e-tests/fixtures:/app/e2e-tests/fixtures:ro
+      - e2e_go_mod_cache:/go/pkg/mod
+      - e2e_go_build_cache:/root/.cache/go-build
+    depends_on:
+      mobile-bff-e2e:
+        condition: service_healthy
+    networks:
+      - platepilot-e2e
+
+  # =============================================================================
+  # Frontend (Vite dev server for E2E tests)
+  # =============================================================================
+
+  frontend-e2e:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile.dev
+    container_name: platepilot-frontend-e2e
+    working_dir: /app
+    command: bun run dev -- --host 0.0.0.0
+    environment:
+      VITE_API_BASE_URL: http://localhost:8081
+    ports:
+      - "9001:9000"  # Different port to avoid conflict with dev
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+    depends_on:
+      seeder-e2e:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9000"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 45s
+    networks:
+      - platepilot-e2e
+
+volumes:
+  e2e_postgres_data:
+  e2e_rabbitmq_data:
+  e2e_go_mod_cache:
+  e2e_go_build_cache:
+
+networks:
+  platepilot-e2e:
+    driver: bridge

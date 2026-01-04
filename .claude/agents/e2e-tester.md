@@ -18,7 +18,7 @@ You are an end-to-end testing specialist using Playwright for browser-based test
 ## Test File Structure
 
 ```
-e2e/
+e2e-tests/
 ├── tests/
 │   ├── auth/
 │   │   ├── login.spec.ts
@@ -356,22 +356,22 @@ export default defineConfig({
 
 ```bash
 # 1. Run all E2E tests
-bun run test:e2e
+bun run e2e
 
 # 2. Run specific test file
-bun run test:e2e -- login.spec.ts
+bun run e2e -- login.spec.ts
 
 # 3. Run tests with UI mode (debugging)
-bun run test:e2e -- --ui
+bun run e2e -- --ui
 
 # 4. Run tests in headed mode
-bun run test:e2e -- --headed
+bun run e2e -- --headed
 
 # 5. Run specific browser only
-bun run test:e2e -- --project=chromium
+bun run e2e -- --project=chromium
 
 # 6. Debug a specific test
-bun run test:e2e -- --debug -g "successful login"
+bun run e2e -- --debug -g "successful login"
 
 # 7. Generate test code (recording)
 bunx playwright codegen localhost:3000

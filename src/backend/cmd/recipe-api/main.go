@@ -27,6 +27,7 @@ import (
 func main() {
 	// Parse command line flags
 	seedFile := flag.String("seed", "", "Path to seed file (e.g., recipes.json)")
+	seedOnly := flag.Bool("seed-only", false, "Exit after seeding (use with -seed)")
 	flag.Parse()
 
 	// Load configuration
@@ -99,6 +100,15 @@ func main() {
 		if err := seeder.SeedFromFile(ctx, *seedFile); err != nil {
 			slog.Error("failed to seed database", "error", err)
 			os.Exit(1)
+		}
+
+		// Exit after seeding if --seed-only is specified
+		if *seedOnly {
+			slog.Info("seed-only mode: exiting after successful seeding")
+			if publisher != nil {
+				_ = publisher.Close()
+			}
+			os.Exit(0)
 		}
 	}
 

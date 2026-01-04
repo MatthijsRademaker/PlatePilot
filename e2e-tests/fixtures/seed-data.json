@@ -1,0 +1,232 @@
+{
+  "recipes": [
+    {
+      "id": "e2e00001-0001-0001-0001-000000000001",
+      "name": "Spaghetti Carbonara",
+      "description": "Classic Italian pasta dish with eggs, cheese, and pancetta",
+      "prepTime": "15 minutes",
+      "cookTime": "20 minutes",
+      "mainIngredient": {
+        "id": "e2e00001-1001-0001-0001-000000000001",
+        "name": "Spaghetti",
+        "quantity": "1 pound"
+      },
+      "metadata": {},
+      "nutritionalInfo": { "Calories": 450, "Protein": 18, "Carbs": 52 },
+      "cuisine": {
+        "id": "e2e00001-2001-0001-0001-000000000001",
+        "name": "Italian"
+      },
+      "ingredients": [
+        {
+          "id": "e2e00001-1002-0001-0001-000000000001",
+          "name": "Eggs",
+          "quantity": "4 large"
+        },
+        {
+          "id": "e2e00001-1003-0001-0001-000000000001",
+          "name": "Pancetta",
+          "quantity": "8 oz"
+        },
+        {
+          "id": "e2e00001-1004-0001-0001-000000000001",
+          "name": "Parmesan Cheese",
+          "quantity": "1 cup, grated"
+        }
+      ],
+      "directions": [
+        "Bring a large pot of salted water to boil",
+        "Cook spaghetti until al dente",
+        "Meanwhile, cook pancetta until crispy",
+        "Mix eggs with grated parmesan",
+        "Combine hot pasta with pancetta",
+        "Add egg mixture and toss quickly off heat"
+      ]
+    },
+    {
+      "id": "e2e00001-0001-0001-0001-000000000002",
+      "name": "Chicken Tikka Masala",
+      "description": "Creamy Indian curry with tender marinated chicken",
+      "prepTime": "30 minutes",
+      "cookTime": "45 minutes",
+      "mainIngredient": {
+        "id": "e2e00001-1005-0001-0001-000000000001",
+        "name": "Chicken Breast",
+        "quantity": "2 pounds"
+      },
+      "metadata": {},
+      "nutritionalInfo": { "Calories": 380, "Protein": 32, "Carbs": 18 },
+      "cuisine": {
+        "id": "e2e00001-2002-0001-0001-000000000001",
+        "name": "Indian"
+      },
+      "ingredients": [
+        {
+          "id": "e2e00001-1006-0001-0001-000000000001",
+          "name": "Yogurt",
+          "quantity": "1 cup"
+        },
+        {
+          "id": "e2e00001-1007-0001-0001-000000000001",
+          "name": "Tomato Sauce",
+          "quantity": "2 cups"
+        },
+        {
+          "id": "e2e00001-1008-0001-0001-000000000001",
+          "name": "Heavy Cream",
+          "quantity": "1 cup"
+        },
+        {
+          "id": "e2e00001-1009-0001-0001-000000000001",
+          "name": "Garam Masala",
+          "quantity": "2 tbsp"
+        }
+      ],
+      "directions": [
+        "Marinate chicken in yogurt and spices for 2 hours",
+        "Grill or broil chicken until charred",
+        "Prepare masala sauce with tomatoes and cream",
+        "Add chicken to sauce and simmer for 15 minutes",
+        "Serve with basmati rice and naan"
+      ]
+    },
+    {
+      "id": "e2e00001-0001-0001-0001-000000000003",
+      "name": "Beef Tacos",
+      "description": "Classic Mexican street tacos with seasoned ground beef",
+      "prepTime": "20 minutes",
+      "cookTime": "15 minutes",
+      "mainIngredient": {
+        "id": "e2e00001-1010-0001-0001-000000000001",
+        "name": "Ground Beef",
+        "quantity": "1 pound"
+      },
+      "metadata": {},
+      "nutritionalInfo": { "Calories": 320, "Protein": 22, "Carbs": 28 },
+      "cuisine": {
+        "id": "e2e00001-2003-0001-0001-000000000001",
+        "name": "Mexican"
+      },
+      "ingredients": [
+        {
+          "id": "e2e00001-1011-0001-0001-000000000001",
+          "name": "Corn Tortillas",
+          "quantity": "12 pieces"
+        },
+        {
+          "id": "e2e00001-1012-0001-0001-000000000001",
+          "name": "White Onion",
+          "quantity": "1 medium, diced"
+        },
+        {
+          "id": "e2e00001-1013-0001-0001-000000000001",
+          "name": "Fresh Cilantro",
+          "quantity": "1/2 cup, chopped"
+        },
+        {
+          "id": "e2e00001-1014-0001-0001-000000000001",
+          "name": "Lime",
+          "quantity": "2 pieces"
+        }
+      ],
+      "directions": [
+        "Brown the ground beef in a skillet",
+        "Add taco seasoning and a splash of water",
+        "Simmer until sauce thickens",
+        "Warm tortillas on a dry pan",
+        "Assemble tacos with beef, onion, and cilantro",
+        "Serve with lime wedges"
+      ]
+    },
+    {
+      "id": "e2e00001-0001-0001-0001-000000000004",
+      "name": "Caesar Salad",
+      "description": "Classic romaine salad with creamy Caesar dressing",
+      "prepTime": "15 minutes",
+      "cookTime": "0 minutes",
+      "mainIngredient": {
+        "id": "e2e00001-1015-0001-0001-000000000001",
+        "name": "Romaine Lettuce",
+        "quantity": "2 heads"
+      },
+      "metadata": {},
+      "nutritionalInfo": { "Calories": 220, "Protein": 8, "Carbs": 12 },
+      "cuisine": {
+        "id": "e2e00001-2004-0001-0001-000000000001",
+        "name": "American"
+      },
+      "ingredients": [
+        {
+          "id": "e2e00001-1016-0001-0001-000000000001",
+          "name": "Croutons",
+          "quantity": "1 cup"
+        },
+        {
+          "id": "e2e00001-1004-0001-0001-000000000001",
+          "name": "Parmesan Cheese",
+          "quantity": "1/2 cup, shaved"
+        },
+        {
+          "id": "e2e00001-1017-0001-0001-000000000001",
+          "name": "Caesar Dressing",
+          "quantity": "1/2 cup"
+        }
+      ],
+      "directions": [
+        "Wash and chop romaine lettuce",
+        "Prepare Caesar dressing",
+        "Toss lettuce with dressing",
+        "Top with croutons and parmesan shavings",
+        "Serve immediately"
+      ]
+    },
+    {
+      "id": "e2e00001-0001-0001-0001-000000000005",
+      "name": "Pad Thai",
+      "description": "Traditional Thai stir-fried rice noodles",
+      "prepTime": "25 minutes",
+      "cookTime": "15 minutes",
+      "mainIngredient": {
+        "id": "e2e00001-1018-0001-0001-000000000001",
+        "name": "Rice Noodles",
+        "quantity": "8 oz"
+      },
+      "metadata": {},
+      "nutritionalInfo": { "Calories": 410, "Protein": 16, "Carbs": 58 },
+      "cuisine": {
+        "id": "e2e00001-2005-0001-0001-000000000001",
+        "name": "Thai"
+      },
+      "ingredients": [
+        {
+          "id": "e2e00001-1019-0001-0001-000000000001",
+          "name": "Firm Tofu",
+          "quantity": "14 oz"
+        },
+        {
+          "id": "e2e00001-1020-0001-0001-000000000001",
+          "name": "Bean Sprouts",
+          "quantity": "2 cups"
+        },
+        {
+          "id": "e2e00001-1021-0001-0001-000000000001",
+          "name": "Peanuts",
+          "quantity": "1/2 cup, crushed"
+        },
+        {
+          "id": "e2e00001-1022-0001-0001-000000000001",
+          "name": "Fish Sauce",
+          "quantity": "3 tbsp"
+        }
+      ],
+      "directions": [
+        "Soak rice noodles in warm water",
+        "Press and cube tofu, then pan-fry until golden",
+        "Prepare pad thai sauce",
+        "Stir-fry noodles with sauce",
+        "Add tofu and bean sprouts",
+        "Garnish with peanuts and lime"
+      ]
+    }
+  ]
+}

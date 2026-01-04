@@ -4,24 +4,31 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/backend-go/**'
+      - 'src/backend/**'
+      - 'src/frontend/**'
+      - 'e2e-tests/**'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'src/backend-go/**'
+      - 'src/backend/**'
+      - 'src/frontend/**'
+      - 'e2e-tests/**'
       - '.github/workflows/ci.yml'
 
 env:
   GO_VERSION: '1.24'
 
 jobs:
-  lint:
-    name: Lint
+  # ============================================
+  # Backend Jobs
+  # ============================================
+  backend-lint:
+    name: Backend Lint
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: src/backend-go
+        working-directory: src/backend
 
     steps:
       - name: Checkout code
@@ -31,21 +38,21 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: src/backend-go/go.sum
+          cache-dependency-path: src/backend/go.sum
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
-          working-directory: src/backend-go
+          working-directory: src/backend
           args: --timeout=5m
 
-  test:
-    name: Test
+  backend-test:
+    name: Backend Test
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: src/backend-go
+        working-directory: src/backend
 
     steps:
       - name: Checkout code
@@ -55,7 +62,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: src/backend-go/go.sum
+          cache-dependency-path: src/backend/go.sum
 
       - name: Download dependencies
         run: go mod download
@@ -66,17 +73,17 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
-          files: src/backend-go/coverage.out
+          files: src/backend/coverage.out
           flags: unittests
           fail_ci_if_error: false
 
-  build:
-    name: Build
+  backend-build:
+    name: Backend Build
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [backend-lint, backend-test]
     defaults:
       run:
-        working-directory: src/backend-go
+        working-directory: src/backend
 
     steps:
       - name: Checkout code
@@ -86,7 +93,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: src/backend-go/go.sum
+          cache-dependency-path: src/backend/go.sum
 
       - name: Build binaries
         run: |
@@ -98,13 +105,83 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: binaries
-          path: src/backend-go/bin/
+          path: src/backend/bin/
           retention-days: 7
 
+  # ============================================
+  # Frontend Jobs
+  # ============================================
+  frontend:
+    name: Frontend Lint & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run linter
+        run: bun run lint
+
+      - name: Run tests
+        run: bun run test
+
+  # ============================================
+  # E2E Tests
+  # ============================================
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [backend-build, frontend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Playwright dependencies
+        working-directory: e2e-tests
+        run: |
+          bun install --frozen-lockfile
+          bunx playwright install chromium --with-deps
+
+      - name: Start E2E stack
+        run: docker compose -f docker-compose.e2e.yml up -d --build --wait
+        timeout-minutes: 10
+
+      - name: Run E2E tests
+        working-directory: e2e-tests
+        run: bun run test
+
+      - name: Stop E2E stack
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e-tests/test-results/
+          retention-days: 7
+
+  # ============================================
+  # Main Branch Only: Docker Build
+  # ============================================
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
@@ -117,8 +194,8 @@ jobs:
       - name: Build Recipe API image
         uses: docker/build-push-action@v6
         with:
-          context: src/backend-go
-          file: src/backend-go/deployments/Dockerfile
+          context: src/backend
+          file: src/backend/deployments/Dockerfile
           target: recipe-api
           push: false
           tags: platepilot/recipe-api:latest
@@ -128,8 +205,8 @@ jobs:
       - name: Build MealPlanner API image
         uses: docker/build-push-action@v6
         with:
-          context: src/backend-go
-          file: src/backend-go/deployments/Dockerfile
+          context: src/backend
+          file: src/backend/deployments/Dockerfile
           target: mealplanner-api
           push: false
           tags: platepilot/mealplanner-api:latest
@@ -139,18 +216,21 @@ jobs:
       - name: Build Mobile BFF image
         uses: docker/build-push-action@v6
         with:
-          context: src/backend-go
-          file: src/backend-go/deployments/Dockerfile
+          context: src/backend
+          file: src/backend/deployments/Dockerfile
           target: mobile-bff
           push: false
           tags: platepilot/mobile-bff:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # ============================================
+  # Main Branch Only: Integration Tests
+  # ============================================
   integration:
     name: Integration Test
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     services:
@@ -184,7 +264,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: src/backend-go
+        working-directory: src/backend
 
     steps:
       - name: Checkout code
@@ -194,7 +274,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: src/backend-go/go.sum
+          cache-dependency-path: src/backend/go.sum
 
       - name: Install migrate
         run: |

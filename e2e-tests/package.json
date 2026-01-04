@@ -1,15 +1,33 @@
 {
   "name": "e2e-tests",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {},
-  "keywords": [],
+  "description": "End-to-end tests for PlatePilot",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:headed": "playwright test --headed",
+    "test:chromium": "playwright test --project=chromium",
+    "report": "playwright show-report",
+    "stack:up": "docker compose -f ../docker-compose.e2e.yml up -d --wait",
+    "stack:down": "docker compose -f ../docker-compose.e2e.yml down",
+    "stack:build": "docker compose -f ../docker-compose.e2e.yml build",
+    "stack:clean": "docker compose -f ../docker-compose.e2e.yml down -v --remove-orphans",
+    "stack:logs": "docker compose -f ../docker-compose.e2e.yml logs -f",
+    "e2e": "bun run stack:up && bun run test; bun run stack:down",
+    "e2e:keep": "bun run stack:up && bun run test",
+    "e2e:clean": "bun run stack:clean && bun run stack:up && bun run test; bun run stack:down"
+  },
+  "keywords": [
+    "e2e",
+    "playwright",
+    "testing"
+  ],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "devDependencies": {
     "@playwright/test": "^1.57.0",
-    "@types/node": "^25.0.3"
+    "@types/node": "^22.0.0"
   }
 }

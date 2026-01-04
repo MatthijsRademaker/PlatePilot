@@ -21,10 +21,10 @@ Mobile development is done through capacitor. Quasar handles this for us and the
 
 | Component | Location | Description |
 |-----------|----------|-------------|
-| Recipe API | `src/backend-go/cmd/recipe-api/` | Write service, gRPC, event publishing |
-| MealPlanner API | `src/backend-go/cmd/mealplanner-api/` | Read service, vector search, event consuming |
-| Mobile BFF | `src/backend-go/cmd/mobile-bff/` | REST gateway for clients |
-| Common | `src/backend-go/internal/common/` | Shared domain, events, config |
+| Recipe API | `src/backend/cmd/recipe-api/` | Write service, gRPC, event publishing |
+| MealPlanner API | `src/backend/cmd/mealplanner-api/` | Read service, vector search, event consuming |
+| Mobile BFF | `src/backend/cmd/mobile-bff/` | REST gateway for clients |
+| Common | `src/backend/internal/common/` | Shared domain, events, config |
 | Frontend | `src/frontend/` | Vue/Quasar app with vertical slice architecture |
 
 ### Completed Migration Phases
@@ -69,7 +69,7 @@ Mobile development is done through capacitor. Quasar handles this for us and the
 |------|----------|---------|
 | `docker-compose.yml` | Project root | **Local development** - hot reload, debug logging |
 | `docker-compose.prod.yml` | Project root | Production builds - optimized images |
-| `deployments/docker-compose.yml` | `src/backend-go/` | Backend-only production (legacy, prefer root files) |
+| `deployments/docker-compose.yml` | `src/backend/` | Backend-only production (legacy, prefer root files) |
 
 **For local development**, always run from the project root:
 ```bash
@@ -88,7 +88,7 @@ docker compose -f docker-compose.prod.yml up --build
 ## Build & Development Commands
 
 ```bash
-cd src/backend-go
+cd src/backend
 
 # First time setup
 make tools              # Install dev tools (golangci-lint, air, protoc plugins)
@@ -152,7 +152,7 @@ The backend follows **CQRS pattern** with event-driven architecture:
 ### Project Structure
 
 ```
-src/backend-go/
+src/backend/
 ├── cmd/                          # Service entry points
 │   ├── recipe-api/main.go
 │   ├── mealplanner-api/main.go

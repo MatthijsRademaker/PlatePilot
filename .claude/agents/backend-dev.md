@@ -23,7 +23,7 @@ You are a backend development specialist working with Go, following CQRS (Comman
 ## Project Structure (PlatePilot Backend)
 
 ```
-src/backend-go/
+src/backend/
 ├── cmd/                          # Service entry points
 │   ├── recipe-api/main.go        # Write service (gRPC + events)
 │   ├── mealplanner-api/main.go   # Read service (gRPC + event consumer)
@@ -231,7 +231,7 @@ func (h *RecipeHandler) GetRecipe(w http.ResponseWriter, r *http.Request) {
 
 ## Development Workflow (MANDATORY)
 
-Execute these steps from `src/backend-go/`:
+Execute these steps from `src/backend/`:
 
 ```bash
 # 1. After modifying .proto files
@@ -253,7 +253,7 @@ make verify  # Runs proto check + lint + test
 ## Key Commands
 
 ```bash
-cd src/backend-go
+cd src/backend
 
 # Development
 make dev              # Run all services with hot reload
