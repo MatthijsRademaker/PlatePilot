@@ -1,9 +1,5 @@
 import { ref, computed } from 'vue';
-import {
-  useGetRecipeAll,
-  useGetRecipeId,
-  useGetRecipeSimilar,
-} from '@/api/generated/platepilot';
+import { useGetRecipeAll, useGetRecipeId, useGetRecipeSimilar } from '@/api/generated/platepilot';
 
 export function useRecipeList() {
   const pageIndex = ref(1);
@@ -48,7 +44,7 @@ export function useRecipeDetail(recipeId: () => string) {
   return {
     recipe: data,
     loading: isPending,
-    error: computed(() => error.value?.message ?? null),
+    error: computed(() => error.value?.error ?? null),
   };
 }
 

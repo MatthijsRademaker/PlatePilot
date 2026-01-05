@@ -1,11 +1,11 @@
 <template>
   <div class="week-view">
-    <div class="row items-center justify-between q-mb-md">
-      <q-btn flat icon="chevron_left" @click="$emit('prev')" />
-      <div class="text-h6">
+    <div class="week-nav tw-flex tw-items-center tw-justify-between tw-mb-4">
+      <q-btn flat round icon="chevron_left" class="nav-btn" @click="$emit('prev')" />
+      <div class="text-h6 tw-font-semibold">
         {{ formatDateRange(weekPlan.startDate, weekPlan.endDate) }}
       </div>
-      <q-btn flat icon="chevron_right" @click="$emit('next')" />
+      <q-btn flat round icon="chevron_right" class="nav-btn" @click="$emit('next')" />
     </div>
 
     <div class="row q-col-gutter-sm">
@@ -14,12 +14,12 @@
         :key="day.date"
         class="col"
       >
-        <q-card flat bordered>
-          <q-card-section class="q-pa-sm text-center bg-grey-2">
-            <div class="text-caption text-weight-medium">
+        <q-card flat class="day-card">
+          <q-card-section class="day-header q-pa-sm text-center">
+            <div class="text-caption text-weight-medium tw-text-white">
               {{ formatDayName(day.date) }}
             </div>
-            <div class="text-caption text-grey">
+            <div class="text-caption tw-text-white/80">
               {{ formatDate(day.date) }}
             </div>
           </q-card-section>
@@ -80,5 +80,24 @@ function formatDateRange(startStr: string, endStr: string): string {
 <style scoped lang="scss">
 .week-view {
   overflow-x: auto;
+}
+
+.nav-btn {
+  color: #ff7f50;
+  background: #fff5f2;
+
+  &:hover {
+    background: #ffebe5;
+  }
+}
+
+.day-card {
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.day-header {
+  background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
 }
 </style>

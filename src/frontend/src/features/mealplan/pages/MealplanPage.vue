@@ -1,25 +1,39 @@
 <template>
-  <q-page padding>
-    <div class="row items-center justify-between q-mb-md">
-      <h1 class="text-h4 q-ma-none">Meal Plan</h1>
-      <div class="row q-gutter-sm">
-        <q-btn flat label="Today" @click="goToCurrentWeek" />
-        <q-btn flat icon="delete_sweep" label="Clear Week" @click="confirmClearWeek" />
+  <q-page class="mealplan-page">
+    <div class="page-header">
+      <div class="tw-flex tw-items-center tw-justify-between">
+        <div class="tw-flex tw-items-center tw-gap-3">
+          <div class="header-icon">
+            <q-icon name="calendar_month" size="24px" color="white" />
+          </div>
+          <h1 class="text-h5 q-ma-none tw-font-semibold">Meal Plan</h1>
+        </div>
+        <div class="row q-gutter-sm">
+          <q-btn flat label="Today" class="header-btn" @click="goToCurrentWeek" />
+          <q-btn flat icon="delete_sweep" class="header-btn" @click="confirmClearWeek" />
+        </div>
       </div>
     </div>
 
-    <WeekView
-      :week-plan="currentWeek"
-      @prev="navigateWeek('prev')"
-      @next="navigateWeek('next')"
-      @slot-click="openRecipeSelector"
-      @slot-clear="clearSlot($event.id)"
-    />
+    <div class="tw-px-4 tw-pb-4">
+      <WeekView
+        :week-plan="currentWeek"
+        @prev="navigateWeek('prev')"
+        @next="navigateWeek('next')"
+        @slot-click="openRecipeSelector"
+        @slot-clear="clearSlot($event.id)"
+      />
+    </div>
 
     <q-dialog v-model="selectorOpen">
-      <q-card style="min-width: 400px; max-width: 600px">
-        <q-card-section>
-          <div class="text-h6">Select a Recipe</div>
+      <q-card class="selector-card">
+        <q-card-section class="selector-header">
+          <div class="tw-flex tw-items-center tw-gap-2">
+            <div class="selector-icon">
+              <q-icon name="restaurant_menu" size="20px" color="white" />
+            </div>
+            <div class="text-h6 tw-font-semibold">Select a Recipe</div>
+          </div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
@@ -29,12 +43,17 @@
               dense
               outlined
               placeholder="Search recipes..."
-              class="col"
-            />
+              class="col search-input"
+            >
+              <template #prepend>
+                <q-icon name="search" />
+              </template>
+            </q-input>
             <q-btn
               color="primary"
               icon="auto_awesome"
-              label="Get AI Suggestions"
+              label="AI Suggest"
+              unelevated
               :loading="suggestionsLoading"
               @click="handleGetSuggestions"
             />
@@ -43,20 +62,20 @@
 
         <!-- AI Suggestions Section -->
         <q-card-section v-if="suggestionsError" class="q-pt-none">
-          <q-banner class="bg-negative text-white">
+          <q-banner class="bg-negative text-white tw-rounded-lg">
             {{ suggestionsError }}
           </q-banner>
         </q-card-section>
 
         <q-card-section v-if="suggestedRecipes.length > 0" class="q-pt-none">
           <div class="q-mb-sm row items-center justify-between">
-            <span class="text-subtitle2 text-primary">
-              <q-icon name="auto_awesome" class="q-mr-xs" />
+            <span class="text-subtitle2 text-primary tw-flex tw-items-center tw-gap-1">
+              <q-icon name="auto_awesome" />
               AI Suggestions
             </span>
             <q-btn flat dense size="sm" icon="close" @click="clearSuggestions" />
           </div>
-          <q-list bordered separator class="rounded-borders bg-blue-1">
+          <q-list bordered separator class="suggestions-list tw-rounded-lg">
             <q-item
               v-for="recipe in suggestedRecipes"
               :key="'suggestion-' + recipe.id"
@@ -65,10 +84,12 @@
               @click="selectRecipe(recipe)"
             >
               <q-item-section avatar>
-                <q-icon name="auto_awesome" color="primary" />
+                <div class="suggestion-avatar">
+                  <q-icon name="auto_awesome" size="16px" color="white" />
+                </div>
               </q-item-section>
               <q-item-section>
-                <q-item-label>{{ recipe.name }}</q-item-label>
+                <q-item-label class="tw-font-medium">{{ recipe.name }}</q-item-label>
                 <q-item-label caption>{{ recipe.description }}</q-item-label>
               </q-item-section>
             </q-item>
@@ -78,7 +99,7 @@
         <!-- All Recipes Section -->
         <q-card-section class="scroll q-pt-none" style="max-height: 300px">
           <div class="text-subtitle2 text-grey-7 q-mb-sm">All Recipes</div>
-          <q-list separator>
+          <q-list separator class="recipes-list tw-rounded-lg">
             <q-item
               v-for="recipe in filteredRecipes"
               :key="recipe.id ?? ''"
@@ -86,15 +107,20 @@
               v-ripple
               @click="selectRecipe(recipe)"
             >
+              <q-item-section avatar>
+                <div class="recipe-avatar">
+                  <q-icon name="restaurant_menu" size="16px" color="white" />
+                </div>
+              </q-item-section>
               <q-item-section>
-                <q-item-label>{{ recipe.name }}</q-item-label>
+                <q-item-label class="tw-font-medium">{{ recipe.name }}</q-item-label>
                 <q-item-label caption>{{ recipe.description }}</q-item-label>
               </q-item-section>
             </q-item>
           </q-list>
         </q-card-section>
 
-        <q-card-actions align="right">
+        <q-card-actions align="right" class="tw-px-4 tw-pb-4">
           <q-btn flat label="Cancel" v-close-popup />
         </q-card-actions>
       </q-card>
@@ -184,3 +210,93 @@ function confirmClearWeek() {
   });
 }
 </script>
+
+<style scoped lang="scss">
+.mealplan-page {
+  background: linear-gradient(180deg, #fff8f5 0%, #ffffff 100%);
+  min-height: 100vh;
+}
+
+.page-header {
+  background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
+  padding: 24px 16px;
+  margin-bottom: 16px;
+  color: white;
+}
+
+.header-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-btn {
+  color: white;
+  background: rgba(255, 255, 255, 0.15);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+.selector-card {
+  min-width: 400px;
+  max-width: 600px;
+  border-radius: 20px;
+}
+
+.selector-header {
+  background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
+  color: white;
+  border-radius: 20px 20px 0 0;
+}
+
+.selector-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-input {
+  :deep(.q-field__control) {
+    border-radius: 12px;
+  }
+}
+
+.suggestions-list {
+  background: #fff5f2;
+  border-color: rgba(255, 127, 80, 0.2) !important;
+}
+
+.suggestion-avatar {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recipes-list {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.recipe-avatar {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #ffa07a 0%, #ff7f50 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>

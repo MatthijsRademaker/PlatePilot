@@ -1,30 +1,47 @@
 <template>
-  <q-page padding>
-    <h1 class="text-h4 q-mt-none q-mb-md">Search Recipes</h1>
+  <q-page class="search-page">
+    <div class="page-header">
+      <div class="tw-flex tw-items-center tw-gap-3 tw-mb-4">
+        <div class="header-icon">
+          <q-icon name="search" size="24px" color="white" />
+        </div>
+        <h1 class="text-h5 q-ma-none tw-font-semibold">Search Recipes</h1>
+      </div>
 
-    <q-input
-      v-model="searchQuery"
-      outlined
-      placeholder="Search for recipes..."
-      debounce="300"
-      clearable
-    >
-      <template #prepend>
-        <q-icon name="search" />
-      </template>
-    </q-input>
+      <q-input
+        v-model="searchQuery"
+        outlined
+        placeholder="Search for recipes..."
+        debounce="300"
+        clearable
+        class="search-input"
+        bg-color="white"
+      >
+        <template #prepend>
+          <q-icon name="search" />
+        </template>
+      </q-input>
+    </div>
 
-    <div class="q-mt-lg">
-      <div v-if="loading" class="row justify-center">
+    <div class="tw-px-4 tw-pb-4">
+      <div v-if="loading" class="row justify-center tw-py-8">
         <q-spinner size="lg" color="primary" />
       </div>
 
-      <div v-else-if="results.length === 0 && searchQuery" class="text-center text-grey">
-        No recipes found for "{{ searchQuery }}"
+      <div v-else-if="results.length === 0 && searchQuery" class="empty-state tw-text-center tw-py-12">
+        <div class="empty-icon tw-mx-auto tw-mb-4">
+          <q-icon name="search_off" size="48px" color="grey-5" />
+        </div>
+        <div class="text-body1 text-grey-6">No recipes found for "{{ searchQuery }}"</div>
+        <div class="text-caption text-grey-5 tw-mt-1">Try a different search term</div>
       </div>
 
-      <div v-else-if="results.length === 0" class="text-center text-grey">
-        Start typing to search for recipes
+      <div v-else-if="results.length === 0" class="empty-state tw-text-center tw-py-12">
+        <div class="empty-icon tw-mx-auto tw-mb-4">
+          <q-icon name="restaurant_menu" size="48px" color="grey-5" />
+        </div>
+        <div class="text-body1 text-grey-6">Start typing to search</div>
+        <div class="text-caption text-grey-5 tw-mt-1">Find recipes by name or description</div>
       </div>
 
       <div v-else class="row q-col-gutter-md">
@@ -81,3 +98,53 @@ function goToRecipe(recipe: HandlerRecipeJSON) {
   void router.push({ name: 'recipe-detail', params: { id: recipe.id } });
 }
 </script>
+
+<style scoped lang="scss">
+.search-page {
+  background: linear-gradient(180deg, #fff8f5 0%, #ffffff 100%);
+  min-height: 100vh;
+}
+
+.page-header {
+  background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
+  padding: 24px 16px;
+  margin-bottom: 16px;
+  color: white;
+}
+
+.header-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-input {
+  :deep(.q-field__control) {
+    border-radius: 14px;
+  }
+
+  :deep(.q-field__native) {
+    color: #333;
+  }
+}
+
+.empty-state {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.empty-icon {
+  width: 80px;
+  height: 80px;
+  background: #f5f5f5;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>

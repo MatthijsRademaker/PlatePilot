@@ -73,7 +73,7 @@ The backend is implemented in Go following CQRS (Command Query Responsibility Se
 ### Backend Directory Structure
 
 ```
-src/backend-go/
+src/backend/
 ├── cmd/                              # Service entry points
 │   ├── recipe-api/main.go            # Recipe write service
 │   ├── mealplanner-api/main.go       # MealPlanner read service

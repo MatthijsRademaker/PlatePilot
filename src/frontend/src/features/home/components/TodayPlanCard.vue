@@ -1,63 +1,71 @@
 <template>
-  <q-card class="today-plan-card">
-    <q-card-section>
-      <div class="row items-center q-mb-md">
-        <q-icon name="today" size="24px" color="primary" class="q-mr-sm" />
-        <div class="text-h6">My Plan For Today</div>
+  <div class="today-plan-card">
+    <!-- Card Header -->
+    <div class="card-header tw-px-4 tw-pt-4 tw-pb-3">
+      <div class="tw-flex tw-items-center tw-gap-2">
+        <q-icon name="restaurant" size="18px" color="white" class="tw-opacity-80" />
+        <span class="tw-text-white tw-font-medium">Your Meal Plan Today</span>
       </div>
+    </div>
 
-      <template v-if="hasMealsPlanned">
-        <div class="column q-gutter-sm">
-          <div
-            v-for="meal in todayMeals"
-            :key="meal.mealType"
-            class="meal-row row items-center q-pa-sm rounded-borders cursor-pointer"
-            :class="{ 'meal-row--clickable': meal.recipe }"
-            @click="handleMealClick(meal)"
-          >
-            <q-icon
-              :name="getMealIcon(meal.mealType)"
-              size="20px"
-              :color="meal.recipe ? 'primary' : 'grey'"
-              class="q-mr-sm"
-            />
-            <div class="column">
-              <span class="text-caption text-weight-medium text-uppercase">
-                {{ formatMealType(meal.mealType) }}
-              </span>
-              <span
-                class="text-body2"
-                :class="meal.recipe ? '' : 'text-grey'"
-              >
-                {{ meal.recipe?.name || 'Not planned' }}
-              </span>
-            </div>
-            <q-icon
-              v-if="meal.recipe"
-              name="chevron_right"
-              size="20px"
-              color="grey"
-              class="q-ml-auto"
+    <!-- Featured Meal Content -->
+    <div class="card-content tw-px-4 tw-pb-4">
+      <div class="featured-meal-wrapper">
+        <template v-if="featuredMeal?.recipe">
+          <!-- Recipe Image -->
+          <div class="meal-image-container">
+            <img
+              :src="getRecipeImage(featuredMeal.recipe.name)"
+              :alt="featuredMeal.recipe.name"
+              class="meal-image"
             />
           </div>
-        </div>
-      </template>
 
-      <template v-else>
-        <div class="text-center q-py-md">
-          <q-icon name="event_busy" size="48px" color="grey-5" />
-          <div class="text-body1 text-grey q-mt-sm">No meals planned for today</div>
-          <q-btn
-            label="Plan Your Meals"
-            color="primary"
-            outline
-            class="q-mt-md"
-            @click="navigateToMealPlanner"
-          />
-        </div>
-      </template>
-    </q-card-section>
-  </q-card>
+          <!-- Recipe Info -->
+          <div class="meal-info tw-p-3">
+            <div class="tw-text-sm tw-text-gray-500 tw-mb-1">
+              {{ formatMealType(featuredMeal.mealType) }}
+            </div>
+            <div class="tw-text-lg tw-font-semibold tw-text-gray-800 tw-mb-3">
+              {{ featuredMeal.recipe.name }}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="tw-flex tw-flex-col tw-gap-2">
+              <q-btn
+                label="View Recipe"
+                unelevated
+                class="view-recipe-btn"
+                @click="viewRecipe"
+              />
+              <q-btn
+                label="Meal Planner Overview"
+                flat
+                class="overview-btn"
+                @click="goToMealPlanner"
+              />
+            </div>
+          </div>
+        </template>
+
+        <template v-else>
+          <!-- Empty State -->
+          <div class="empty-state tw-p-6 tw-text-center">
+            <div class="empty-icon tw-mx-auto tw-mb-3">
+              <q-icon name="event_busy" size="32px" color="grey-5" />
+            </div>
+            <div class="tw-text-gray-600 tw-mb-3">No meals planned for today</div>
+            <q-btn
+              label="Plan Your Meals"
+              unelevated
+              class="view-recipe-btn"
+              @click="goToMealPlanner"
+            />
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -74,62 +82,95 @@ const todayDateStr = computed(() => {
 });
 
 const todayPlan = computed(() => {
-  return mealplanStore.currentWeek.days.find(
-    (day) => day.date === todayDateStr.value
-  );
+  return mealplanStore.currentWeek.days.find((day) => day.date === todayDateStr.value);
 });
 
-const todayMeals = computed((): MealSlot[] => {
-  if (!todayPlan.value) {
-    return [];
+const featuredMeal = computed((): MealSlot | null => {
+  if (!todayPlan.value) return null;
+
+  // Find first meal with a recipe (prioritize dinner > lunch > breakfast)
+  const priority: MealType[] = ['dinner', 'lunch', 'breakfast'];
+  for (const mealType of priority) {
+    const meal = todayPlan.value.meals.find(
+      (m) => m.mealType === mealType && m.recipe !== null,
+    );
+    if (meal) return meal;
   }
-  // Only show breakfast, lunch, dinner (not snack)
-  return todayPlan.value.meals.filter(
-    (meal) => ['breakfast', 'lunch', 'dinner'].includes(meal.mealType)
-  );
+  return null;
 });
-
-const hasMealsPlanned = computed(() => {
-  return todayMeals.value.some((meal) => meal.recipe !== null);
-});
-
-function getMealIcon(mealType: MealType): string {
-  const icons: Record<MealType, string> = {
-    breakfast: 'free_breakfast',
-    lunch: 'lunch_dining',
-    dinner: 'dinner_dining',
-    snack: 'cookie',
-  };
-  return icons[mealType] || 'restaurant';
-}
 
 function formatMealType(mealType: MealType): string {
   return mealType.charAt(0).toUpperCase() + mealType.slice(1);
 }
 
-function handleMealClick(meal: MealSlot) {
-  if (meal.recipe) {
-    void router.push({ name: 'recipe-detail', params: { id: meal.recipe.id } });
+function getRecipeImage(recipeName: string | undefined): string {
+  // Generate a placeholder image based on recipe name
+  const seed = recipeName?.replace(/\s+/g, '-').toLowerCase() || 'default';
+  return `https://picsum.photos/seed/${seed}/400/240`;
+}
+
+function viewRecipe() {
+  if (featuredMeal.value?.recipe?.id) {
+    void router.push({ name: 'recipe-detail', params: { id: featuredMeal.value.recipe.id } });
   }
 }
 
-function navigateToMealPlanner() {
+function goToMealPlanner() {
   void router.push({ name: 'mealplan' });
 }
 </script>
 
 <style scoped lang="scss">
 .today-plan-card {
-  width: 100%;
+  background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
+  border-radius: 20px;
+  overflow: hidden;
 }
 
-.meal-row {
-  background: rgba(0, 0, 0, 0.02);
-  transition: all 0.2s;
+.featured-meal-wrapper {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+}
 
-  &--clickable:hover {
-    background: rgba(var(--q-primary-rgb), 0.1);
-    transform: translateX(4px);
-  }
+.meal-image-container {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+}
+
+.meal-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.view-recipe-btn {
+  background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%) !important;
+  color: white !important;
+  border-radius: 10px;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.overview-btn {
+  color: #ff7f50 !important;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.empty-state {
+  background: white;
+  border-radius: 16px;
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  background: #f5f5f5;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

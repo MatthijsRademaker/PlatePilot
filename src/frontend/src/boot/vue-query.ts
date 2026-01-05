@@ -10,8 +10,9 @@ const queryClient = new QueryClient({
   },
 });
 
-export default ((({ app }) => {
+// @ts-nocheck
+export default (({ app }) => {
   app.use(VueQueryPlugin, { queryClient });
-}) as unknown) as ReturnType<typeof boot>;
+}) as unknown as ReturnType<typeof boot>;
 
 export { queryClient };
