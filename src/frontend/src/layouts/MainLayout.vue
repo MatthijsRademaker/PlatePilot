@@ -29,22 +29,22 @@ interface NavLink {
 const navLinks: NavLink[] = [
   {
     to: 'home',
-    icon: 'home',
+    icon: 'mdi-home',
     label: 'Home',
   },
   {
     to: 'recipes',
-    icon: 'menu_book',
+    icon: 'mdi-book-open-variant-outline',
     label: 'Recipes',
   },
   {
     to: 'mealplan',
-    icon: 'calendar_month',
+    icon: 'mdi-calendar',
     label: 'Meal Plan',
   },
   {
     to: 'search',
-    icon: 'search',
+    icon: 'mdi-magnify',
     label: 'Search',
   },
 ];

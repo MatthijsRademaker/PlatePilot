@@ -1,14 +1,6 @@
 <template>
   <q-page class="home-page">
-    <!-- Simple Header -->
-    <div class="page-header tw-flex tw-items-center tw-gap-3 tw-px-4 tw-py-3">
-      <div class="header-logo">
-        <q-icon name="restaurant_menu" size="20px" color="white" />
-      </div>
-      <span class="tw-text-lg tw-font-semibold tw-text-gray-800">PlatePilot</span>
-    </div>
-
-    <div class="tw-px-4 tw-pb-24">
+    <div class="tw-px-4 tw-py-4 tw-pb-24">
       <!-- Today's Meal Plan Card -->
       <TodayPlanCard class="tw-mb-6" />
 

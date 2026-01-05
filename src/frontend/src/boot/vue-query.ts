@@ -1,6 +1,5 @@
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query';
-import type { boot } from 'quasar/wrappers';
-
+import { defineBoot } from '#q-app/wrappers';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -10,9 +9,8 @@ const queryClient = new QueryClient({
   },
 });
 
-// @ts-nocheck
-export default (({ app }) => {
+export default defineBoot(({ app }) => {
   app.use(VueQueryPlugin, { queryClient });
-}) as unknown as ReturnType<typeof boot>;
+});
 
 export { queryClient };
