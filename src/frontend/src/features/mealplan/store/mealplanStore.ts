@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type { Recipe } from '@features/recipe/types/recipe';
+import type { HandlerRecipeJSON } from '@/api/generated/models';
 import type { WeekPlan, DayPlan, MealSlot, MealType } from '@features/mealplan/types/mealplan';
-import { mealplanApi } from '@features/mealplan/api/mealplanApi';
+import { postMealplanSuggest } from '@/api/generated/platepilot';
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0] as string;
@@ -49,7 +49,7 @@ function getWeekStart(date: Date): Date {
 export const useMealplanStore = defineStore('mealplan', () => {
   // State
   const currentWeek = ref<WeekPlan>(generateWeekPlan(getWeekStart(new Date())));
-  const suggestions = ref<Recipe[]>([]);
+  const suggestedRecipeIds = ref<string[]>([]);
   const loading = ref(false);
   const suggestionsLoading = ref(false);
   const error = ref<string | null>(null);
@@ -60,7 +60,7 @@ export const useMealplanStore = defineStore('mealplan', () => {
     const ids: string[] = [];
     currentWeek.value.days.forEach((day) => {
       day.meals.forEach((meal) => {
-        if (meal.recipe) {
+        if (meal.recipe?.id) {
           ids.push(meal.recipe.id);
         }
       });
@@ -71,7 +71,7 @@ export const useMealplanStore = defineStore('mealplan', () => {
   const totalMealsPlanned = computed(() => plannedRecipeIds.value.length);
 
   // Actions
-  function setRecipeForSlot(slotId: string, recipe: Recipe | null) {
+  function setRecipeForSlot(slotId: string, recipe: HandlerRecipeJSON | null) {
     for (const day of currentWeek.value.days) {
       const slot = day.meals.find((m) => m.id === slotId);
       if (slot) {
@@ -107,14 +107,14 @@ export const useMealplanStore = defineStore('mealplan', () => {
   async function fetchSuggestions(amount: number = 5): Promise<void> {
     suggestionsLoading.value = true;
     suggestionsError.value = null;
-    suggestions.value = [];
+    suggestedRecipeIds.value = [];
 
     try {
-      const result = await mealplanApi.suggestRecipes({
-        excludeRecipeIds: plannedRecipeIds.value,
+      const result = await postMealplanSuggest({
+        alreadySelectedRecipeIds: plannedRecipeIds.value,
         amount,
       });
-      suggestions.value = result;
+      suggestedRecipeIds.value = result.recipeIds ?? [];
     } catch (err) {
       suggestionsError.value =
         err instanceof Error ? err.message : 'Failed to fetch suggestions';
@@ -124,14 +124,14 @@ export const useMealplanStore = defineStore('mealplan', () => {
   }
 
   function clearSuggestions() {
-    suggestions.value = [];
+    suggestedRecipeIds.value = [];
     suggestionsError.value = null;
   }
 
   return {
     // State
     currentWeek,
-    suggestions,
+    suggestedRecipeIds,
     loading,
     suggestionsLoading,
     error,

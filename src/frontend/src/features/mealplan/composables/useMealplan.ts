@@ -8,7 +8,7 @@ export function useMealplan() {
     loading,
     error,
     totalMealsPlanned,
-    suggestions,
+    suggestedRecipeIds,
     suggestionsLoading,
     suggestionsError,
   } = storeToRefs(store);
@@ -18,7 +18,7 @@ export function useMealplan() {
     loading,
     error,
     totalMealsPlanned,
-    suggestions,
+    suggestedRecipeIds,
     suggestionsLoading,
     suggestionsError,
     setRecipeForSlot: store.setRecipeForSlot,

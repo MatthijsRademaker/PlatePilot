@@ -1,29 +1,39 @@
-import { storeToRefs } from 'pinia';
-import { onMounted, watch } from 'vue';
-import { useRecipeStore } from '@features/recipe/store/recipeStore';
+import { ref, computed } from 'vue';
+import {
+  useGetRecipeAll,
+  useGetRecipeId,
+  useGetRecipeSimilar,
+} from '@/api/generated/platepilot';
 
 export function useRecipeList() {
-  const store = useRecipeStore();
-  const { recipes, loading, error, pageIndex, totalPages, hasMore } = storeToRefs(store);
+  const pageIndex = ref(1);
+  const pageSize = ref(20);
 
-  onMounted(() => {
-    if (recipes.value.length === 0) {
-      void store.fetchRecipes();
-    }
-  });
+  const { data, isPending, error, refetch } = useGetRecipeAll(
+    computed(() => ({
+      pageIndex: pageIndex.value,
+      pageSize: pageSize.value,
+    })),
+  );
+
+  const recipes = computed(() => data.value?.items ?? []);
+  const totalCount = computed(() => data.value?.totalCount ?? 0);
+  const totalPages = computed(() => data.value?.totalPages ?? 0);
+  const hasMore = computed(() => recipes.value.length < totalCount.value);
 
   function loadPage(page: number) {
-    void store.fetchRecipes(page);
+    pageIndex.value = page;
   }
 
   function refresh() {
-    void store.fetchRecipes(1);
+    pageIndex.value = 1;
+    void refetch();
   }
 
   return {
     recipes,
-    loading,
-    error,
+    loading: isPending,
+    error: computed(() => error.value?.error ?? null),
     pageIndex,
     totalPages,
     hasMore,
@@ -33,20 +43,26 @@ export function useRecipeList() {
 }
 
 export function useRecipeDetail(recipeId: () => string) {
-  const store = useRecipeStore();
-  const { currentRecipe, loading, error } = storeToRefs(store);
-
-  onMounted(() => {
-    void store.fetchRecipeById(recipeId());
-  });
-
-  watch(recipeId, (newId) => {
-    void store.fetchRecipeById(newId);
-  });
+  const { data, isPending, error } = useGetRecipeId(computed(() => recipeId()));
 
   return {
-    recipe: currentRecipe,
-    loading,
-    error,
+    recipe: data,
+    loading: isPending,
+    error: computed(() => error.value?.message ?? null),
+  };
+}
+
+export function useSimilarRecipes(recipeId: () => string, amount = 5) {
+  const { data, isPending, error } = useGetRecipeSimilar(
+    computed(() => ({
+      recipe: recipeId(),
+      amount,
+    })),
+  );
+
+  return {
+    recipes: computed(() => data.value ?? []),
+    loading: isPending,
+    error: computed(() => error.value?.error ?? null),
   };
 }

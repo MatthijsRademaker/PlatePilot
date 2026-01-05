@@ -45,13 +45,13 @@ import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import RecipeCard from '@features/recipe/components/RecipeCard.vue';
 import { useRecipeStore } from '@features/recipe/store/recipeStore';
-import type { Recipe } from '@features/recipe/types/recipe';
+import type { HandlerRecipeJSON } from '@/api/generated/models';
 
 const router = useRouter();
 const recipeStore = useRecipeStore();
 
 const searchQuery = ref('');
-const results = ref<Recipe[]>([]);
+const results = ref<HandlerRecipeJSON[]>([]);
 const loading = ref(false);
 
 watch(searchQuery, async (query) => {
@@ -69,15 +69,15 @@ watch(searchQuery, async (query) => {
     }
     results.value = recipeStore.recipes.filter(
       (r) =>
-        r.name.toLowerCase().includes(query.toLowerCase()) ||
-        r.description.toLowerCase().includes(query.toLowerCase())
+        (r.name?.toLowerCase().includes(query.toLowerCase()) ?? false) ||
+        (r.description?.toLowerCase().includes(query.toLowerCase()) ?? false)
     );
   } finally {
     loading.value = false;
   }
 });
 
-function goToRecipe(recipe: Recipe) {
+function goToRecipe(recipe: HandlerRecipeJSON) {
   void router.push({ name: 'recipe-detail', params: { id: recipe.id } });
 }
 </script>

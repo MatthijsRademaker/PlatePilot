@@ -24,6 +24,16 @@ func NewMealPlanHandler(client *client.MealPlannerClient, logger *slog.Logger) *
 }
 
 // Suggest handles POST /v1/mealplan/suggest
+// @Summary      Suggest recipes for meal planning
+// @Description  Suggests recipes based on constraints and already selected recipes
+// @Tags         mealplan
+// @Accept       json
+// @Produce      json
+// @Param        request  body      SuggestRequest  true  "Suggestion request with constraints"
+// @Success      200      {object}  SuggestResponse
+// @Failure      400      {object}  ErrorResponse
+// @Failure      500      {object}  ErrorResponse
+// @Router       /mealplan/suggest [post]
 func (h *MealPlanHandler) Suggest(w http.ResponseWriter, r *http.Request) {
 	var req SuggestRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

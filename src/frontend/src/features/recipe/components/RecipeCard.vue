@@ -1,7 +1,6 @@
 <template>
   <q-card class="recipe-card" @click="$emit('click', recipe)">
-    <q-img v-if="recipe.imageUrl" :src="recipe.imageUrl" :ratio="16 / 9" />
-    <div v-else class="placeholder-image">
+    <div class="placeholder-image">
       <q-icon name="restaurant_menu" size="64px" color="grey-5" />
     </div>
 
@@ -14,43 +13,33 @@
 
     <q-card-section class="q-pt-none">
       <div class="row items-center q-gutter-sm">
-        <q-chip dense size="sm" icon="schedule">
-          {{ totalTime }} min
+        <q-chip v-if="recipe.prepTime" dense size="sm" icon="schedule">
+          Prep: {{ recipe.prepTime }}
         </q-chip>
-        <q-chip dense size="sm" icon="restaurant">
-          {{ recipe.servings }} servings
+        <q-chip v-if="recipe.cookTime" dense size="sm" icon="local_fire_department">
+          Cook: {{ recipe.cookTime }}
         </q-chip>
       </div>
     </q-card-section>
 
-    <q-card-section v-if="recipe.cuisines.length > 0" class="q-pt-none">
-      <q-chip
-        v-for="cuisine in recipe.cuisines.slice(0, 3)"
-        :key="cuisine.id"
-        dense
-        size="sm"
-        color="primary"
-        text-color="white"
-      >
-        {{ cuisine.name }}
+    <q-card-section v-if="recipe.cuisine" class="q-pt-none">
+      <q-chip dense size="sm" color="primary" text-color="white">
+        {{ recipe.cuisine.name }}
       </q-chip>
     </q-card-section>
   </q-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { Recipe } from '@features/recipe/types/recipe';
+import type { HandlerRecipeJSON } from '@/api/generated/models';
 
-const props = defineProps<{
-  recipe: Recipe;
+defineProps<{
+  recipe: HandlerRecipeJSON;
 }>();
 
 defineEmits<{
-  click: [recipe: Recipe];
+  click: [recipe: HandlerRecipeJSON];
 }>();
-
-const totalTime = computed(() => props.recipe.preparationTime + props.recipe.cookingTime);
 </script>
 
 <style scoped lang="scss">

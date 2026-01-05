@@ -27,8 +27,8 @@ test.describe('Recipe List Page', () => {
       timeout: 10000,
     });
 
-    // Cuisines should be visible
-    await expect(page.getByText(TEST_RECIPES.spaghettiCarbonara.cuisine)).toBeVisible();
+    // Cuisines should be visible (use exact match to avoid matching description text)
+    await expect(page.getByText(TEST_RECIPES.spaghettiCarbonara.cuisine, { exact: true })).toBeVisible();
   });
 
   test('navigates to recipe detail when clicking a recipe', async ({ page }) => {
@@ -88,16 +88,17 @@ test.describe('Recipe Detail Page', () => {
       page.getByRole('heading', { name: TEST_RECIPES.spaghettiCarbonara.name })
     ).toBeVisible({ timeout: 10000 });
 
-    // Check for ingredients heading
-    await expect(page.getByText('Ingredients')).toBeVisible();
+    // Check for ingredients heading (use exact match to avoid "Main Ingredient")
+    await expect(page.getByText('Ingredients', { exact: true })).toBeVisible();
 
-    // Check for specific ingredients
-    await expect(page.getByText('Spaghetti')).toBeVisible();
-    await expect(page.getByText('Eggs')).toBeVisible();
-    await expect(page.getByText('Pancetta')).toBeVisible();
+    // Check for specific ingredients (Spaghetti is main ingredient, not in list)
+    // Use exact match to avoid matching description and directions text
+    await expect(page.getByText('Eggs', { exact: true })).toBeVisible();
+    await expect(page.getByText('Pancetta', { exact: true })).toBeVisible();
+    await expect(page.getByText('Parmesan Cheese', { exact: true })).toBeVisible();
   });
 
-  test('displays instructions section', async ({ page }) => {
+  test('displays directions section', async ({ page }) => {
     await page.goto(`/#/recipes/${TEST_RECIPES.spaghettiCarbonara.id}`);
 
     // Wait for page to load
@@ -105,10 +106,10 @@ test.describe('Recipe Detail Page', () => {
       page.getByRole('heading', { name: TEST_RECIPES.spaghettiCarbonara.name })
     ).toBeVisible({ timeout: 10000 });
 
-    // Check for instructions heading
-    await expect(page.getByText('Instructions')).toBeVisible();
+    // Check for directions heading
+    await expect(page.getByText('Directions')).toBeVisible();
 
-    // Check for specific instruction steps
+    // Check for specific direction steps
     await expect(page.getByText(/Bring a large pot of salted water to boil/)).toBeVisible();
     await expect(page.getByText(/Cook spaghetti until al dente/)).toBeVisible();
   });
@@ -121,8 +122,8 @@ test.describe('Recipe Detail Page', () => {
       page.getByRole('heading', { name: TEST_RECIPES.spaghettiCarbonara.name })
     ).toBeVisible({ timeout: 10000 });
 
-    // Check for cuisine
-    await expect(page.getByText(TEST_RECIPES.spaghettiCarbonara.cuisine)).toBeVisible();
+    // Check for cuisine (use exact match to avoid matching description text)
+    await expect(page.getByText(TEST_RECIPES.spaghettiCarbonara.cuisine, { exact: true })).toBeVisible();
   });
 
   test('has back button that navigates to list', async ({ page }) => {
@@ -148,7 +149,7 @@ test.describe('Recipe Detail Page', () => {
   test('handles non-existent recipe', async ({ page }) => {
     await page.goto('/#/recipes/non-existent-recipe-id');
 
-    // Should show error state - look for specific error text
-    await expect(page.getByText('HTTP error: Not Found')).toBeVisible({ timeout: 10000 });
+    // Should show error state - look for error text (either "Not Found" or "recipe not found")
+    await expect(page.getByText(/not found/i)).toBeVisible({ timeout: 10000 });
   });
 });

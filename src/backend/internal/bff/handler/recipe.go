@@ -27,6 +27,16 @@ func NewRecipeHandler(client *client.RecipeClient, logger *slog.Logger) *RecipeH
 }
 
 // GetByID handles GET /v1/recipe/{id}
+// @Summary      Get recipe by ID
+// @Description  Retrieves a single recipe by its unique identifier
+// @Tags         recipes
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Recipe ID (UUID)"
+// @Success      200  {object}  RecipeJSON
+// @Failure      400  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Router       /recipe/{id} [get]
 func (h *RecipeHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -54,6 +64,16 @@ type PaginatedRecipesJSON struct {
 }
 
 // GetAll handles GET /v1/recipe/all
+// @Summary      Get all recipes (paginated)
+// @Description  Retrieves a paginated list of all recipes
+// @Tags         recipes
+// @Accept       json
+// @Produce      json
+// @Param        pageIndex  query     int     false  "Page number (1-indexed)"  default(1)
+// @Param        pageSize   query     int     false  "Items per page (max 100)" default(20)
+// @Success      200  {object}  PaginatedRecipesJSON
+// @Failure      500  {object}  ErrorResponse
+// @Router       /recipe/all [get]
 func (h *RecipeHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	pageIndex := parseIntParam(r, "pageIndex", 1)
 	pageSize := parseIntParam(r, "pageSize", 20)
@@ -79,6 +99,17 @@ func (h *RecipeHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetSimilar handles GET /v1/recipe/similar
+// @Summary      Get similar recipes
+// @Description  Finds recipes similar to the specified recipe using vector search
+// @Tags         recipes
+// @Accept       json
+// @Produce      json
+// @Param        recipe  query     string  true   "Recipe ID to find similar recipes for"
+// @Param        amount  query     int     false  "Number of similar recipes to return (max 50)" default(5)
+// @Success      200  {array}   RecipeJSON
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /recipe/similar [get]
 func (h *RecipeHandler) GetSimilar(w http.ResponseWriter, r *http.Request) {
 	recipeID := r.URL.Query().Get("recipe")
 	if recipeID == "" {
@@ -102,6 +133,16 @@ func (h *RecipeHandler) GetSimilar(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetByCuisine handles GET /v1/recipe/cuisine/{id}
+// @Summary      Get recipes by cuisine
+// @Description  Retrieves all recipes belonging to a specific cuisine
+// @Tags         recipes
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Cuisine ID (UUID)"
+// @Success      200  {array}   RecipeJSON
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /recipe/cuisine/{id} [get]
 func (h *RecipeHandler) GetByCuisine(w http.ResponseWriter, r *http.Request) {
 	cuisineID := chi.URLParam(r, "id")
 	if cuisineID == "" {
@@ -120,6 +161,16 @@ func (h *RecipeHandler) GetByCuisine(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetByIngredient handles GET /v1/recipe/ingredient/{id}
+// @Summary      Get recipes by ingredient
+// @Description  Retrieves all recipes containing a specific ingredient
+// @Tags         recipes
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Ingredient ID (UUID)"
+// @Success      200  {array}   RecipeJSON
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /recipe/ingredient/{id} [get]
 func (h *RecipeHandler) GetByIngredient(w http.ResponseWriter, r *http.Request) {
 	ingredientID := chi.URLParam(r, "id")
 	if ingredientID == "" {
@@ -138,6 +189,16 @@ func (h *RecipeHandler) GetByIngredient(w http.ResponseWriter, r *http.Request) 
 }
 
 // GetByAllergy handles GET /v1/recipe/allergy/{id}
+// @Summary      Get recipes avoiding allergen
+// @Description  Retrieves all recipes that do not contain a specific allergen
+// @Tags         recipes
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Allergy ID (UUID)"
+// @Success      200  {array}   RecipeJSON
+// @Failure      400  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /recipe/allergy/{id} [get]
 func (h *RecipeHandler) GetByAllergy(w http.ResponseWriter, r *http.Request) {
 	allergyID := chi.URLParam(r, "id")
 	if allergyID == "" {
@@ -156,6 +217,16 @@ func (h *RecipeHandler) GetByAllergy(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create handles POST /v1/recipe/create
+// @Summary      Create a new recipe
+// @Description  Creates a new recipe with the provided details
+// @Tags         recipes
+// @Accept       json
+// @Produce      json
+// @Param        recipe  body      CreateRecipeRequest  true  "Recipe to create"
+// @Success      201     {object}  RecipeJSON
+// @Failure      400     {object}  ErrorResponse
+// @Failure      500     {object}  ErrorResponse
+// @Router       /recipe/create [post]
 func (h *RecipeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateRecipeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

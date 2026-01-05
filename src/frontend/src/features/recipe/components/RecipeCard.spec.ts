@@ -1,19 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import RecipeCard from './RecipeCard.vue';
-import type { Recipe } from '@features/recipe/types/recipe';
+import type { HandlerRecipeJSON } from '@/api/generated/models';
 
-const createMockRecipe = (overrides: Partial<Recipe> = {}): Recipe => ({
+const createMockRecipe = (overrides: Partial<HandlerRecipeJSON> = {}): HandlerRecipeJSON => ({
   id: '1',
   name: 'Test Recipe',
   description: 'A delicious test recipe',
   ingredients: [{ id: '1', name: 'Salt' }],
-  cuisines: [{ id: '1', name: 'Italian' }],
-  allergies: [],
-  preparationTime: 15,
-  cookingTime: 30,
-  servings: 4,
-  instructions: ['Step 1', 'Step 2'],
+  cuisine: { id: '1', name: 'Italian' },
+  prepTime: '15 min',
+  cookTime: '30 min',
+  directions: ['Step 1', 'Step 2'],
   ...overrides,
 });
 
@@ -38,18 +36,28 @@ describe('RecipeCard', () => {
     expect(wrapper.text()).toContain('Creamy Italian pasta');
   });
 
-  it('computes total time correctly', () => {
+  it('displays prep time', () => {
     const recipe = createMockRecipe({
-      preparationTime: 10,
-      cookingTime: 25,
+      prepTime: '10 min',
     });
 
     const wrapper = mount(RecipeCard, {
       props: { recipe },
     });
 
-    // 10 + 25 = 35 min
-    expect(wrapper.text()).toContain('35 min');
+    expect(wrapper.text()).toContain('Prep: 10 min');
+  });
+
+  it('displays cook time', () => {
+    const recipe = createMockRecipe({
+      cookTime: '25 min',
+    });
+
+    const wrapper = mount(RecipeCard, {
+      props: { recipe },
+    });
+
+    expect(wrapper.text()).toContain('Cook: 25 min');
   });
 
   it('emits click event with recipe when clicked', async () => {
@@ -65,13 +73,13 @@ describe('RecipeCard', () => {
     expect(wrapper.emitted('click')![0]).toEqual([recipe]);
   });
 
-  it('displays servings', () => {
-    const recipe = createMockRecipe({ servings: 6 });
+  it('displays cuisine name', () => {
+    const recipe = createMockRecipe({ cuisine: { id: '1', name: 'Mexican' } });
 
     const wrapper = mount(RecipeCard, {
       props: { recipe },
     });
 
-    expect(wrapper.text()).toContain('6 servings');
+    expect(wrapper.text()).toContain('Mexican');
   });
 });

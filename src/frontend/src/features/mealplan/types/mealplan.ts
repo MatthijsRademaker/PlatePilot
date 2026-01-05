@@ -1,4 +1,4 @@
-import type { Recipe } from '@features/recipe/types/recipe';
+import type { HandlerRecipeJSON } from '@/api/generated/models';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -6,7 +6,7 @@ export interface MealSlot {
   id: string;
   date: string;
   mealType: MealType;
-  recipe: Recipe | null;
+  recipe: HandlerRecipeJSON | null;
 }
 
 export interface DayPlan {
@@ -18,11 +18,4 @@ export interface WeekPlan {
   startDate: string;
   endDate: string;
   days: DayPlan[];
-}
-
-export interface SuggestRecipesRequest {
-  excludeRecipeIds?: string[];
-  cuisineIds?: string[];
-  excludeAllergyIds?: string[];
-  amount?: number;
 }

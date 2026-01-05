@@ -2,7 +2,7 @@
 .PHONY: dev dev-recipe dev-mealplanner dev-bff
 .PHONY: docker-up docker-down docker-build docker-run docker-run-all generate
 .PHONY: test-e2e test-integration test-coverage
-.PHONY: verify-proto verify-generated
+.PHONY: verify-proto verify-generated verify-swagger swagger
 .PHONY: ollama-start ollama-stop ollama-pull ollama-status
 .PHONY: up down up-no-llm logs restart
 
@@ -186,8 +186,8 @@ sqlc:
 	@echo "$(GREEN)Generating sqlc code...$(NC)"
 	sqlc generate
 
-## generate: Generate all code (proto + sqlc)
-generate: proto sqlc
+## generate: Generate all code (proto + sqlc + swagger)
+generate: proto sqlc swagger
 
 ## migrate-up: Run all database migrations
 migrate-up:
@@ -272,12 +272,13 @@ tools:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+	go install github.com/swaggo/swag/cmd/swag@latest
 	@echo "$(GREEN)Don't forget to install:$(NC)"
 	@echo "  - protoc (Protocol Buffers compiler)"
 	@echo "  - golang-migrate (database migrations)"
 
 ## verify: Verify project setup (tools + generated code)
-verify: verify-proto
+verify: verify-proto verify-swagger
 	@echo "$(GREEN)Verifying project setup...$(NC)"
 	@echo "Go version:"
 	@go version
@@ -288,6 +289,7 @@ verify: verify-proto
 	@which protoc > /dev/null 2>&1 && echo "✓ protoc" || echo "✗ protoc (install manually)"
 	@which migrate > /dev/null 2>&1 && echo "✓ migrate" || echo "✗ migrate (install manually)"
 	@which sqlc > /dev/null 2>&1 && echo "✓ sqlc" || echo "✗ sqlc (run: make tools)"
+	@which swag > /dev/null 2>&1 && echo "✓ swag" || echo "✗ swag (run: make tools)"
 	@which docker > /dev/null 2>&1 && echo "✓ docker" || echo "✗ docker"
 	@echo ""
 	@echo "$(GREEN)Verification complete!$(NC)"
@@ -315,6 +317,27 @@ verify-proto:
 	fi
 	@rm -rf /tmp/proto-verify
 	@echo "$(GREEN)✓ Protobuf code is up-to-date$(NC)"
+
+## swagger: Generate OpenAPI spec from swagger annotations
+swagger:
+	@echo "$(GREEN)Generating OpenAPI spec...$(NC)"
+	@mkdir -p api/openapi
+	swag init -g cmd/mobile-bff/main.go -o api/openapi --outputTypes yaml
+	@echo "$(GREEN)OpenAPI spec generated at api/openapi/swagger.yaml$(NC)"
+
+## verify-swagger: Verify OpenAPI spec is up-to-date
+verify-swagger:
+	@echo "$(GREEN)Verifying OpenAPI spec is up-to-date...$(NC)"
+	@mkdir -p /tmp/swagger-verify
+	@cp api/openapi/swagger.yaml /tmp/swagger-verify/ 2>/dev/null || true
+	@swag init -g cmd/mobile-bff/main.go -o api/openapi --outputTypes yaml > /dev/null 2>&1
+	@if ! diff -q api/openapi/swagger.yaml /tmp/swagger-verify/swagger.yaml > /dev/null 2>&1; then \
+		echo "$(RED)ERROR: swagger.yaml is out of date. Run 'make swagger' to regenerate.$(NC)"; \
+		rm -rf /tmp/swagger-verify; \
+		exit 1; \
+	fi
+	@rm -rf /tmp/swagger-verify
+	@echo "$(GREEN)✓ OpenAPI spec is up-to-date$(NC)"
 
 ## test-e2e: Run end-to-end integration tests
 test-e2e:

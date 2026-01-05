@@ -1,3 +1,17 @@
+// @title           PlatePilot API
+// @version         1.0
+// @description     Intelligent meal planning and recipe management API
+
+// @contact.name   PlatePilot Support
+
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      localhost:8080
+// @BasePath  /v1
+
+// @schemes http https
+
 package main
 
 import (

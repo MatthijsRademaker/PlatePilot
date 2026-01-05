@@ -48,7 +48,7 @@
           </q-banner>
         </q-card-section>
 
-        <q-card-section v-if="suggestions.length > 0" class="q-pt-none">
+        <q-card-section v-if="suggestedRecipes.length > 0" class="q-pt-none">
           <div class="q-mb-sm row items-center justify-between">
             <span class="text-subtitle2 text-primary">
               <q-icon name="auto_awesome" class="q-mr-xs" />
@@ -58,7 +58,7 @@
           </div>
           <q-list bordered separator class="rounded-borders bg-blue-1">
             <q-item
-              v-for="recipe in suggestions"
+              v-for="recipe in suggestedRecipes"
               :key="'suggestion-' + recipe.id"
               clickable
               v-ripple
@@ -81,7 +81,7 @@
           <q-list separator>
             <q-item
               v-for="recipe in filteredRecipes"
-              :key="recipe.id"
+              :key="recipe.id ?? ''"
               clickable
               v-ripple
               @click="selectRecipe(recipe)"
@@ -108,7 +108,7 @@ import { useQuasar } from 'quasar';
 import WeekView from '@features/mealplan/components/WeekView.vue';
 import { useMealplan } from '@features/mealplan/composables/useMealplan';
 import { useRecipeStore } from '@features/recipe/store/recipeStore';
-import type { Recipe } from '@features/recipe/types/recipe';
+import type { HandlerRecipeJSON } from '@/api/generated/models';
 import type { MealSlot } from '@features/mealplan/types/mealplan';
 
 const $q = useQuasar();
@@ -120,7 +120,7 @@ const {
   navigateWeek,
   goToCurrentWeek,
   clearWeek,
-  suggestions,
+  suggestedRecipeIds,
   suggestionsLoading,
   suggestionsError,
   fetchSuggestions,
@@ -131,13 +131,20 @@ const selectorOpen = ref(false);
 const selectedSlot = ref<MealSlot | null>(null);
 const searchQuery = ref('');
 
+// Compute suggested recipes from IDs by looking them up in the loaded recipes
+const suggestedRecipes = computed(() => {
+  const ids = suggestedRecipeIds.value;
+  if (!ids || ids.length === 0) return [];
+  return recipeStore.recipes.filter((r) => r.id && ids.includes(r.id));
+});
+
 const filteredRecipes = computed(() => {
   const query = searchQuery.value.toLowerCase();
   if (!query) return recipeStore.recipes;
   return recipeStore.recipes.filter(
     (r) =>
-      r.name.toLowerCase().includes(query) ||
-      r.description.toLowerCase().includes(query)
+      (r.name?.toLowerCase().includes(query) ?? false) ||
+      (r.description?.toLowerCase().includes(query) ?? false)
   );
 });
 
@@ -154,7 +161,7 @@ function openRecipeSelector(slot: MealSlot) {
   selectorOpen.value = true;
 }
 
-function selectRecipe(recipe: Recipe) {
+function selectRecipe(recipe: HandlerRecipeJSON) {
   if (selectedSlot.value) {
     setRecipeForSlot(selectedSlot.value.id, recipe);
   }

@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { recipeApi } from '@features/recipe/api/recipeApi';
-import type { Recipe } from '@features/recipe/types/recipe';
+import type { HandlerRecipeJSON } from '@/api/generated/models';
+import { getRecipeAll, getRecipeId, getRecipeSimilar } from '@/api/generated/platepilot';
 
 export const useRecipeStore = defineStore('recipe', () => {
   // State
-  const recipes = ref<Recipe[]>([]);
-  const currentRecipe = ref<Recipe | null>(null);
+  const recipes = ref<HandlerRecipeJSON[]>([]);
+  const currentRecipe = ref<HandlerRecipeJSON | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
   const pageIndex = ref(1);
@@ -22,10 +22,10 @@ export const useRecipeStore = defineStore('recipe', () => {
     loading.value = true;
     error.value = null;
     try {
-      const response = await recipeApi.getAll(page, pageSize.value);
-      recipes.value = response.items;
-      pageIndex.value = response.pageIndex;
-      totalCount.value = response.totalCount;
+      const response = await getRecipeAll({ pageIndex: page, pageSize: pageSize.value });
+      recipes.value = response.items ?? [];
+      pageIndex.value = response.pageIndex ?? page;
+      totalCount.value = response.totalCount ?? 0;
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch recipes';
     } finally {
@@ -37,7 +37,7 @@ export const useRecipeStore = defineStore('recipe', () => {
     loading.value = true;
     error.value = null;
     try {
-      currentRecipe.value = await recipeApi.getById(id);
+      currentRecipe.value = await getRecipeId(id);
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch recipe';
     } finally {
@@ -45,9 +45,9 @@ export const useRecipeStore = defineStore('recipe', () => {
     }
   }
 
-  async function fetchSimilarRecipes(recipeId: string, amount = 5): Promise<Recipe[]> {
+  async function fetchSimilarRecipes(recipeId: string, amount = 5): Promise<HandlerRecipeJSON[]> {
     try {
-      return await recipeApi.getSimilar(recipeId, amount);
+      return await getRecipeSimilar({ recipe: recipeId, amount });
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch similar recipes';
       return [];

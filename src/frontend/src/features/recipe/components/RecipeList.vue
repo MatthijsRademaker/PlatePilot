@@ -38,11 +38,11 @@
 </template>
 
 <script setup lang="ts">
-import type { Recipe } from '@features/recipe/types/recipe';
+import type { HandlerRecipeJSON } from '@/api/generated/models';
 import RecipeCard from '@features/recipe/components/RecipeCard.vue';
 
 defineProps<{
-  recipes: Recipe[];
+  recipes: HandlerRecipeJSON[];
   loading: boolean;
   error: string | null;
   pageIndex: number;
@@ -50,7 +50,7 @@ defineProps<{
 }>();
 
 defineEmits<{
-  select: [recipe: Recipe];
+  select: [recipe: HandlerRecipeJSON];
   page: [page: number];
   refresh: [];
 }>();
