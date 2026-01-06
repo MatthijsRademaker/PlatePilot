@@ -21,6 +21,7 @@ import RecipeSuggestions from '@features/home/components/RecipeSuggestions.vue';
 
 <style scoped lang="scss">
 .home-page {
+  padding-top: env(safe-area-inset-top);
   background: linear-gradient(180deg, #fff8f5 0%, #ffffff 100%);
   min-height: 100vh;
 }

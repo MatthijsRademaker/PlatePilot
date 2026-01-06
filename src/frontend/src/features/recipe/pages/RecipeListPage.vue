@@ -8,18 +8,11 @@
           </div>
           <h1 class="text-h5 q-ma-none tw-font-semibold">Recipes</h1>
         </div>
-        <q-btn
-          color="primary"
-          icon="refresh"
-          flat
-          round
-          aria-label="Refresh"
-          @click="refresh"
-        />
+        <q-btn color="primary" icon="refresh" flat round aria-label="Refresh" @click="refresh" />
       </div>
     </div>
 
-    <div class="tw-px-4 tw-pb-4">
+    <div class="tw-px-4 tw-pb-4 recipe-list">
       <RecipeList
         :recipes="recipes"
         :loading="loading"
@@ -52,8 +45,14 @@ function goToRecipe(recipe: HandlerRecipeJSON) {
 
 <style scoped lang="scss">
 .recipe-list-page {
+  padding-top: env(safe-area-inset-top);
   background: linear-gradient(180deg, #fff8f5 0%, #ffffff 100%);
   min-height: 100vh;
+}
+
+.recipe-list {
+  border-top-right-radius: 8px;
+  border-top-left-radius: 8px;
 }
 
 .page-header {

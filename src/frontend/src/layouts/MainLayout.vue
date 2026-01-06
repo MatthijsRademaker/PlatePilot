@@ -5,7 +5,7 @@
     </q-page-container>
 
     <q-footer class="main-footer">
-      <q-tabs align="justify" class="footer-tabs">
+      <q-tabs align="justify" class="footer-tabs" indicator-color="transparent">
         <q-route-tab
           v-for="tab in navLinks"
           :key="tab.to"

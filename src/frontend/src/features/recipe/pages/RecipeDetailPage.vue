@@ -15,13 +15,7 @@
     <template v-else-if="recipe">
       <!-- Hero Section -->
       <div class="recipe-hero">
-        <q-btn
-          flat
-          round
-          icon="arrow_back"
-          class="back-btn"
-          @click="router.back()"
-        />
+        <q-btn flat round icon="arrow_back" class="back-btn" @click="router.back()" />
         <div class="hero-content">
           <q-icon name="restaurant_menu" size="64px" color="white" />
         </div>
@@ -38,7 +32,11 @@
               <q-chip v-if="recipe.prepTime" icon="schedule" class="info-chip">
                 Prep: {{ recipe.prepTime }}
               </q-chip>
-              <q-chip v-if="recipe.cookTime" icon="local_fire_department" class="info-chip info-chip--cook">
+              <q-chip
+                v-if="recipe.cookTime"
+                icon="local_fire_department"
+                class="info-chip info-chip--cook"
+              >
                 Cook: {{ recipe.cookTime }}
               </q-chip>
             </div>
@@ -115,10 +113,10 @@ const { recipe, loading, error } = useRecipeDetail(() => recipeId.value);
 <style scoped lang="scss">
 .recipe-detail-page {
   background: linear-gradient(180deg, #fff8f5 0%, #ffffff 100%);
-  min-height: 100vh;
 }
 
 .recipe-hero {
+  padding-top: env(safe-area-inset-top);
   background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
   height: 200px;
   position: relative;

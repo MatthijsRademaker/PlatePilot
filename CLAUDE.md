@@ -8,8 +8,71 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **This is a hobby project** - no backwards compatibility requirements, no legacy constraints. We can make breaking changes freely and choose the simplest solutions.
 
-## Mobile development 
-Mobile development is done through capacitor. Quasar handles this for us and therefore src-capacitor can be ignored alltogether
+## Mobile Development Strategy
+
+### Hybrid Approach: Vue.js + Native iOS/watchOS
+
+PlatePilot uses a **dual-frontend strategy**:
+
+| Platform | Technology | Purpose |
+|----------|------------|---------|
+| Web | Vue.js 3 + Quasar | Primary development, rapid prototyping |
+| iOS/iPadOS | SwiftUI | Native app with Liquid Glass design (iOS 26+) |
+| watchOS | SwiftUI | Companion app (requires native Swift) |
+
+**Why this approach:**
+- **watchOS requires native Swift** - No cross-platform alternative exists
+- **Liquid Glass design** - Apple's new design language is SwiftUI-native
+- **Vue stays the prototyping ground** - Fast iteration in familiar territory
+- **Same backend** - Both frontends consume the same BFF REST endpoints
+
+### Development Workflow
+
+```
+1. Prototype feature in Vue.js → validate UX/logic quickly
+2. Port to SwiftUI for iOS + watchOS companion
+3. Both apps use same /v1/* REST API endpoints
+```
+
+### Project Structure
+
+```
+src/
+├── frontend/              # Vue.js (web + prototyping)
+├── ios/                   # Native Apple platforms
+│   ├── PlatePilot/        # iOS/iPadOS app (SwiftUI)
+│   │   ├── Features/      # Feature modules (mirrors Vue structure)
+│   │   ├── Shared/        # Shared components, API client
+│   │   └── App/           # App entry, navigation
+│   ├── PlatePilotWatch/   # watchOS app
+│   │   ├── Views/         # Watch-specific views
+│   │   └── Complications/ # Watch face complications
+│   └── Shared/            # Code shared between iOS and watchOS
+│       ├── API/           # REST client matching BFF endpoints
+│       ├── Models/        # Swift models (matching Go domain)
+│       └── Extensions/    # Swift extensions
+└── backend/               # Go services (unchanged)
+```
+
+### iOS/watchOS Tech Stack
+- **Language**: Swift 6+
+- **UI Framework**: SwiftUI (Liquid Glass on iOS 26+)
+- **Networking**: URLSession + async/await
+- **State**: @Observable (modern Swift observation)
+- **Architecture**: Feature-based modules mirroring Vue structure
+
+### Feature Parity Goals
+
+Features should be implemented in Vue first, then ported to SwiftUI:
+1. Recipe browsing and detail views
+2. Similar recipe suggestions
+3. Meal planning (weekly view)
+4. watchOS: Quick recipe reference, cooking timers
+
+### Notes
+- `src-capacitor/` can be ignored - not using Capacitor
+- iOS deployment requires Xcode, Apple Developer account ($99/year)
+- Claude maintains the Swift codebase; user runs Xcode builds
 
 ### Why Go?
 - **AI Agent Friendly**: Explicit control flow, no magic/reflection, errors as values
@@ -25,7 +88,8 @@ Mobile development is done through capacitor. Quasar handles this for us and the
 | MealPlanner API | `src/backend/cmd/mealplanner-api/` | Read service, vector search, event consuming |
 | Mobile BFF | `src/backend/cmd/mobile-bff/` | REST gateway for clients |
 | Common | `src/backend/internal/common/` | Shared domain, events, config |
-| Frontend | `src/frontend/` | Vue/Quasar app with vertical slice architecture |
+| Frontend (Web) | `src/frontend/` | Vue/Quasar app with vertical slice architecture |
+| Frontend (iOS) | `src/ios/` | Native SwiftUI app for iOS/iPadOS/watchOS |
 
 ### Completed Migration Phases
 1. **Phase 0: Foundation** ✅ - Go project setup, tooling, Docker, migrations
@@ -55,11 +119,11 @@ Mobile development is done through capacitor. Quasar handles this for us and the
 - **Containers**: Docker, docker-compose
 - **CI/CD**: GitHub Actions
 
-### Frontend
+### Frontend (Vue.js)
 - **Framework**: Vue.js 3 + Quasar 2
 - **State**: Pinia stores
 - **Styling**: UnoCSS with Wind preset (Tailwind-compatible, `tw-` prefix)
-- **Mobile**: Capacitor (planned)
+- **Mobile**: Native iOS/watchOS (see Mobile Development Strategy)
 - **Architecture**: Feature-based vertical slices
 - **Package Manager**: bun (NEVER use npm)
 
@@ -261,9 +325,9 @@ src/backend/
 - **Framework**: Vue.js 3 with Quasar 2
 - **State Management**: Pinia
 - **Language**: TypeScript
-- **Mobile**: Capacitor for iOS/Android (planned)
 - **Styling**: UnoCSS with Wind preset (Tailwind-compatible)
 - **Package Manager**: bun (NEVER use npm)
+- **Mobile**: See "Mobile Development Strategy" section (native iOS/watchOS)
 
 ### Frontend Commands
 
@@ -487,7 +551,7 @@ type MealPlanner interface {           // NOT: VectorSimilaritySearcher
 
 - **Hash-based vectors**: POC only, real embeddings planned
 - **No authentication**: Auth/authz not yet implemented
-- **Mobile apps**: Capacitor integration not yet configured
+- **iOS app**: Not yet scaffolded (see Mobile Development Strategy)
 
 ### Hobby Project Philosophy
 
