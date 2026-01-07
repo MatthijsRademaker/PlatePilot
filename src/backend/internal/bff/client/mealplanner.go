@@ -45,6 +45,7 @@ func (c *MealPlannerClient) SuggestRecipes(ctx context.Context, req *mealplanner
 		"dailyConstraints", len(req.GetDailyConstraints()),
 		"alreadySelected", len(req.GetAlreadySelectedRecipeIds()),
 		"amount", req.GetAmount(),
+		"userId", req.GetUserId(),
 	)
 
 	resp, err := c.client.SuggestRecipes(ctx, req)

@@ -38,13 +38,19 @@ func NewRecipeHandler(client *client.RecipeClient, logger *slog.Logger) *RecipeH
 // @Failure      404  {object}  ErrorResponse
 // @Router       /recipe/{id} [get]
 func (h *RecipeHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 	if id == "" {
 		writeError(w, http.StatusBadRequest, "recipe id is required")
 		return
 	}
 
-	recipe, err := h.client.GetByID(r.Context(), id)
+	recipe, err := h.client.GetByID(r.Context(), userID.String(), id)
 	if err != nil {
 		h.logger.Error("failed to get recipe", "id", id, "error", err)
 		writeError(w, http.StatusNotFound, "recipe not found")
@@ -75,6 +81,12 @@ type PaginatedRecipesJSON struct {
 // @Failure      500  {object}  ErrorResponse
 // @Router       /recipe/all [get]
 func (h *RecipeHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	pageIndex := parseIntParam(r, "pageIndex", 1)
 	pageSize := parseIntParam(r, "pageSize", 20)
 
@@ -82,7 +94,7 @@ func (h *RecipeHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		pageSize = 100
 	}
 
-	resp, err := h.client.GetAll(r.Context(), int32(pageIndex), int32(pageSize))
+	resp, err := h.client.GetAll(r.Context(), userID.String(), int32(pageIndex), int32(pageSize))
 	if err != nil {
 		h.logger.Error("failed to get recipes", "error", err)
 		writeError(w, http.StatusInternalServerError, "failed to fetch recipes")
@@ -111,6 +123,12 @@ func (h *RecipeHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Failure      500  {object}  ErrorResponse
 // @Router       /recipe/similar [get]
 func (h *RecipeHandler) GetSimilar(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	recipeID := r.URL.Query().Get("recipe")
 	if recipeID == "" {
 		writeError(w, http.StatusBadRequest, "recipe parameter is required")
@@ -122,7 +140,7 @@ func (h *RecipeHandler) GetSimilar(w http.ResponseWriter, r *http.Request) {
 		amount = 50
 	}
 
-	recipes, err := h.client.GetSimilar(r.Context(), recipeID, int32(amount))
+	recipes, err := h.client.GetSimilar(r.Context(), userID.String(), recipeID, int32(amount))
 	if err != nil {
 		h.logger.Error("failed to get similar recipes", "recipeId", recipeID, "error", err)
 		writeError(w, http.StatusInternalServerError, "failed to fetch similar recipes")
@@ -144,13 +162,19 @@ func (h *RecipeHandler) GetSimilar(w http.ResponseWriter, r *http.Request) {
 // @Failure      500  {object}  ErrorResponse
 // @Router       /recipe/cuisine/{id} [get]
 func (h *RecipeHandler) GetByCuisine(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	cuisineID := chi.URLParam(r, "id")
 	if cuisineID == "" {
 		writeError(w, http.StatusBadRequest, "cuisine id is required")
 		return
 	}
 
-	recipes, err := h.client.GetByCuisine(r.Context(), cuisineID)
+	recipes, err := h.client.GetByCuisine(r.Context(), userID.String(), cuisineID)
 	if err != nil {
 		h.logger.Error("failed to get recipes by cuisine", "cuisineId", cuisineID, "error", err)
 		writeError(w, http.StatusInternalServerError, "failed to fetch recipes")
@@ -172,13 +196,19 @@ func (h *RecipeHandler) GetByCuisine(w http.ResponseWriter, r *http.Request) {
 // @Failure      500  {object}  ErrorResponse
 // @Router       /recipe/ingredient/{id} [get]
 func (h *RecipeHandler) GetByIngredient(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	ingredientID := chi.URLParam(r, "id")
 	if ingredientID == "" {
 		writeError(w, http.StatusBadRequest, "ingredient id is required")
 		return
 	}
 
-	recipes, err := h.client.GetByIngredient(r.Context(), ingredientID)
+	recipes, err := h.client.GetByIngredient(r.Context(), userID.String(), ingredientID)
 	if err != nil {
 		h.logger.Error("failed to get recipes by ingredient", "ingredientId", ingredientID, "error", err)
 		writeError(w, http.StatusInternalServerError, "failed to fetch recipes")
@@ -200,13 +230,19 @@ func (h *RecipeHandler) GetByIngredient(w http.ResponseWriter, r *http.Request) 
 // @Failure      500  {object}  ErrorResponse
 // @Router       /recipe/allergy/{id} [get]
 func (h *RecipeHandler) GetByAllergy(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	allergyID := chi.URLParam(r, "id")
 	if allergyID == "" {
 		writeError(w, http.StatusBadRequest, "allergy id is required")
 		return
 	}
 
-	recipes, err := h.client.GetByAllergy(r.Context(), allergyID)
+	recipes, err := h.client.GetByAllergy(r.Context(), userID.String(), allergyID)
 	if err != nil {
 		h.logger.Error("failed to get recipes by allergy", "allergyId", allergyID, "error", err)
 		writeError(w, http.StatusInternalServerError, "failed to fetch recipes")
@@ -228,6 +264,12 @@ func (h *RecipeHandler) GetByAllergy(w http.ResponseWriter, r *http.Request) {
 // @Failure      500     {object}  ErrorResponse
 // @Router       /recipe/create [post]
 func (h *RecipeHandler) Create(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	var req CreateRecipeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
@@ -239,7 +281,7 @@ func (h *RecipeHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	recipe, err := h.client.Create(r.Context(), req.ToProto())
+	recipe, err := h.client.Create(r.Context(), req.ToProto(userID.String()))
 	if err != nil {
 		h.logger.Error("failed to create recipe", "name", req.Name, "error", err)
 		writeError(w, http.StatusInternalServerError, "failed to create recipe")
@@ -276,8 +318,9 @@ func (r *CreateRecipeRequest) Validate() error {
 }
 
 // ToProto converts the request to a protobuf message
-func (r *CreateRecipeRequest) ToProto() *recipepb.CreateRecipeRequest {
+func (r *CreateRecipeRequest) ToProto(userID string) *recipepb.CreateRecipeRequest {
 	return &recipepb.CreateRecipeRequest{
+		UserId:           userID,
 		Name:             r.Name,
 		Description:      r.Description,
 		PrepTime:         r.PrepTime,
@@ -291,15 +334,15 @@ func (r *CreateRecipeRequest) ToProto() *recipepb.CreateRecipeRequest {
 
 // RecipeJSON is the JSON response for a recipe
 type RecipeJSON struct {
-	ID             string          `json:"id"`
-	Name           string          `json:"name"`
-	Description    string          `json:"description"`
-	PrepTime       string          `json:"prepTime"`
-	CookTime       string          `json:"cookTime"`
-	MainIngredient *IngredientJSON `json:"mainIngredient,omitempty"`
-	Cuisine        *CuisineJSON    `json:"cuisine,omitempty"`
+	ID             string           `json:"id"`
+	Name           string           `json:"name"`
+	Description    string           `json:"description"`
+	PrepTime       string           `json:"prepTime"`
+	CookTime       string           `json:"cookTime"`
+	MainIngredient *IngredientJSON  `json:"mainIngredient,omitempty"`
+	Cuisine        *CuisineJSON     `json:"cuisine,omitempty"`
 	Ingredients    []IngredientJSON `json:"ingredients"`
-	Directions     []string        `json:"directions"`
+	Directions     []string         `json:"directions"`
 }
 
 // IngredientJSON is the JSON response for an ingredient

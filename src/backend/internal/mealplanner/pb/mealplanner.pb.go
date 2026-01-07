@@ -27,6 +27,7 @@ type SuggestionsRequest struct {
 	DailyConstraints         []*DailyConstraints    `protobuf:"bytes,1,rep,name=daily_constraints,json=dailyConstraints,proto3" json:"daily_constraints,omitempty"`
 	AlreadySelectedRecipeIds []string               `protobuf:"bytes,2,rep,name=already_selected_recipe_ids,json=alreadySelectedRecipeIds,proto3" json:"already_selected_recipe_ids,omitempty"` // UUID strings
 	Amount                   int32                  `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`
+	UserId                   string                 `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID string
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -80,6 +81,13 @@ func (x *SuggestionsRequest) GetAmount() int32 {
 		return x.Amount
 	}
 	return 0
+}
+
+func (x *SuggestionsRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
 }
 
 // Response message containing suggested recipe IDs
@@ -274,11 +282,12 @@ var File_mealplanner_v1_mealplanner_proto protoreflect.FileDescriptor
 
 const file_mealplanner_v1_mealplanner_proto_rawDesc = "" +
 	"\n" +
-	" mealplanner/v1/mealplanner.proto\x12\x0emealplanner.v1\"\xba\x01\n" +
+	" mealplanner/v1/mealplanner.proto\x12\x0emealplanner.v1\"\xd3\x01\n" +
 	"\x12SuggestionsRequest\x12M\n" +
 	"\x11daily_constraints\x18\x01 \x03(\v2 .mealplanner.v1.DailyConstraintsR\x10dailyConstraints\x12=\n" +
 	"\x1balready_selected_recipe_ids\x18\x02 \x03(\tR\x18alreadySelectedRecipeIds\x12\x16\n" +
-	"\x06amount\x18\x03 \x01(\x05R\x06amount\"4\n" +
+	"\x06amount\x18\x03 \x01(\x05R\x06amount\x12\x17\n" +
+	"\auser_id\x18\x04 \x01(\tR\x06userId\"4\n" +
 	"\x13SuggestionsResponse\x12\x1d\n" +
 	"\n" +
 	"recipe_ids\x18\x01 \x03(\tR\trecipeIds\"\xc3\x01\n" +

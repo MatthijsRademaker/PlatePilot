@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/google/uuid"
+
+	"github.com/platepilot/backend/internal/bff/middleware"
 )
 
 // ErrorResponse is the standard error response
@@ -31,4 +35,9 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 // writeError writes a JSON error response
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, ErrorResponse{Error: message})
+}
+
+func requireUserID(r *http.Request) (uuid.UUID, bool) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	return userID, ok
 }

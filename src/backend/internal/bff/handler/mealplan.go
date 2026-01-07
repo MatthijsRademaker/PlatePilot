@@ -35,6 +35,12 @@ func NewMealPlanHandler(client *client.MealPlannerClient, logger *slog.Logger) *
 // @Failure      500      {object}  ErrorResponse
 // @Router       /mealplan/suggest [post]
 func (h *MealPlanHandler) Suggest(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
 	var req SuggestRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
@@ -48,7 +54,7 @@ func (h *MealPlanHandler) Suggest(w http.ResponseWriter, r *http.Request) {
 		req.Amount = 20
 	}
 
-	recipeIDs, err := h.client.SuggestRecipes(r.Context(), req.ToProto())
+	recipeIDs, err := h.client.SuggestRecipes(r.Context(), req.ToProto(userID.String()))
 	if err != nil {
 		h.logger.Error("failed to suggest recipes", "error", err)
 		writeError(w, http.StatusInternalServerError, "failed to suggest recipes")
@@ -77,7 +83,7 @@ type EntityConstraint struct {
 }
 
 // ToProto converts the request to a protobuf message
-func (r *SuggestRequest) ToProto() *mealplannerpb.SuggestionsRequest {
+func (r *SuggestRequest) ToProto(userID string) *mealplannerpb.SuggestionsRequest {
 	dailyConstraints := make([]*mealplannerpb.DailyConstraints, len(r.DailyConstraints))
 	for i, dc := range r.DailyConstraints {
 		ingredientConstraints := make([]*mealplannerpb.IngredientConstraint, len(dc.IngredientConstraints))
@@ -101,6 +107,7 @@ func (r *SuggestRequest) ToProto() *mealplannerpb.SuggestionsRequest {
 	}
 
 	return &mealplannerpb.SuggestionsRequest{
+		UserId:                   userID,
 		DailyConstraints:         dailyConstraints,
 		AlreadySelectedRecipeIds: r.AlreadySelectedRecipeIDs,
 		Amount:                   r.Amount,

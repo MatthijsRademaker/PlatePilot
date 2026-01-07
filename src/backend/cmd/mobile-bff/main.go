@@ -25,9 +25,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/platepilot/backend/internal/bff/auth"
 	"github.com/platepilot/backend/internal/bff/client"
 	"github.com/platepilot/backend/internal/bff/handler"
+	bffmiddleware "github.com/platepilot/backend/internal/bff/middleware"
 	"github.com/platepilot/backend/internal/common/config"
 )
 
@@ -50,12 +53,22 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
+	ctx := context.Background()
+
 	slog.Info("starting mobile-bff",
 		"environment", cfg.Environment,
 		"http_address", cfg.BFF.HTTPAddress,
 		"recipe_api", cfg.BFF.RecipeAPIAddress,
 		"mealplan_api", cfg.BFF.MealPlanAddress,
 	)
+
+	// Create database pool for auth
+	dbPool, err := newDBPool(ctx, cfg.Database)
+	if err != nil {
+		slog.Error("failed to create database pool", "error", err)
+		os.Exit(1)
+	}
+	defer dbPool.Close()
 
 	// Create gRPC clients
 	recipeClient, err := client.NewRecipeClient(cfg.BFF.RecipeAPIAddress, logger)
@@ -72,9 +85,15 @@ func main() {
 	}
 	defer mealPlannerClient.Close()
 
+	// Create auth services
+	authRepo := auth.NewRepository(dbPool)
+	tokenService := auth.NewTokenService(cfg.Auth.JWTSecret, cfg.Auth.Issuer, cfg.Auth.AccessTokenTTL)
+	authService := auth.NewService(authRepo, tokenService, cfg.Auth.RefreshTokenTTL)
+
 	// Create handlers
 	recipeHandler := handler.NewRecipeHandler(recipeClient, logger)
 	mealPlanHandler := handler.NewMealPlanHandler(mealPlannerClient, logger)
+	authHandler := handler.NewAuthHandler(authService, logger)
 
 	// Set up router
 	r := chi.NewRouter()
@@ -101,17 +120,28 @@ func main() {
 
 	// API v1 routes
 	r.Route("/v1", func(r chi.Router) {
-		r.Route("/recipe", func(r chi.Router) {
-			r.Get("/{id}", recipeHandler.GetByID)
-			r.Get("/all", recipeHandler.GetAll)
-			r.Get("/similar", recipeHandler.GetSimilar)
-			r.Get("/cuisine/{id}", recipeHandler.GetByCuisine)
-			r.Get("/ingredient/{id}", recipeHandler.GetByIngredient)
-			r.Get("/allergy/{id}", recipeHandler.GetByAllergy)
-			r.Post("/create", recipeHandler.Create)
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/register", authHandler.Register)
+			r.Post("/login", authHandler.Login)
+			r.Post("/refresh", authHandler.Refresh)
+			r.Post("/logout", authHandler.Logout)
 		})
-		r.Route("/mealplan", func(r chi.Router) {
-			r.Post("/suggest", mealPlanHandler.Suggest)
+
+		r.Group(func(r chi.Router) {
+			r.Use(bffmiddleware.AuthMiddleware(tokenService))
+
+			r.Route("/recipe", func(r chi.Router) {
+				r.Get("/{id}", recipeHandler.GetByID)
+				r.Get("/all", recipeHandler.GetAll)
+				r.Get("/similar", recipeHandler.GetSimilar)
+				r.Get("/cuisine/{id}", recipeHandler.GetByCuisine)
+				r.Get("/ingredient/{id}", recipeHandler.GetByIngredient)
+				r.Get("/allergy/{id}", recipeHandler.GetByAllergy)
+				r.Post("/create", recipeHandler.Create)
+			})
+			r.Route("/mealplan", func(r chi.Router) {
+				r.Post("/suggest", mealPlanHandler.Suggest)
+			})
 		})
 	})
 
@@ -152,6 +182,25 @@ func main() {
 	}
 
 	slog.Info("mobile-bff stopped")
+}
+
+func newDBPool(ctx context.Context, cfg config.Database) (*pgxpool.Pool, error) {
+	poolCfg, err := pgxpool.ParseConfig(cfg.RecipeDB)
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.MaxOpenConns > 0 {
+		poolCfg.MaxConns = int32(cfg.MaxOpenConns)
+	}
+	if cfg.MaxIdleConns > 0 {
+		poolCfg.MinConns = int32(cfg.MaxIdleConns)
+	}
+	if cfg.ConnMaxLife > 0 {
+		poolCfg.MaxConnLifetime = cfg.ConnMaxLife
+	}
+
+	return pgxpool.NewWithConfig(ctx, poolCfg)
 }
 
 // corsMiddleware returns a CORS middleware

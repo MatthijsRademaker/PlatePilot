@@ -9,19 +9,20 @@ import (
 
 // Recipe represents a recipe in the system
 type Recipe struct {
-	ID             uuid.UUID
-	Name           string
-	Description    string
-	PrepTime       string
-	CookTime       string
-	MainIngredient *Ingredient
-	Cuisine        *Cuisine
-	Ingredients    []Ingredient
-	Directions     []string
+	ID              uuid.UUID
+	UserID          uuid.UUID
+	Name            string
+	Description     string
+	PrepTime        string
+	CookTime        string
+	MainIngredient  *Ingredient
+	Cuisine         *Cuisine
+	Ingredients     []Ingredient
+	Directions      []string
 	NutritionalInfo NutritionalInfo
-	Metadata       Metadata
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	Metadata        Metadata
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // Allergies returns all unique allergies from the recipe's ingredients

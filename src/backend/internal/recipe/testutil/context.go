@@ -5,12 +5,15 @@ import (
 	"io"
 	"log/slog"
 
+	"github.com/google/uuid"
+
 	"github.com/platepilot/backend/internal/recipe/handler"
 )
 
 // TestContext contains all test dependencies for handler tests
 type TestContext struct {
 	Ctx       context.Context
+	UserID    uuid.UUID
 	Repo      *FakeRecipeRepository
 	Publisher *FakeEventPublisher
 	VectorGen *FakeVectorGenerator
@@ -21,6 +24,7 @@ type TestContext struct {
 // NewTestContext creates a new test context with all dependencies wired up
 func NewTestContext() *TestContext {
 	ctx := context.Background()
+	userID := uuid.New()
 	repo := NewFakeRecipeRepository()
 	publisher := NewFakeEventPublisher()
 	vectorGen := NewFakeVectorGenerator()
@@ -32,6 +36,7 @@ func NewTestContext() *TestContext {
 
 	return &TestContext{
 		Ctx:       ctx,
+		UserID:    userID,
 		Repo:      repo,
 		Publisher: publisher,
 		VectorGen: vectorGen,
@@ -44,6 +49,7 @@ func NewTestContext() *TestContext {
 // Use this to test behavior when event publishing is disabled
 func NewTestContextWithoutPublisher() *TestContext {
 	ctx := context.Background()
+	userID := uuid.New()
 	repo := NewFakeRecipeRepository()
 	vectorGen := NewFakeVectorGenerator()
 
@@ -54,6 +60,7 @@ func NewTestContextWithoutPublisher() *TestContext {
 
 	return &TestContext{
 		Ctx:       ctx,
+		UserID:    userID,
 		Repo:      repo,
 		Publisher: nil, // No publisher
 		VectorGen: vectorGen,

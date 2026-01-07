@@ -23,6 +23,7 @@ type FakeRecipeRepository struct {
 
 // GetAllCall records a call to GetAll
 type GetAllCall struct {
+	UserID uuid.UUID
 	Limit  int
 	Offset int
 }
@@ -36,22 +37,29 @@ func NewFakeRecipeRepository() *FakeRecipeRepository {
 }
 
 // GetAll retrieves all recipes with pagination
-func (r *FakeRecipeRepository) GetAll(ctx context.Context, limit, offset int) ([]repository.Recipe, error) {
-	r.GetAllCalls = append(r.GetAllCalls, GetAllCall{Limit: limit, Offset: offset})
+func (r *FakeRecipeRepository) GetAll(ctx context.Context, userID uuid.UUID, limit, offset int) ([]repository.Recipe, error) {
+	r.GetAllCalls = append(r.GetAllCalls, GetAllCall{UserID: userID, Limit: limit, Offset: offset})
 
 	if r.FailOnGetAll {
 		return nil, errors.New("fake repository error")
 	}
 
+	filtered := make([]repository.Recipe, 0, len(r.Recipes))
+	for _, recipe := range r.Recipes {
+		if recipe.UserID == userID {
+			filtered = append(filtered, recipe)
+		}
+	}
+
 	// Apply pagination
-	if offset >= len(r.Recipes) {
+	if offset >= len(filtered) {
 		return []repository.Recipe{}, nil
 	}
 	end := offset + limit
-	if end > len(r.Recipes) {
-		end = len(r.Recipes)
+	if end > len(filtered) {
+		end = len(filtered)
 	}
-	return r.Recipes[offset:end], nil
+	return filtered[offset:end], nil
 }
 
 // AddRecipe adds a recipe to the fake repository for test setup

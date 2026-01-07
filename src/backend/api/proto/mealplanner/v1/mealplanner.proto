@@ -15,6 +15,7 @@ message SuggestionsRequest {
   repeated DailyConstraints daily_constraints = 1;
   repeated string already_selected_recipe_ids = 2; // UUID strings
   int32 amount = 3;
+  string user_id = 4; // UUID string
 }
 
 // Response message containing suggested recipe IDs

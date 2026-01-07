@@ -31,12 +31,14 @@ service RecipeService {
 // Request for getting a recipe by ID
 message GetRecipeByIdRequest {
   string recipe_id = 1; // UUID string
+  string user_id = 2; // UUID string
 }
 
 // Request for getting all recipes with pagination
 message GetAllRecipesRequest {
   int32 page_index = 1;
   int32 page_size = 2;
+  string user_id = 3; // UUID string
 }
 
 // Response containing multiple recipes with pagination
@@ -58,27 +60,32 @@ message CreateRecipeRequest {
   string cuisine_id = 6; // UUID string
   repeated string ingredient_ids = 7; // UUID strings
   repeated string directions = 8;
+  string user_id = 9; // UUID string
 }
 
 // Request for getting similar recipes
 message GetSimilarRecipesRequest {
   string recipe_id = 1; // UUID string
   int32 amount = 2;
+  string user_id = 3; // UUID string
 }
 
 // Request for getting recipes by cuisine
 message GetRecipesByCuisineRequest {
   string cuisine_id = 1; // UUID string
+  string user_id = 2; // UUID string
 }
 
 // Request for getting recipes by ingredient
 message GetRecipesByIngredientRequest {
   string ingredient_id = 1; // UUID string
+  string user_id = 2; // UUID string
 }
 
 // Request for getting recipes avoiding an allergy
 message GetRecipesByAllergyRequest {
   string allergy_id = 1; // UUID string
+  string user_id = 2; // UUID string
 }
 
 // Response containing recipe details

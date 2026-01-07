@@ -18,18 +18,18 @@ type FakeRecipeRepository struct {
 	Cuisines    map[uuid.UUID]*domain.Cuisine
 
 	// Failure modes for testing error paths
-	FailOnGetByID            bool
-	FailOnGetAll             bool
-	FailOnCreate             bool
-	FailOnGetSimilar         bool
-	FailOnGetByCuisine       bool
-	FailOnGetByIngredient    bool
+	FailOnGetByID             bool
+	FailOnGetAll              bool
+	FailOnCreate              bool
+	FailOnGetSimilar          bool
+	FailOnGetByCuisine        bool
+	FailOnGetByIngredient     bool
 	FailOnGetExcludingAllergy bool
-	FailOnGetIngredientByID  bool
-	FailOnGetCuisineByID     bool
+	FailOnGetIngredientByID   bool
+	FailOnGetCuisineByID      bool
 
 	// Call tracking for assertions
-	CreateCalls []CreateCall
+	CreateCalls  []CreateCall
 	GetByIDCalls []uuid.UUID
 }
 
@@ -41,16 +41,16 @@ type CreateCall struct {
 // NewFakeRecipeRepository creates a new fake repository
 func NewFakeRecipeRepository() *FakeRecipeRepository {
 	return &FakeRecipeRepository{
-		Recipes:     make(map[uuid.UUID]*domain.Recipe),
-		Ingredients: make(map[uuid.UUID]*domain.Ingredient),
-		Cuisines:    make(map[uuid.UUID]*domain.Cuisine),
-		CreateCalls: []CreateCall{},
+		Recipes:      make(map[uuid.UUID]*domain.Recipe),
+		Ingredients:  make(map[uuid.UUID]*domain.Ingredient),
+		Cuisines:     make(map[uuid.UUID]*domain.Cuisine),
+		CreateCalls:  []CreateCall{},
 		GetByIDCalls: []uuid.UUID{},
 	}
 }
 
 // GetByID retrieves a recipe by ID
-func (r *FakeRecipeRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Recipe, error) {
+func (r *FakeRecipeRepository) GetByID(ctx context.Context, userID, id uuid.UUID) (*domain.Recipe, error) {
 	r.GetByIDCalls = append(r.GetByIDCalls, id)
 
 	if r.FailOnGetByID {
@@ -58,21 +58,23 @@ func (r *FakeRecipeRepository) GetByID(ctx context.Context, id uuid.UUID) (*doma
 	}
 
 	recipe, ok := r.Recipes[id]
-	if !ok {
+	if !ok || recipe.UserID != userID {
 		return nil, repository.ErrRecipeNotFound
 	}
 	return recipe, nil
 }
 
 // GetAll retrieves all recipes with pagination
-func (r *FakeRecipeRepository) GetAll(ctx context.Context, limit, offset int) ([]domain.Recipe, error) {
+func (r *FakeRecipeRepository) GetAll(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
 	if r.FailOnGetAll {
 		return nil, errors.New("fake repository error")
 	}
 
 	recipes := make([]domain.Recipe, 0, len(r.Recipes))
 	for _, recipe := range r.Recipes {
-		recipes = append(recipes, *recipe)
+		if recipe.UserID == userID {
+			recipes = append(recipes, *recipe)
+		}
 	}
 
 	// Apply pagination
@@ -87,11 +89,17 @@ func (r *FakeRecipeRepository) GetAll(ctx context.Context, limit, offset int) ([
 }
 
 // Count returns the total number of recipes
-func (r *FakeRecipeRepository) Count(ctx context.Context) (int64, error) {
+func (r *FakeRecipeRepository) Count(ctx context.Context, userID uuid.UUID) (int64, error) {
 	if r.FailOnGetAll {
 		return 0, errors.New("fake repository error")
 	}
-	return int64(len(r.Recipes)), nil
+	count := int64(0)
+	for _, recipe := range r.Recipes {
+		if recipe.UserID == userID {
+			count++
+		}
+	}
+	return count, nil
 }
 
 // Create creates a new recipe
@@ -112,20 +120,20 @@ func (r *FakeRecipeRepository) Create(ctx context.Context, recipe *domain.Recipe
 }
 
 // GetSimilar retrieves similar recipes
-func (r *FakeRecipeRepository) GetSimilar(ctx context.Context, recipeID uuid.UUID, limit int) ([]domain.Recipe, error) {
+func (r *FakeRecipeRepository) GetSimilar(ctx context.Context, userID, recipeID uuid.UUID, limit int) ([]domain.Recipe, error) {
 	if r.FailOnGetSimilar {
 		return nil, errors.New("fake repository error")
 	}
 
 	// Check if source recipe exists
-	if _, ok := r.Recipes[recipeID]; !ok {
+	if recipe, ok := r.Recipes[recipeID]; !ok || recipe.UserID != userID {
 		return nil, repository.ErrRecipeNotFound
 	}
 
 	// Return all other recipes (simplified similarity)
 	recipes := make([]domain.Recipe, 0)
 	for id, recipe := range r.Recipes {
-		if id != recipeID {
+		if id != recipeID && recipe.UserID == userID {
 			recipes = append(recipes, *recipe)
 			if len(recipes) >= limit {
 				break
@@ -136,14 +144,14 @@ func (r *FakeRecipeRepository) GetSimilar(ctx context.Context, recipeID uuid.UUI
 }
 
 // GetByCuisine retrieves recipes by cuisine
-func (r *FakeRecipeRepository) GetByCuisine(ctx context.Context, cuisineID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
+func (r *FakeRecipeRepository) GetByCuisine(ctx context.Context, userID, cuisineID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
 	if r.FailOnGetByCuisine {
 		return nil, errors.New("fake repository error")
 	}
 
 	recipes := make([]domain.Recipe, 0)
 	for _, recipe := range r.Recipes {
-		if recipe.Cuisine != nil && recipe.Cuisine.ID == cuisineID {
+		if recipe.UserID == userID && recipe.Cuisine != nil && recipe.Cuisine.ID == cuisineID {
 			recipes = append(recipes, *recipe)
 		}
 	}
@@ -151,13 +159,16 @@ func (r *FakeRecipeRepository) GetByCuisine(ctx context.Context, cuisineID uuid.
 }
 
 // GetByIngredient retrieves recipes containing a specific ingredient
-func (r *FakeRecipeRepository) GetByIngredient(ctx context.Context, ingredientID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
+func (r *FakeRecipeRepository) GetByIngredient(ctx context.Context, userID, ingredientID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
 	if r.FailOnGetByIngredient {
 		return nil, errors.New("fake repository error")
 	}
 
 	recipes := make([]domain.Recipe, 0)
 	for _, recipe := range r.Recipes {
+		if recipe.UserID != userID {
+			continue
+		}
 		// Check main ingredient
 		if recipe.MainIngredient != nil && recipe.MainIngredient.ID == ingredientID {
 			recipes = append(recipes, *recipe)
@@ -175,7 +186,7 @@ func (r *FakeRecipeRepository) GetByIngredient(ctx context.Context, ingredientID
 }
 
 // GetExcludingAllergy retrieves recipes excluding a specific allergy
-func (r *FakeRecipeRepository) GetExcludingAllergy(ctx context.Context, allergyID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
+func (r *FakeRecipeRepository) GetExcludingAllergy(ctx context.Context, userID, allergyID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
 	if r.FailOnGetExcludingAllergy {
 		return nil, errors.New("fake repository error")
 	}
@@ -183,7 +194,9 @@ func (r *FakeRecipeRepository) GetExcludingAllergy(ctx context.Context, allergyI
 	// For simplicity, return all recipes (real implementation would filter)
 	recipes := make([]domain.Recipe, 0, len(r.Recipes))
 	for _, recipe := range r.Recipes {
-		recipes = append(recipes, *recipe)
+		if recipe.UserID == userID {
+			recipes = append(recipes, *recipe)
+		}
 	}
 	return recipes, nil
 }

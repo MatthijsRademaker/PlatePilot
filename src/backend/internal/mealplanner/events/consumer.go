@@ -242,6 +242,7 @@ type RecipeUpdatedEvent struct {
 // RecipeDTO is the recipe data in events
 type RecipeDTO struct {
 	ID              uuid.UUID       `json:"id"`
+	UserID          uuid.UUID       `json:"userId"`
 	Name            string          `json:"name"`
 	Description     string          `json:"description"`
 	PrepTime        string          `json:"prepTime"`
@@ -300,6 +301,7 @@ func (d *RecipeDTO) ToRepositoryModel() *repository.Recipe {
 
 	return &repository.Recipe{
 		ID:                 d.ID,
+		UserID:             d.UserID,
 		Name:               d.Name,
 		Description:        d.Description,
 		PrepTime:           d.PrepTime,

@@ -78,10 +78,10 @@ func (p *Publisher) Publish(ctx context.Context, event events.Event) error {
 
 	err = p.channel.PublishWithContext(
 		ctx,
-		p.exchange,  // exchange
-		routingKey,  // routing key
-		false,       // mandatory
-		false,       // immediate
+		p.exchange, // exchange
+		routingKey, // routing key
+		false,      // mandatory
+		false,      // immediate
 		amqp.Publishing{
 			ContentType:  "application/json",
 			DeliveryMode: amqp.Persistent,

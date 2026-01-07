@@ -40,11 +40,12 @@ func (c *RecipeClient) Close() error {
 }
 
 // GetByID retrieves a recipe by its ID
-func (c *RecipeClient) GetByID(ctx context.Context, id string) (*recipepb.RecipeResponse, error) {
-	c.logger.Debug("getting recipe by id", "id", id)
+func (c *RecipeClient) GetByID(ctx context.Context, userID, id string) (*recipepb.RecipeResponse, error) {
+	c.logger.Debug("getting recipe by id", "id", id, "userId", userID)
 
 	resp, err := c.client.GetRecipeById(ctx, &recipepb.GetRecipeByIdRequest{
 		RecipeId: id,
+		UserId:   userID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get recipe by id: %w", err)
@@ -63,10 +64,11 @@ type GetAllResponse struct {
 }
 
 // GetAll retrieves all recipes with pagination
-func (c *RecipeClient) GetAll(ctx context.Context, pageIndex, pageSize int32) (*GetAllResponse, error) {
-	c.logger.Debug("getting all recipes", "pageIndex", pageIndex, "pageSize", pageSize)
+func (c *RecipeClient) GetAll(ctx context.Context, userID string, pageIndex, pageSize int32) (*GetAllResponse, error) {
+	c.logger.Debug("getting all recipes", "pageIndex", pageIndex, "pageSize", pageSize, "userId", userID)
 
 	resp, err := c.client.GetAllRecipes(ctx, &recipepb.GetAllRecipesRequest{
+		UserId:    userID,
 		PageIndex: pageIndex,
 		PageSize:  pageSize,
 	})
@@ -96,12 +98,13 @@ func (c *RecipeClient) Create(ctx context.Context, req *recipepb.CreateRecipeReq
 }
 
 // GetSimilar retrieves recipes similar to a given recipe
-func (c *RecipeClient) GetSimilar(ctx context.Context, recipeID string, amount int32) ([]*recipepb.RecipeResponse, error) {
-	c.logger.Debug("getting similar recipes", "recipeId", recipeID, "amount", amount)
+func (c *RecipeClient) GetSimilar(ctx context.Context, userID, recipeID string, amount int32) ([]*recipepb.RecipeResponse, error) {
+	c.logger.Debug("getting similar recipes", "recipeId", recipeID, "amount", amount, "userId", userID)
 
 	resp, err := c.client.GetSimilarRecipes(ctx, &recipepb.GetSimilarRecipesRequest{
 		RecipeId: recipeID,
 		Amount:   amount,
+		UserId:   userID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get similar recipes: %w", err)
@@ -111,11 +114,12 @@ func (c *RecipeClient) GetSimilar(ctx context.Context, recipeID string, amount i
 }
 
 // GetByCuisine retrieves recipes by cuisine
-func (c *RecipeClient) GetByCuisine(ctx context.Context, cuisineID string) ([]*recipepb.RecipeResponse, error) {
-	c.logger.Debug("getting recipes by cuisine", "cuisineId", cuisineID)
+func (c *RecipeClient) GetByCuisine(ctx context.Context, userID, cuisineID string) ([]*recipepb.RecipeResponse, error) {
+	c.logger.Debug("getting recipes by cuisine", "cuisineId", cuisineID, "userId", userID)
 
 	resp, err := c.client.GetRecipesByCuisine(ctx, &recipepb.GetRecipesByCuisineRequest{
 		CuisineId: cuisineID,
+		UserId:    userID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get recipes by cuisine: %w", err)
@@ -125,11 +129,12 @@ func (c *RecipeClient) GetByCuisine(ctx context.Context, cuisineID string) ([]*r
 }
 
 // GetByIngredient retrieves recipes by ingredient
-func (c *RecipeClient) GetByIngredient(ctx context.Context, ingredientID string) ([]*recipepb.RecipeResponse, error) {
-	c.logger.Debug("getting recipes by ingredient", "ingredientId", ingredientID)
+func (c *RecipeClient) GetByIngredient(ctx context.Context, userID, ingredientID string) ([]*recipepb.RecipeResponse, error) {
+	c.logger.Debug("getting recipes by ingredient", "ingredientId", ingredientID, "userId", userID)
 
 	resp, err := c.client.GetRecipesByIngredient(ctx, &recipepb.GetRecipesByIngredientRequest{
 		IngredientId: ingredientID,
+		UserId:       userID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get recipes by ingredient: %w", err)
@@ -139,11 +144,12 @@ func (c *RecipeClient) GetByIngredient(ctx context.Context, ingredientID string)
 }
 
 // GetByAllergy retrieves recipes excluding an allergy
-func (c *RecipeClient) GetByAllergy(ctx context.Context, allergyID string) ([]*recipepb.RecipeResponse, error) {
-	c.logger.Debug("getting recipes by allergy", "allergyId", allergyID)
+func (c *RecipeClient) GetByAllergy(ctx context.Context, userID, allergyID string) ([]*recipepb.RecipeResponse, error) {
+	c.logger.Debug("getting recipes by allergy", "allergyId", allergyID, "userId", userID)
 
 	resp, err := c.client.GetRecipesByAllergy(ctx, &recipepb.GetRecipesByAllergyRequest{
 		AllergyId: allergyID,
+		UserId:    userID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get recipes by allergy: %w", err)

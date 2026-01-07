@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Bash(done)",
+      "Bash(go mod init:*)",
+      "Bash(go get:*)",
+      "Bash(github.com/go-chi/chi/v5@latest )",
+      "Bash(github.com/google/uuid@latest )",
+      "Bash(github.com/jackc/pgx/v5@latest )",
+      "Bash(github.com/pgvector/pgvector-go@latest )",
+      "Bash(github.com/spf13/viper@latest )",
+      "Bash(google.golang.org/grpc@latest )",
+      "Bash(google.golang.org/protobuf@latest)",
+      "Bash(chmod:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(go build:*)",
+      "Bash(make verify:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -13,6 +13,7 @@ import (
 
 // SuggestionRequest contains the parameters for suggesting recipes
 type SuggestionRequest struct {
+	UserID                 uuid.UUID
 	DailyConstraints       []DailyConstraints
 	AlreadySelectedRecipes []uuid.UUID
 	Amount                 int
@@ -37,7 +38,7 @@ func NewPlanner(repo RecipeRepository) *Planner {
 // SuggestMeals suggests recipes based on the given request
 func (p *Planner) SuggestMeals(ctx context.Context, req SuggestionRequest) ([]uuid.UUID, error) {
 	// Get all recipes from the repository
-	recipes, err := p.repo.GetAll(ctx, 1000, 0) // Get up to 1000 recipes
+	recipes, err := p.repo.GetAll(ctx, req.UserID, 1000, 0) // Get up to 1000 recipes
 	if err != nil {
 		return nil, err
 	}

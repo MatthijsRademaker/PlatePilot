@@ -25,6 +25,7 @@ const (
 type GetRecipeByIdRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RecipeId      string                 `protobuf:"bytes,1,opt,name=recipe_id,json=recipeId,proto3" json:"recipe_id,omitempty"` // UUID string
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`       // UUID string
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -66,11 +67,19 @@ func (x *GetRecipeByIdRequest) GetRecipeId() string {
 	return ""
 }
 
+func (x *GetRecipeByIdRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 // Request for getting all recipes with pagination
 type GetAllRecipesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PageIndex     int32                  `protobuf:"varint,1,opt,name=page_index,json=pageIndex,proto3" json:"page_index,omitempty"`
 	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID string
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -117,6 +126,13 @@ func (x *GetAllRecipesRequest) GetPageSize() int32 {
 		return x.PageSize
 	}
 	return 0
+}
+
+func (x *GetAllRecipesRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
 }
 
 // Response containing multiple recipes with pagination
@@ -207,6 +223,7 @@ type CreateRecipeRequest struct {
 	CuisineId        string                 `protobuf:"bytes,6,opt,name=cuisine_id,json=cuisineId,proto3" json:"cuisine_id,omitempty"`                        // UUID string
 	IngredientIds    []string               `protobuf:"bytes,7,rep,name=ingredient_ids,json=ingredientIds,proto3" json:"ingredient_ids,omitempty"`            // UUID strings
 	Directions       []string               `protobuf:"bytes,8,rep,name=directions,proto3" json:"directions,omitempty"`
+	UserId           string                 `protobuf:"bytes,9,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID string
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -297,11 +314,19 @@ func (x *CreateRecipeRequest) GetDirections() []string {
 	return nil
 }
 
+func (x *CreateRecipeRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 // Request for getting similar recipes
 type GetSimilarRecipesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RecipeId      string                 `protobuf:"bytes,1,opt,name=recipe_id,json=recipeId,proto3" json:"recipe_id,omitempty"` // UUID string
 	Amount        int32                  `protobuf:"varint,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID string
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -350,10 +375,18 @@ func (x *GetSimilarRecipesRequest) GetAmount() int32 {
 	return 0
 }
 
+func (x *GetSimilarRecipesRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 // Request for getting recipes by cuisine
 type GetRecipesByCuisineRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CuisineId     string                 `protobuf:"bytes,1,opt,name=cuisine_id,json=cuisineId,proto3" json:"cuisine_id,omitempty"` // UUID string
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // UUID string
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -395,10 +428,18 @@ func (x *GetRecipesByCuisineRequest) GetCuisineId() string {
 	return ""
 }
 
+func (x *GetRecipesByCuisineRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 // Request for getting recipes by ingredient
 type GetRecipesByIngredientRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	IngredientId  string                 `protobuf:"bytes,1,opt,name=ingredient_id,json=ingredientId,proto3" json:"ingredient_id,omitempty"` // UUID string
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                   // UUID string
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -440,10 +481,18 @@ func (x *GetRecipesByIngredientRequest) GetIngredientId() string {
 	return ""
 }
 
+func (x *GetRecipesByIngredientRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 // Request for getting recipes avoiding an allergy
 type GetRecipesByAllergyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AllergyId     string                 `protobuf:"bytes,1,opt,name=allergy_id,json=allergyId,proto3" json:"allergy_id,omitempty"` // UUID string
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // UUID string
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -481,6 +530,13 @@ func (*GetRecipesByAllergyRequest) Descriptor() ([]byte, []int) {
 func (x *GetRecipesByAllergyRequest) GetAllergyId() string {
 	if x != nil {
 		return x.AllergyId
+	}
+	return ""
+}
+
+func (x *GetRecipesByAllergyRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
 	}
 	return ""
 }
@@ -704,13 +760,15 @@ var File_recipe_v1_recipe_proto protoreflect.FileDescriptor
 
 const file_recipe_v1_recipe_proto_rawDesc = "" +
 	"\n" +
-	"\x16recipe/v1/recipe.proto\x12\trecipe.v1\"3\n" +
+	"\x16recipe/v1/recipe.proto\x12\trecipe.v1\"L\n" +
 	"\x14GetRecipeByIdRequest\x12\x1b\n" +
-	"\trecipe_id\x18\x01 \x01(\tR\brecipeId\"R\n" +
+	"\trecipe_id\x18\x01 \x01(\tR\brecipeId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"k\n" +
 	"\x14GetAllRecipesRequest\x12\x1d\n" +
 	"\n" +
 	"page_index\x18\x01 \x01(\x05R\tpageIndex\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\xca\x01\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\tR\x06userId\"\xca\x01\n" +
 	"\x15GetAllRecipesResponse\x123\n" +
 	"\arecipes\x18\x01 \x03(\v2\x19.recipe.v1.RecipeResponseR\arecipes\x12\x1d\n" +
 	"\n" +
@@ -719,7 +777,7 @@ const file_recipe_v1_recipe_proto_rawDesc = "" +
 	"\vtotal_count\x18\x04 \x01(\x05R\n" +
 	"totalCount\x12\x1f\n" +
 	"\vtotal_pages\x18\x05 \x01(\x05R\n" +
-	"totalPages\"\x99\x02\n" +
+	"totalPages\"\xb2\x02\n" +
 	"\x13CreateRecipeRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1b\n" +
@@ -731,18 +789,23 @@ const file_recipe_v1_recipe_proto_rawDesc = "" +
 	"\x0eingredient_ids\x18\a \x03(\tR\ringredientIds\x12\x1e\n" +
 	"\n" +
 	"directions\x18\b \x03(\tR\n" +
-	"directions\"O\n" +
+	"directions\x12\x17\n" +
+	"\auser_id\x18\t \x01(\tR\x06userId\"h\n" +
 	"\x18GetSimilarRecipesRequest\x12\x1b\n" +
 	"\trecipe_id\x18\x01 \x01(\tR\brecipeId\x12\x16\n" +
-	"\x06amount\x18\x02 \x01(\x05R\x06amount\";\n" +
+	"\x06amount\x18\x02 \x01(\x05R\x06amount\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\tR\x06userId\"T\n" +
 	"\x1aGetRecipesByCuisineRequest\x12\x1d\n" +
 	"\n" +
-	"cuisine_id\x18\x01 \x01(\tR\tcuisineId\"D\n" +
+	"cuisine_id\x18\x01 \x01(\tR\tcuisineId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"]\n" +
 	"\x1dGetRecipesByIngredientRequest\x12#\n" +
-	"\ringredient_id\x18\x01 \x01(\tR\fingredientId\";\n" +
+	"\ringredient_id\x18\x01 \x01(\tR\fingredientId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"T\n" +
 	"\x1aGetRecipesByAllergyRequest\x12\x1d\n" +
 	"\n" +
-	"allergy_id\x18\x01 \x01(\tR\tallergyId\"\xd7\x02\n" +
+	"allergy_id\x18\x01 \x01(\tR\tallergyId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"\xd7\x02\n" +
 	"\x0eRecipeResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +

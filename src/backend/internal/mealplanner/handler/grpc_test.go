@@ -76,6 +76,22 @@ func TestSuggestRecipes_WithAlreadySelected_PassesToPlanner(t *testing.T) {
 	thenPlannerReceivedAlreadySelected(t, tc, 1)
 }
 
+func TestSuggestRecipes_PassesUserIDToPlanner(t *testing.T) {
+	// Given
+	tc := givenMealPlannerAPI()
+	userID := uuid.New()
+
+	// When
+	_, err := whenRequestingSuggestions(tc, &pb.SuggestionsRequest{
+		UserId: userID.String(),
+		Amount: 5,
+	})
+
+	// Then
+	thenNoError(t, err)
+	thenPlannerReceivedUserID(t, tc, userID)
+}
+
 func TestSuggestRecipes_InvalidSelectedRecipeID_ReturnsInvalidArgument(t *testing.T) {
 	// Given
 	tc := givenMealPlannerAPI()
@@ -125,6 +141,21 @@ func TestSuggestRecipes_InvalidIngredientConstraintID_ReturnsInvalidArgument(t *
 				},
 			},
 		},
+		Amount: 5,
+	})
+
+	// Then
+	thenErrorHasCode(t, err, codes.InvalidArgument)
+	thenPlannerWasNotCalled(t, tc)
+}
+
+func TestSuggestRecipes_InvalidUserID_ReturnsInvalidArgument(t *testing.T) {
+	// Given
+	tc := givenMealPlannerAPI()
+
+	// When
+	_, err := whenRequestingSuggestions(tc, &pb.SuggestionsRequest{
+		UserId: "not-a-valid-uuid",
 		Amount: 5,
 	})
 
@@ -256,6 +287,9 @@ func givenPlannerFails(tc *testutil.HandlerTestContext) {
 // =============================================================================
 
 func whenRequestingSuggestions(tc *testutil.HandlerTestContext, req *pb.SuggestionsRequest) (*pb.SuggestionsResponse, error) {
+	if req.UserId == "" {
+		req.UserId = tc.UserID.String()
+	}
 	return tc.Handler.SuggestRecipes(tc.Ctx, req)
 }
 
@@ -348,5 +382,16 @@ func thenPlannerReceivedAmount(t *testing.T, tc *testutil.HandlerTestContext, ex
 	lastCall := tc.Planner.SuggestMealsCalls[len(tc.Planner.SuggestMealsCalls)-1]
 	if lastCall.Amount != expectedAmount {
 		t.Fatalf("expected amount %d, got %d", expectedAmount, lastCall.Amount)
+	}
+}
+
+func thenPlannerReceivedUserID(t *testing.T, tc *testutil.HandlerTestContext, expectedUserID uuid.UUID) {
+	t.Helper()
+	if len(tc.Planner.SuggestMealsCalls) == 0 {
+		t.Fatal("expected planner to be called")
+	}
+	lastCall := tc.Planner.SuggestMealsCalls[len(tc.Planner.SuggestMealsCalls)-1]
+	if lastCall.UserID != expectedUserID {
+		t.Fatalf("expected user ID %s, got %s", expectedUserID, lastCall.UserID)
 	}
 }

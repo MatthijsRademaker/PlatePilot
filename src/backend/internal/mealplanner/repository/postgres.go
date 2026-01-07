@@ -13,6 +13,7 @@ import (
 // Recipe represents a recipe in the read model
 type Recipe struct {
 	ID                 uuid.UUID
+	UserID             uuid.UUID
 	Name               string
 	Description        string
 	PrepTime           string
@@ -41,21 +42,21 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 }
 
 // GetByID retrieves a recipe by its ID
-func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Recipe, error) {
+func (r *Repository) GetByID(ctx context.Context, userID, id uuid.UUID) (*Recipe, error) {
 	query := `
 		SELECT
-			id, name, description, prep_time, cook_time,
+			id, user_id, name, description, prep_time, cook_time,
 			search_vector, cuisine_id, cuisine_name,
 			main_ingredient_id, main_ingredient_name,
 			ingredient_ids, allergy_ids, directions,
 			image_url, tags, calories
 		FROM recipes
-		WHERE id = $1
+		WHERE id = $1 AND user_id = $2
 	`
 
 	var recipe Recipe
-	err := r.pool.QueryRow(ctx, query, id).Scan(
-		&recipe.ID, &recipe.Name, &recipe.Description,
+	err := r.pool.QueryRow(ctx, query, id, userID).Scan(
+		&recipe.ID, &recipe.UserID, &recipe.Name, &recipe.Description,
 		&recipe.PrepTime, &recipe.CookTime,
 		&recipe.SearchVector, &recipe.CuisineID, &recipe.CuisineName,
 		&recipe.MainIngredientID, &recipe.MainIngredientName,
@@ -73,20 +74,21 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Recipe, error)
 }
 
 // GetAll retrieves all recipes with pagination
-func (r *Repository) GetAll(ctx context.Context, limit, offset int) ([]Recipe, error) {
+func (r *Repository) GetAll(ctx context.Context, userID uuid.UUID, limit, offset int) ([]Recipe, error) {
 	query := `
 		SELECT
-			id, name, description, prep_time, cook_time,
+			id, user_id, name, description, prep_time, cook_time,
 			search_vector, cuisine_id, cuisine_name,
 			main_ingredient_id, main_ingredient_name,
 			ingredient_ids, allergy_ids, directions,
 			image_url, tags, calories
 		FROM recipes
+		WHERE user_id = $1
 		ORDER BY created_at DESC
-		LIMIT $1 OFFSET $2
+		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.pool.Query(ctx, query, limit, offset)
+	rows, err := r.pool.Query(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query recipes: %w", err)
 	}
@@ -96,21 +98,21 @@ func (r *Repository) GetAll(ctx context.Context, limit, offset int) ([]Recipe, e
 }
 
 // GetByCuisine retrieves recipes by cuisine ID
-func (r *Repository) GetByCuisine(ctx context.Context, cuisineID uuid.UUID, limit, offset int) ([]Recipe, error) {
+func (r *Repository) GetByCuisine(ctx context.Context, userID, cuisineID uuid.UUID, limit, offset int) ([]Recipe, error) {
 	query := `
 		SELECT
-			id, name, description, prep_time, cook_time,
+			id, user_id, name, description, prep_time, cook_time,
 			search_vector, cuisine_id, cuisine_name,
 			main_ingredient_id, main_ingredient_name,
 			ingredient_ids, allergy_ids, directions,
 			image_url, tags, calories
 		FROM recipes
-		WHERE cuisine_id = $1
+		WHERE cuisine_id = $1 AND user_id = $2
 		ORDER BY created_at DESC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 
-	rows, err := r.pool.Query(ctx, query, cuisineID, limit, offset)
+	rows, err := r.pool.Query(ctx, query, cuisineID, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query recipes by cuisine: %w", err)
 	}
@@ -120,21 +122,22 @@ func (r *Repository) GetByCuisine(ctx context.Context, cuisineID uuid.UUID, limi
 }
 
 // GetByIngredient retrieves recipes containing a specific ingredient
-func (r *Repository) GetByIngredient(ctx context.Context, ingredientID uuid.UUID, limit, offset int) ([]Recipe, error) {
+func (r *Repository) GetByIngredient(ctx context.Context, userID, ingredientID uuid.UUID, limit, offset int) ([]Recipe, error) {
 	query := `
 		SELECT
-			id, name, description, prep_time, cook_time,
+			id, user_id, name, description, prep_time, cook_time,
 			search_vector, cuisine_id, cuisine_name,
 			main_ingredient_id, main_ingredient_name,
 			ingredient_ids, allergy_ids, directions,
 			image_url, tags, calories
 		FROM recipes
-		WHERE main_ingredient_id = $1 OR $1 = ANY(ingredient_ids)
+		WHERE (main_ingredient_id = $1 OR $1 = ANY(ingredient_ids))
+		  AND user_id = $2
 		ORDER BY created_at DESC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 
-	rows, err := r.pool.Query(ctx, query, ingredientID, limit, offset)
+	rows, err := r.pool.Query(ctx, query, ingredientID, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query recipes by ingredient: %w", err)
 	}
@@ -144,21 +147,22 @@ func (r *Repository) GetByIngredient(ctx context.Context, ingredientID uuid.UUID
 }
 
 // GetExcludingAllergy retrieves recipes that don't contain a specific allergy
-func (r *Repository) GetExcludingAllergy(ctx context.Context, allergyID uuid.UUID, limit, offset int) ([]Recipe, error) {
+func (r *Repository) GetExcludingAllergy(ctx context.Context, userID, allergyID uuid.UUID, limit, offset int) ([]Recipe, error) {
 	query := `
 		SELECT
-			id, name, description, prep_time, cook_time,
+			id, user_id, name, description, prep_time, cook_time,
 			search_vector, cuisine_id, cuisine_name,
 			main_ingredient_id, main_ingredient_name,
 			ingredient_ids, allergy_ids, directions,
 			image_url, tags, calories
 		FROM recipes
 		WHERE NOT ($1 = ANY(allergy_ids))
+		  AND user_id = $2
 		ORDER BY created_at DESC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 
-	rows, err := r.pool.Query(ctx, query, allergyID, limit, offset)
+	rows, err := r.pool.Query(ctx, query, allergyID, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query recipes excluding allergy: %w", err)
 	}
@@ -168,12 +172,12 @@ func (r *Repository) GetExcludingAllergy(ctx context.Context, allergyID uuid.UUI
 }
 
 // GetSimilar retrieves recipes similar to a given recipe using vector similarity
-func (r *Repository) GetSimilar(ctx context.Context, recipeID uuid.UUID, limit int) ([]Recipe, error) {
+func (r *Repository) GetSimilar(ctx context.Context, userID, recipeID uuid.UUID, limit int) ([]Recipe, error) {
 	// First get the vector for the target recipe
 	var targetVector pgvector.Vector
 	err := r.pool.QueryRow(ctx,
-		`SELECT search_vector FROM recipes WHERE id = $1`,
-		recipeID,
+		`SELECT search_vector FROM recipes WHERE id = $1 AND user_id = $2`,
+		recipeID, userID,
 	).Scan(&targetVector)
 	if err != nil {
 		return nil, fmt.Errorf("get target vector: %w", err)
@@ -181,18 +185,18 @@ func (r *Repository) GetSimilar(ctx context.Context, recipeID uuid.UUID, limit i
 
 	query := `
 		SELECT
-			id, name, description, prep_time, cook_time,
+			id, user_id, name, description, prep_time, cook_time,
 			search_vector, cuisine_id, cuisine_name,
 			main_ingredient_id, main_ingredient_name,
 			ingredient_ids, allergy_ids, directions,
 			image_url, tags, calories
 		FROM recipes
-		WHERE id != $1
-		ORDER BY search_vector <=> $2
-		LIMIT $3
+		WHERE id != $1 AND user_id = $2
+		ORDER BY search_vector <=> $3
+		LIMIT $4
 	`
 
-	rows, err := r.pool.Query(ctx, query, recipeID, targetVector, limit)
+	rows, err := r.pool.Query(ctx, query, recipeID, userID, targetVector, limit)
 	if err != nil {
 		return nil, fmt.Errorf("query similar recipes: %w", err)
 	}
@@ -202,11 +206,11 @@ func (r *Repository) GetSimilar(ctx context.Context, recipeID uuid.UUID, limit i
 }
 
 // GetVectorByID retrieves just the search vector for a recipe
-func (r *Repository) GetVectorByID(ctx context.Context, id uuid.UUID) (pgvector.Vector, error) {
+func (r *Repository) GetVectorByID(ctx context.Context, userID, id uuid.UUID) (pgvector.Vector, error) {
 	var vector pgvector.Vector
 	err := r.pool.QueryRow(ctx,
-		`SELECT search_vector FROM recipes WHERE id = $1`,
-		id,
+		`SELECT search_vector FROM recipes WHERE id = $1 AND user_id = $2`,
+		id, userID,
 	).Scan(&vector)
 	if err != nil {
 		return pgvector.Vector{}, fmt.Errorf("get vector: %w", err)
@@ -218,15 +222,16 @@ func (r *Repository) GetVectorByID(ctx context.Context, id uuid.UUID) (pgvector.
 func (r *Repository) Upsert(ctx context.Context, recipe *Recipe) error {
 	query := `
 		INSERT INTO recipes (
-			id, name, description, prep_time, cook_time,
+			id, user_id, name, description, prep_time, cook_time,
 			search_vector, cuisine_id, cuisine_name,
 			main_ingredient_id, main_ingredient_name,
 			ingredient_ids, allergy_ids, directions,
 			image_url, tags, calories
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
 		)
 		ON CONFLICT (id) DO UPDATE SET
+			user_id = EXCLUDED.user_id,
 			name = EXCLUDED.name,
 			description = EXCLUDED.description,
 			prep_time = EXCLUDED.prep_time,
@@ -246,7 +251,7 @@ func (r *Repository) Upsert(ctx context.Context, recipe *Recipe) error {
 	`
 
 	_, err := r.pool.Exec(ctx, query,
-		recipe.ID, recipe.Name, recipe.Description,
+		recipe.ID, recipe.UserID, recipe.Name, recipe.Description,
 		recipe.PrepTime, recipe.CookTime,
 		recipe.SearchVector, recipe.CuisineID, recipe.CuisineName,
 		recipe.MainIngredientID, recipe.MainIngredientName,
@@ -274,7 +279,7 @@ func scanRecipes(rows pgx.Rows) ([]Recipe, error) {
 	for rows.Next() {
 		var recipe Recipe
 		err := rows.Scan(
-			&recipe.ID, &recipe.Name, &recipe.Description,
+			&recipe.ID, &recipe.UserID, &recipe.Name, &recipe.Description,
 			&recipe.PrepTime, &recipe.CookTime,
 			&recipe.SearchVector, &recipe.CuisineID, &recipe.CuisineName,
 			&recipe.MainIngredientID, &recipe.MainIngredientName,

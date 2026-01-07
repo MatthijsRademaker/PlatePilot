@@ -29,6 +29,24 @@ func TestSuggestMeals_NoRecipes_ReturnsEmptyList(t *testing.T) {
 	thenResultIsEmpty(t, result)
 }
 
+func TestSuggestMeals_UserScoped_ReturnsOnlyOwnedRecipes(t *testing.T) {
+	// Given
+	tc := givenPlanner()
+	ownedRecipe := givenRecipeExists(tc, "Owned Recipe")
+	givenRecipeExistsForUser(tc, "Other User Recipe", uuid.New())
+
+	// When
+	result, err := whenSuggestingMeals(tc, domain.SuggestionRequest{
+		UserID: tc.UserID,
+		Amount: 5,
+	})
+
+	// Then
+	thenNoError(t, err)
+	thenResultHasCount(t, result, 1)
+	thenResultContains(t, result, ownedRecipe.ID)
+}
+
 func TestSuggestMeals_WithRecipes_ReturnsSuggestions(t *testing.T) {
 	// Given
 	tc := givenPlanner()
@@ -344,10 +362,8 @@ func TestSuggestMeals_DiversityScoring_PrefersDifferentRecipes(t *testing.T) {
 	// Then - the different recipe should rank higher due to diversity
 	thenNoError(t, err)
 	thenResultHasCount(t, result, 2)
+	thenResultHasFirst(t, result, differentRecipe.ID)
 	thenResultContains(t, result, similarRecipe.ID)
-	thenResultContains(t, result, differentRecipe.ID)
-	// Note: We can't easily assert order without more complex testing,
-	// but both recipes should be included
 }
 
 func TestSuggestMeals_NoPreviousSelection_AllHaveMaxDiversity(t *testing.T) {
@@ -379,6 +395,16 @@ func givenPlanner() *testutil.PlannerTestContext {
 func givenRecipeExists(tc *testutil.PlannerTestContext, name string) repository.Recipe {
 	recipe := testutil.NewRecipeBuilder().
 		WithName(name).
+		WithUserID(tc.UserID).
+		Build()
+	tc.Repo.AddRecipe(recipe)
+	return recipe
+}
+
+func givenRecipeExistsForUser(tc *testutil.PlannerTestContext, name string, userID uuid.UUID) repository.Recipe {
+	recipe := testutil.NewRecipeBuilder().
+		WithName(name).
+		WithUserID(userID).
 		Build()
 	tc.Repo.AddRecipe(recipe)
 	return recipe
@@ -388,6 +414,7 @@ func givenRecipeExistsWithCuisine(tc *testutil.PlannerTestContext, name string, 
 	recipe := testutil.NewRecipeBuilder().
 		WithName(name).
 		WithCuisineID(cuisineID).
+		WithUserID(tc.UserID).
 		Build()
 	tc.Repo.AddRecipe(recipe)
 	return recipe
@@ -397,6 +424,7 @@ func givenRecipeExistsWithMainIngredient(tc *testutil.PlannerTestContext, name s
 	recipe := testutil.NewRecipeBuilder().
 		WithName(name).
 		WithMainIngredientID(ingredientID).
+		WithUserID(tc.UserID).
 		Build()
 	tc.Repo.AddRecipe(recipe)
 	return recipe
@@ -406,6 +434,7 @@ func givenRecipeExistsWithIngredients(tc *testutil.PlannerTestContext, name stri
 	recipe := testutil.NewRecipeBuilder().
 		WithName(name).
 		WithIngredientIDs(ingredientIDs).
+		WithUserID(tc.UserID).
 		Build()
 	tc.Repo.AddRecipe(recipe)
 	return recipe
@@ -416,6 +445,7 @@ func givenRecipeExistsWithCuisineAndIngredient(tc *testutil.PlannerTestContext, 
 		WithName(name).
 		WithCuisineID(cuisineID).
 		WithMainIngredientID(ingredientID).
+		WithUserID(tc.UserID).
 		Build()
 	tc.Repo.AddRecipe(recipe)
 	return recipe
@@ -425,6 +455,7 @@ func givenRecipeExistsWithVector(tc *testutil.PlannerTestContext, name string, v
 	recipe := testutil.NewRecipeBuilder().
 		WithName(name).
 		WithSearchVector(vector).
+		WithUserID(tc.UserID).
 		Build()
 	tc.Repo.AddRecipe(recipe)
 	return recipe
@@ -439,6 +470,9 @@ func givenRepositoryFails(tc *testutil.PlannerTestContext) {
 // =============================================================================
 
 func whenSuggestingMeals(tc *testutil.PlannerTestContext, req domain.SuggestionRequest) ([]uuid.UUID, error) {
+	if req.UserID == uuid.Nil {
+		req.UserID = tc.UserID
+	}
 	return tc.Planner.SuggestMeals(tc.Ctx, req)
 }
 
@@ -490,5 +524,15 @@ func thenResultDoesNotContain(t *testing.T, result []uuid.UUID, id uuid.UUID) {
 		if r == id {
 			t.Fatalf("expected result NOT to contain %s", id)
 		}
+	}
+}
+
+func thenResultHasFirst(t *testing.T, result []uuid.UUID, id uuid.UUID) {
+	t.Helper()
+	if len(result) == 0 {
+		t.Fatal("expected non-empty result")
+	}
+	if result[0] != id {
+		t.Fatalf("expected first result to be %s, got %s", id, result[0])
 	}
 }

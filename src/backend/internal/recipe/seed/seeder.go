@@ -3,6 +3,7 @@ package seed
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/platepilot/backend/internal/common/auth"
 	"github.com/platepilot/backend/internal/common/domain"
 	"github.com/platepilot/backend/internal/common/vector"
 	"github.com/platepilot/backend/internal/recipe/events"
@@ -36,8 +38,13 @@ func NewSeeder(repo *repository.Repository, vectorGen vector.Generator, publishe
 
 // SeedFromFile seeds the database from a JSON file
 func (s *Seeder) SeedFromFile(ctx context.Context, filePath string) error {
+	seedUser, err := s.ensureSeedUser(ctx)
+	if err != nil {
+		return fmt.Errorf("ensure seed user: %w", err)
+	}
+
 	// Check if already seeded
-	count, err := s.repo.Count(ctx)
+	count, err := s.repo.Count(ctx, seedUser.ID)
 	if err != nil {
 		return fmt.Errorf("check recipe count: %w", err)
 	}
@@ -65,7 +72,7 @@ func (s *Seeder) SeedFromFile(ctx context.Context, filePath string) error {
 	createdCuisines := make(map[string]*domain.Cuisine)
 
 	for _, recipeData := range seedData.Recipes {
-		if err := s.seedRecipe(ctx, recipeData, createdIngredients, createdCuisines); err != nil {
+		if err := s.seedRecipe(ctx, seedUser.ID, recipeData, createdIngredients, createdCuisines); err != nil {
 			s.logger.Error("failed to seed recipe",
 				"error", err,
 				"recipeName", recipeData.Name,
@@ -86,6 +93,7 @@ func (s *Seeder) SeedFromFile(ctx context.Context, filePath string) error {
 
 func (s *Seeder) seedRecipe(
 	ctx context.Context,
+	userID uuid.UUID,
 	data RecipeData,
 	createdIngredients map[string]*domain.Ingredient,
 	createdCuisines map[string]*domain.Cuisine,
@@ -120,6 +128,7 @@ func (s *Seeder) seedRecipe(
 
 	recipe := &domain.Recipe{
 		ID:             recipeID,
+		UserID:         userID,
 		Name:           data.Name,
 		Description:    data.Description,
 		PrepTime:       data.PrepTime,
@@ -158,6 +167,51 @@ func (s *Seeder) seedRecipe(
 	}
 
 	return nil
+}
+
+func (s *Seeder) ensureSeedUser(ctx context.Context) (*domain.User, error) {
+	email := os.Getenv("PLATEPILOT_SEED_USER_EMAIL")
+	if email == "" {
+		email = "seed@platepilot.local"
+	}
+
+	password := os.Getenv("PLATEPILOT_SEED_USER_PASSWORD")
+	if password == "" {
+		password = "platepilot"
+	}
+
+	user, err := s.repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		if !errors.Is(err, repository.ErrUserNotFound) {
+			return nil, err
+		}
+
+		user = &domain.User{
+			ID:          uuid.New(),
+			Email:       email,
+			DisplayName: "Seed User",
+		}
+
+		if err := s.repo.CreateUser(ctx, user); err != nil {
+			return nil, err
+		}
+	}
+
+	if _, err := s.repo.GetUserPasswordHash(ctx, user.ID); err != nil {
+		if !errors.Is(err, repository.ErrUserNotFound) {
+			return nil, err
+		}
+		hash, err := auth.HashPassword(password)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.repo.CreateUserCredentials(ctx, user.ID, hash); err != nil {
+			return nil, err
+		}
+		s.logger.Info("seed user credentials created", "email", email)
+	}
+
+	return user, nil
 }
 
 func (s *Seeder) getOrCreateCuisine(
@@ -246,17 +300,17 @@ type SeedData struct {
 
 // RecipeData represents a recipe in the seed JSON
 type RecipeData struct {
-	ID              uuid.UUID         `json:"id"`
-	Name            string            `json:"name"`
-	Description     string            `json:"description"`
-	PrepTime        string            `json:"prepTime"`
-	CookTime        string            `json:"cookTime"`
-	MainIngredient  IngredientData    `json:"mainIngredient"`
-	Cuisine         CuisineData       `json:"cuisine"`
-	Ingredients     []IngredientData  `json:"ingredients"`
-	Directions      []string          `json:"directions"`
-	Metadata        MetadataData      `json:"metadata"`
-	NutritionalInfo NutritionalData   `json:"nutritionalInfo"`
+	ID              uuid.UUID        `json:"id"`
+	Name            string           `json:"name"`
+	Description     string           `json:"description"`
+	PrepTime        string           `json:"prepTime"`
+	CookTime        string           `json:"cookTime"`
+	MainIngredient  IngredientData   `json:"mainIngredient"`
+	Cuisine         CuisineData      `json:"cuisine"`
+	Ingredients     []IngredientData `json:"ingredients"`
+	Directions      []string         `json:"directions"`
+	Metadata        MetadataData     `json:"metadata"`
+	NutritionalInfo NutritionalData  `json:"nutritionalInfo"`
 }
 
 // IngredientData represents an ingredient in the seed JSON

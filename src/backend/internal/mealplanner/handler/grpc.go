@@ -33,6 +33,7 @@ func (h *GRPCHandler) SuggestRecipes(ctx context.Context, req *pb.SuggestionsReq
 		"dailyConstraints", len(req.GetDailyConstraints()),
 		"alreadySelected", len(req.GetAlreadySelectedRecipeIds()),
 		"amount", req.GetAmount(),
+		"userId", req.GetUserId(),
 	)
 
 	// Convert protobuf request to domain request
@@ -111,7 +112,13 @@ func (h *GRPCHandler) toDomainRequest(req *pb.SuggestionsRequest) (domain.Sugges
 		amount = 50
 	}
 
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return domain.SuggestionRequest{}, err
+	}
+
 	return domain.SuggestionRequest{
+		UserID:                 userID,
 		DailyConstraints:       dailyConstraints,
 		AlreadySelectedRecipes: alreadySelected,
 		Amount:                 amount,

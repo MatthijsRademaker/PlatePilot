@@ -1,6 +1,7 @@
 package handler_test
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/google/uuid"
@@ -85,6 +86,21 @@ func TestGetAllRecipes_WithRecipes_ReturnsAll(t *testing.T) {
 	thenResponseContainsRecipeWithID(t, resp, recipe2.ID)
 }
 
+func TestGetAllRecipes_UserScoped_ReturnsOnlyOwnedRecipes(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	ownedRecipe := givenRecipeExists(tc)
+	givenRecipeExistsForUser(tc, uuid.New(), "Other User Recipe")
+
+	// When
+	resp, err := whenGettingAllRecipes(tc, 1, 20)
+
+	// Then
+	thenNoError(t, err)
+	thenResponseContainsRecipes(t, resp, 1)
+	thenResponseContainsRecipeWithID(t, resp, ownedRecipe.ID)
+}
+
 func TestGetAllRecipes_EmptyRepository_ReturnsEmpty(t *testing.T) {
 	// Given
 	tc := givenRecipeAPI()
@@ -110,6 +126,20 @@ func TestGetAllRecipes_InvalidPageIndex_DefaultsToFirst(t *testing.T) {
 	thenResponseContainsRecipes(t, resp, 1)
 }
 
+func TestGetAllRecipes_NegativePageIndex_DefaultsToFirst(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	givenMultipleRecipesExist(tc, 2)
+
+	// When (negative pageIndex should default to 1)
+	resp, err := whenGettingAllRecipes(tc, -5, 1)
+
+	// Then
+	thenNoError(t, err)
+	thenResponseContainsRecipes(t, resp, 1)
+	thenPaginationMatches(t, resp, 1, 1, 2, 2)
+}
+
 func TestGetAllRecipes_InvalidPageSize_DefaultsToTwenty(t *testing.T) {
 	// Given
 	tc := givenRecipeAPI()
@@ -121,6 +151,34 @@ func TestGetAllRecipes_InvalidPageSize_DefaultsToTwenty(t *testing.T) {
 	// Then
 	thenNoError(t, err)
 	thenResponseContainsRecipes(t, resp, 1)
+}
+
+func TestGetAllRecipes_ExcessivePageSize_DefaultsToTwenty(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	givenMultipleRecipesExist(tc, 2)
+
+	// When (pageSize > 100 should default to 20)
+	resp, err := whenGettingAllRecipes(tc, 1, 200)
+
+	// Then
+	thenNoError(t, err)
+	thenResponseContainsRecipes(t, resp, 2)
+	thenPaginationMatches(t, resp, 1, 20, 2, 1)
+}
+
+func TestGetAllRecipes_PaginationMetadata_ReturnsTotals(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	givenMultipleRecipesExist(tc, 3)
+
+	// When
+	resp, err := whenGettingAllRecipes(tc, 2, 1)
+
+	// Then
+	thenNoError(t, err)
+	thenResponseContainsRecipes(t, resp, 1)
+	thenPaginationMatches(t, resp, 2, 1, 3, 3)
 }
 
 func TestGetAllRecipes_RepositoryError_ReturnsInternal(t *testing.T) {
@@ -225,6 +283,27 @@ func TestCreateRecipe_InvalidCuisineID_ReturnsInvalidArgument(t *testing.T) {
 	thenNoRecipeIsPersisted(t, tc)
 }
 
+func TestCreateRecipe_InvalidIngredientID_ReturnsInvalidArgument(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	mainIngredient := givenIngredientExists(tc, "Chicken")
+	cuisine := givenCuisineExists(tc, "Italian")
+
+	req := &pb.CreateRecipeRequest{
+		Name:             "Test Recipe",
+		MainIngredientId: mainIngredient.ID.String(),
+		CuisineId:        cuisine.ID.String(),
+		IngredientIds:    []string{"not-a-valid-uuid"},
+	}
+
+	// When
+	_, err := whenCreatingRecipe(tc, req)
+
+	// Then
+	thenErrorHasCode(t, err, codes.InvalidArgument)
+	thenNoRecipeIsPersisted(t, tc)
+}
+
 func TestCreateRecipe_MainIngredientNotFound_ReturnsNotFound(t *testing.T) {
 	// Given
 	tc := givenRecipeAPI()
@@ -244,6 +323,28 @@ func TestCreateRecipe_MainIngredientNotFound_ReturnsNotFound(t *testing.T) {
 	thenNoRecipeIsPersisted(t, tc)
 }
 
+func TestCreateRecipe_MainIngredientRepositoryError_ReturnsInternal(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	mainIngredient := givenIngredientExists(tc, "Chicken")
+	cuisine := givenCuisineExists(tc, "Italian")
+	givenRepositoryFailsOnGetIngredientByID(tc)
+
+	req := &pb.CreateRecipeRequest{
+		Name:             "Test Recipe",
+		MainIngredientId: mainIngredient.ID.String(),
+		CuisineId:        cuisine.ID.String(),
+	}
+
+	// When
+	_, err := whenCreatingRecipe(tc, req)
+
+	// Then
+	thenErrorHasCode(t, err, codes.Internal)
+	thenNoRecipeIsPersisted(t, tc)
+	thenNoEventIsPublished(t, tc)
+}
+
 func TestCreateRecipe_CuisineNotFound_ReturnsNotFound(t *testing.T) {
 	// Given
 	tc := givenRecipeAPI()
@@ -261,6 +362,28 @@ func TestCreateRecipe_CuisineNotFound_ReturnsNotFound(t *testing.T) {
 	// Then
 	thenErrorHasCode(t, err, codes.NotFound)
 	thenNoRecipeIsPersisted(t, tc)
+}
+
+func TestCreateRecipe_CuisineRepositoryError_ReturnsInternal(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	mainIngredient := givenIngredientExists(tc, "Chicken")
+	cuisine := givenCuisineExists(tc, "Italian")
+	givenRepositoryFailsOnGetCuisineByID(tc)
+
+	req := &pb.CreateRecipeRequest{
+		Name:             "Test Recipe",
+		MainIngredientId: mainIngredient.ID.String(),
+		CuisineId:        cuisine.ID.String(),
+	}
+
+	// When
+	_, err := whenCreatingRecipe(tc, req)
+
+	// Then
+	thenErrorHasCode(t, err, codes.Internal)
+	thenNoRecipeIsPersisted(t, tc)
+	thenNoEventIsPublished(t, tc)
 }
 
 func TestCreateRecipe_IngredientNotFound_ReturnsNotFound(t *testing.T) {
@@ -324,6 +447,7 @@ func TestCreateRecipe_PublisherError_StillSucceeds(t *testing.T) {
 	// Then (event publishing failure should not fail the request)
 	thenNoError(t, err)
 	thenRecipeIsPersisted(t, tc)
+	thenNoEventIsPublished(t, tc)
 	thenResponseHasRecipeName(t, resp, "Test Recipe")
 }
 
@@ -393,24 +517,54 @@ func TestGetSimilarRecipes_DefaultAmount_ReturnsFive(t *testing.T) {
 	// Given
 	tc := givenRecipeAPI()
 	recipe := givenRecipeExists(tc)
+	givenMultipleRecipesExist(tc, 6)
 
 	// When (amount 0 should default to 5)
-	_, err := whenGettingSimilarRecipes(tc, recipe.ID.String(), 0)
+	resp, err := whenGettingSimilarRecipes(tc, recipe.ID.String(), 0)
 
 	// Then
 	thenNoError(t, err)
+	thenResponseContainsRecipes(t, resp, 5)
 }
 
 func TestGetSimilarRecipes_ExcessiveAmount_CapsAtFifty(t *testing.T) {
 	// Given
 	tc := givenRecipeAPI()
 	recipe := givenRecipeExists(tc)
+	givenMultipleRecipesExist(tc, 60)
 
 	// When (amount > 50 should cap at 50)
-	_, err := whenGettingSimilarRecipes(tc, recipe.ID.String(), 100)
+	resp, err := whenGettingSimilarRecipes(tc, recipe.ID.String(), 100)
 
 	// Then
 	thenNoError(t, err)
+	thenResponseContainsRecipes(t, resp, 50)
+}
+
+func TestGetSimilarRecipes_NoOtherRecipes_ReturnsEmpty(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	recipe := givenRecipeExists(tc)
+
+	// When
+	resp, err := whenGettingSimilarRecipes(tc, recipe.ID.String(), 5)
+
+	// Then
+	thenNoError(t, err)
+	thenResponseContainsRecipes(t, resp, 0)
+}
+
+func TestGetSimilarRecipes_RepositoryError_ReturnsInternal(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	recipe := givenRecipeExists(tc)
+	givenRepositoryFailsOnGetSimilar(tc)
+
+	// When
+	_, err := whenGettingSimilarRecipes(tc, recipe.ID.String(), 5)
+
+	// Then
+	thenErrorHasCode(t, err, codes.Internal)
 }
 
 // =============================================================================
@@ -443,6 +597,33 @@ func TestGetRecipesByCuisine_InvalidID_ReturnsInvalidArgument(t *testing.T) {
 	thenErrorHasCode(t, err, codes.InvalidArgument)
 }
 
+func TestGetRecipeById_InvalidUserID_ReturnsInvalidArgument(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+
+	// When
+	_, err := tc.Handler.GetRecipeById(tc.Ctx, &pb.GetRecipeByIdRequest{
+		RecipeId: uuid.New().String(),
+		UserId:   "not-a-valid-uuid",
+	})
+
+	// Then
+	thenErrorHasCode(t, err, codes.InvalidArgument)
+}
+
+func TestGetRecipesByCuisine_RepositoryError_ReturnsInternal(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	cuisine := givenCuisineExists(tc, "Italian")
+	givenRepositoryFailsOnGetByCuisine(tc)
+
+	// When
+	_, err := whenGettingRecipesByCuisine(tc, cuisine.ID.String())
+
+	// Then
+	thenErrorHasCode(t, err, codes.Internal)
+}
+
 // =============================================================================
 // GetRecipesByIngredient Tests
 // =============================================================================
@@ -470,6 +651,19 @@ func TestGetRecipesByIngredient_InvalidID_ReturnsInvalidArgument(t *testing.T) {
 
 	// Then
 	thenErrorHasCode(t, err, codes.InvalidArgument)
+}
+
+func TestGetRecipesByIngredient_RepositoryError_ReturnsInternal(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	ingredient := givenIngredientExists(tc, "Tomato")
+	givenRepositoryFailsOnGetByIngredient(tc)
+
+	// When
+	_, err := whenGettingRecipesByIngredient(tc, ingredient.ID.String())
+
+	// Then
+	thenErrorHasCode(t, err, codes.Internal)
 }
 
 // =============================================================================
@@ -501,6 +695,18 @@ func TestGetRecipesByAllergy_InvalidID_ReturnsInvalidArgument(t *testing.T) {
 	thenErrorHasCode(t, err, codes.InvalidArgument)
 }
 
+func TestGetRecipesByAllergy_RepositoryError_ReturnsInternal(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+	givenRepositoryFailsOnGetExcludingAllergy(tc)
+
+	// When
+	_, err := whenGettingRecipesByAllergy(tc, uuid.New().String())
+
+	// Then
+	thenErrorHasCode(t, err, codes.Internal)
+}
+
 // =============================================================================
 // Given Helpers (Setup)
 // =============================================================================
@@ -528,6 +734,7 @@ func givenRecipeExists(tc *testutil.TestContext) *domain.Recipe {
 		WithName("Test Recipe").
 		WithMainIngredient(mainIngredient).
 		WithCuisine(cuisine).
+		WithUserID(tc.UserID).
 		Build()
 	tc.Repo.AddRecipe(recipe)
 
@@ -545,10 +752,35 @@ func givenRecipeExistsWithName(tc *testutil.TestContext, name string) *domain.Re
 		WithName(name).
 		WithMainIngredient(mainIngredient).
 		WithCuisine(cuisine).
+		WithUserID(tc.UserID).
 		Build()
 	tc.Repo.AddRecipe(recipe)
 
 	return recipe
+}
+
+func givenRecipeExistsForUser(tc *testutil.TestContext, userID uuid.UUID, name string) *domain.Recipe {
+	mainIngredient := testutil.NewIngredientBuilder().Build()
+	tc.Repo.AddIngredient(mainIngredient)
+
+	cuisine := testutil.NewCuisineBuilder().Build()
+	tc.Repo.AddCuisine(cuisine)
+
+	recipe := testutil.NewRecipeBuilder().
+		WithName(name).
+		WithMainIngredient(mainIngredient).
+		WithCuisine(cuisine).
+		WithUserID(userID).
+		Build()
+	tc.Repo.AddRecipe(recipe)
+
+	return recipe
+}
+
+func givenMultipleRecipesExist(tc *testutil.TestContext, count int) {
+	for i := 0; i < count; i++ {
+		givenRecipeExistsWithName(tc, "Recipe "+strconv.Itoa(i))
+	}
 }
 
 func givenRecipeExistsWithCuisine(tc *testutil.TestContext, name string, cuisine *domain.Cuisine) *domain.Recipe {
@@ -559,6 +791,7 @@ func givenRecipeExistsWithCuisine(tc *testutil.TestContext, name string, cuisine
 		WithName(name).
 		WithMainIngredient(mainIngredient).
 		WithCuisine(cuisine).
+		WithUserID(tc.UserID).
 		Build()
 	tc.Repo.AddRecipe(recipe)
 
@@ -573,6 +806,7 @@ func givenRecipeExistsWithMainIngredient(tc *testutil.TestContext, name string, 
 		WithName(name).
 		WithMainIngredient(mainIngredient).
 		WithCuisine(cuisine).
+		WithUserID(tc.UserID).
 		Build()
 	tc.Repo.AddRecipe(recipe)
 
@@ -607,6 +841,30 @@ func givenRepositoryFailsOnCreate(tc *testutil.TestContext) {
 	tc.Repo.FailOnCreate = true
 }
 
+func givenRepositoryFailsOnGetSimilar(tc *testutil.TestContext) {
+	tc.Repo.FailOnGetSimilar = true
+}
+
+func givenRepositoryFailsOnGetByCuisine(tc *testutil.TestContext) {
+	tc.Repo.FailOnGetByCuisine = true
+}
+
+func givenRepositoryFailsOnGetByIngredient(tc *testutil.TestContext) {
+	tc.Repo.FailOnGetByIngredient = true
+}
+
+func givenRepositoryFailsOnGetExcludingAllergy(tc *testutil.TestContext) {
+	tc.Repo.FailOnGetExcludingAllergy = true
+}
+
+func givenRepositoryFailsOnGetIngredientByID(tc *testutil.TestContext) {
+	tc.Repo.FailOnGetIngredientByID = true
+}
+
+func givenRepositoryFailsOnGetCuisineByID(tc *testutil.TestContext) {
+	tc.Repo.FailOnGetCuisineByID = true
+}
+
 func givenPublisherFails(tc *testutil.TestContext) {
 	tc.Publisher.FailOnPublishCreated = true
 }
@@ -618,17 +876,22 @@ func givenPublisherFails(tc *testutil.TestContext) {
 func whenGettingRecipeById(tc *testutil.TestContext, id string) (*pb.RecipeResponse, error) {
 	return tc.Handler.GetRecipeById(tc.Ctx, &pb.GetRecipeByIdRequest{
 		RecipeId: id,
+		UserId:   tc.UserID.String(),
 	})
 }
 
 func whenGettingAllRecipes(tc *testutil.TestContext, pageIndex, pageSize int32) (*pb.GetAllRecipesResponse, error) {
 	return tc.Handler.GetAllRecipes(tc.Ctx, &pb.GetAllRecipesRequest{
+		UserId:    tc.UserID.String(),
 		PageIndex: pageIndex,
 		PageSize:  pageSize,
 	})
 }
 
 func whenCreatingRecipe(tc *testutil.TestContext, req *pb.CreateRecipeRequest) (*pb.RecipeResponse, error) {
+	if req.UserId == "" {
+		req.UserId = tc.UserID.String()
+	}
 	return tc.Handler.CreateRecipe(tc.Ctx, req)
 }
 
@@ -636,24 +899,28 @@ func whenGettingSimilarRecipes(tc *testutil.TestContext, recipeID string, amount
 	return tc.Handler.GetSimilarRecipes(tc.Ctx, &pb.GetSimilarRecipesRequest{
 		RecipeId: recipeID,
 		Amount:   amount,
+		UserId:   tc.UserID.String(),
 	})
 }
 
 func whenGettingRecipesByCuisine(tc *testutil.TestContext, cuisineID string) (*pb.GetAllRecipesResponse, error) {
 	return tc.Handler.GetRecipesByCuisine(tc.Ctx, &pb.GetRecipesByCuisineRequest{
 		CuisineId: cuisineID,
+		UserId:    tc.UserID.String(),
 	})
 }
 
 func whenGettingRecipesByIngredient(tc *testutil.TestContext, ingredientID string) (*pb.GetAllRecipesResponse, error) {
 	return tc.Handler.GetRecipesByIngredient(tc.Ctx, &pb.GetRecipesByIngredientRequest{
 		IngredientId: ingredientID,
+		UserId:       tc.UserID.String(),
 	})
 }
 
 func whenGettingRecipesByAllergy(tc *testutil.TestContext, allergyID string) (*pb.GetAllRecipesResponse, error) {
 	return tc.Handler.GetRecipesByAllergy(tc.Ctx, &pb.GetRecipesByAllergyRequest{
 		AllergyId: allergyID,
+		UserId:    tc.UserID.String(),
 	})
 }
 
@@ -713,6 +980,22 @@ func thenResponseContainsRecipeWithID(t *testing.T, resp *pb.GetAllRecipesRespon
 		}
 	}
 	t.Fatalf("expected response to contain recipe with ID %s", id)
+}
+
+func thenPaginationMatches(t *testing.T, resp *pb.GetAllRecipesResponse, pageIndex, pageSize, totalCount, totalPages int32) {
+	t.Helper()
+	if resp.PageIndex != pageIndex {
+		t.Fatalf("expected page index %d, got %d", pageIndex, resp.PageIndex)
+	}
+	if resp.PageSize != pageSize {
+		t.Fatalf("expected page size %d, got %d", pageSize, resp.PageSize)
+	}
+	if resp.TotalCount != totalCount {
+		t.Fatalf("expected total count %d, got %d", totalCount, resp.TotalCount)
+	}
+	if resp.TotalPages != totalPages {
+		t.Fatalf("expected total pages %d, got %d", totalPages, resp.TotalPages)
+	}
 }
 
 func thenRecipeIsPersisted(t *testing.T, tc *testutil.TestContext) {

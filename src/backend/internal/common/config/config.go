@@ -15,6 +15,7 @@ type Config struct {
 	RecipeAPI   RecipeAPI      `mapstructure:"recipe_api"`
 	MealPlanner MealPlannerAPI `mapstructure:"mealplanner_api"`
 	BFF         BFFAPI         `mapstructure:"bff"`
+	Auth        Auth           `mapstructure:"auth"`
 	Database    Database       `mapstructure:"database"`
 	RabbitMQ    RabbitMQ       `mapstructure:"rabbitmq"`
 	LLM         LLM            `mapstructure:"llm"`
@@ -41,6 +42,14 @@ type BFFAPI struct {
 	RecipeAPIAddress  string        `mapstructure:"recipe_api_address"`
 	MealPlanAddress   string        `mapstructure:"mealplan_api_address"`
 	CORSAllowedOrigins []string     `mapstructure:"cors_allowed_origins"`
+}
+
+// Auth configuration
+type Auth struct {
+	JWTSecret       string        `mapstructure:"jwt_secret"`
+	Issuer          string        `mapstructure:"issuer"`
+	AccessTokenTTL  time.Duration `mapstructure:"access_token_ttl"`
+	RefreshTokenTTL time.Duration `mapstructure:"refresh_token_ttl"`
 }
 
 // Database configuration
@@ -142,6 +151,12 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("bff.recipe_api_address", "localhost:9091")
 	v.SetDefault("bff.mealplan_api_address", "localhost:9092")
 	v.SetDefault("bff.cors_allowed_origins", []string{"*"})
+
+	// Auth
+	v.SetDefault("auth.jwt_secret", "dev-secret-change-me")
+	v.SetDefault("auth.issuer", "platepilot")
+	v.SetDefault("auth.access_token_ttl", "15m")
+	v.SetDefault("auth.refresh_token_ttl", "720h")
 
 	// Database
 	v.SetDefault("database.recipe_db", "postgres://platepilot:platepilot@localhost:5432/recipedb?sslmode=disable")

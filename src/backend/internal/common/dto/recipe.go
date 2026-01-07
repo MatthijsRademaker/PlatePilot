@@ -11,6 +11,7 @@ import (
 // RecipeDTO is a data transfer object for recipe events
 type RecipeDTO struct {
 	ID              uuid.UUID       `json:"id"`
+	UserID          uuid.UUID       `json:"userId"`
 	Name            string          `json:"name"`
 	Description     string          `json:"description"`
 	PrepTime        string          `json:"prepTime"`
@@ -82,6 +83,7 @@ func FromRecipe(r *domain.Recipe) RecipeDTO {
 
 	return RecipeDTO{
 		ID:              r.ID,
+		UserID:          r.UserID,
 		Name:            r.Name,
 		Description:     r.Description,
 		PrepTime:        r.PrepTime,
@@ -108,6 +110,7 @@ func (d *RecipeDTO) ToRecipe() *domain.Recipe {
 
 	return &domain.Recipe{
 		ID:              d.ID,
+		UserID:          d.UserID,
 		Name:            d.Name,
 		Description:     d.Description,
 		PrepTime:        d.PrepTime,

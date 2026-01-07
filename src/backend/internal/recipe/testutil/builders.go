@@ -22,6 +22,7 @@ func NewRecipeBuilder() *RecipeBuilder {
 	return &RecipeBuilder{
 		recipe: domain.Recipe{
 			ID:          uuid.New(),
+			UserID:      uuid.New(),
 			Name:        "Test Recipe",
 			Description: "A test recipe description",
 			PrepTime:    "15 mins",
@@ -41,6 +42,12 @@ func NewRecipeBuilder() *RecipeBuilder {
 // WithID sets the recipe ID
 func (b *RecipeBuilder) WithID(id uuid.UUID) *RecipeBuilder {
 	b.recipe.ID = id
+	return b
+}
+
+// WithUserID sets the recipe owner
+func (b *RecipeBuilder) WithUserID(id uuid.UUID) *RecipeBuilder {
+	b.recipe.UserID = id
 	return b
 }
 

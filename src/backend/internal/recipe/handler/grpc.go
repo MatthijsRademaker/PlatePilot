@@ -37,14 +37,19 @@ func NewGRPCHandler(repo RecipeRepository, vectorGen vector.Generator, publisher
 
 // GetRecipeById retrieves a recipe by ID
 func (h *GRPCHandler) GetRecipeById(ctx context.Context, req *pb.GetRecipeByIdRequest) (*pb.RecipeResponse, error) {
-	h.logger.Debug("get recipe by id", "recipeId", req.GetRecipeId())
+	h.logger.Debug("get recipe by id", "recipeId", req.GetRecipeId(), "userId", req.GetUserId())
+
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
 
 	id, err := uuid.Parse(req.GetRecipeId())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid recipe ID: %v", err)
 	}
 
-	recipe, err := h.repo.GetByID(ctx, id)
+	recipe, err := h.repo.GetByID(ctx, userID, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrRecipeNotFound) {
 			return nil, status.Errorf(codes.NotFound, "recipe not found")
@@ -58,6 +63,11 @@ func (h *GRPCHandler) GetRecipeById(ctx context.Context, req *pb.GetRecipeByIdRe
 
 // GetAllRecipes retrieves all recipes with pagination
 func (h *GRPCHandler) GetAllRecipes(ctx context.Context, req *pb.GetAllRecipesRequest) (*pb.GetAllRecipesResponse, error) {
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
+
 	pageIndex := int(req.GetPageIndex())
 	pageSize := int(req.GetPageSize())
 
@@ -72,13 +82,13 @@ func (h *GRPCHandler) GetAllRecipes(ctx context.Context, req *pb.GetAllRecipesRe
 
 	h.logger.Debug("get all recipes", "pageIndex", pageIndex, "pageSize", pageSize, "offset", offset)
 
-	recipes, err := h.repo.GetAll(ctx, pageSize, offset)
+	recipes, err := h.repo.GetAll(ctx, userID, pageSize, offset)
 	if err != nil {
 		h.logger.Error("failed to get recipes", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to get recipes")
 	}
 
-	totalCount, err := h.repo.Count(ctx)
+	totalCount, err := h.repo.Count(ctx, userID)
 	if err != nil {
 		h.logger.Error("failed to count recipes", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to count recipes")
@@ -91,7 +101,12 @@ func (h *GRPCHandler) GetAllRecipes(ctx context.Context, req *pb.GetAllRecipesRe
 
 // CreateRecipe creates a new recipe
 func (h *GRPCHandler) CreateRecipe(ctx context.Context, req *pb.CreateRecipeRequest) (*pb.RecipeResponse, error) {
-	h.logger.Debug("create recipe", "name", req.GetName())
+	h.logger.Debug("create recipe", "name", req.GetName(), "userId", req.GetUserId())
+
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
 
 	// Validate required fields
 	if req.GetName() == "" {
@@ -151,6 +166,7 @@ func (h *GRPCHandler) CreateRecipe(ctx context.Context, req *pb.CreateRecipeRequ
 	// Build the recipe
 	recipe := &domain.Recipe{
 		ID:             uuid.New(),
+		UserID:         userID,
 		Name:           req.GetName(),
 		Description:    req.GetDescription(),
 		PrepTime:       req.GetPrepTime(),
@@ -191,7 +207,12 @@ func (h *GRPCHandler) CreateRecipe(ctx context.Context, req *pb.CreateRecipeRequ
 
 // GetSimilarRecipes retrieves similar recipes using vector similarity
 func (h *GRPCHandler) GetSimilarRecipes(ctx context.Context, req *pb.GetSimilarRecipesRequest) (*pb.GetAllRecipesResponse, error) {
-	h.logger.Debug("get similar recipes", "recipeId", req.GetRecipeId(), "amount", req.GetAmount())
+	h.logger.Debug("get similar recipes", "recipeId", req.GetRecipeId(), "amount", req.GetAmount(), "userId", req.GetUserId())
+
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
 
 	recipeID, err := uuid.Parse(req.GetRecipeId())
 	if err != nil {
@@ -206,7 +227,7 @@ func (h *GRPCHandler) GetSimilarRecipes(ctx context.Context, req *pb.GetSimilarR
 		amount = 50
 	}
 
-	recipes, err := h.repo.GetSimilar(ctx, recipeID, amount)
+	recipes, err := h.repo.GetSimilar(ctx, userID, recipeID, amount)
 	if err != nil {
 		if errors.Is(err, repository.ErrRecipeNotFound) {
 			return nil, status.Errorf(codes.NotFound, "recipe not found")
@@ -220,7 +241,12 @@ func (h *GRPCHandler) GetSimilarRecipes(ctx context.Context, req *pb.GetSimilarR
 
 // GetRecipesByCuisine retrieves recipes by cuisine
 func (h *GRPCHandler) GetRecipesByCuisine(ctx context.Context, req *pb.GetRecipesByCuisineRequest) (*pb.GetAllRecipesResponse, error) {
-	h.logger.Debug("get recipes by cuisine", "cuisineId", req.GetCuisineId())
+	h.logger.Debug("get recipes by cuisine", "cuisineId", req.GetCuisineId(), "userId", req.GetUserId())
+
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
 
 	cuisineID, err := uuid.Parse(req.GetCuisineId())
 	if err != nil {
@@ -228,7 +254,7 @@ func (h *GRPCHandler) GetRecipesByCuisine(ctx context.Context, req *pb.GetRecipe
 	}
 
 	// Using default pagination for now
-	recipes, err := h.repo.GetByCuisine(ctx, cuisineID, 100, 0)
+	recipes, err := h.repo.GetByCuisine(ctx, userID, cuisineID, 100, 0)
 	if err != nil {
 		h.logger.Error("failed to get recipes by cuisine", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to get recipes by cuisine")
@@ -239,7 +265,12 @@ func (h *GRPCHandler) GetRecipesByCuisine(ctx context.Context, req *pb.GetRecipe
 
 // GetRecipesByIngredient retrieves recipes containing a specific ingredient
 func (h *GRPCHandler) GetRecipesByIngredient(ctx context.Context, req *pb.GetRecipesByIngredientRequest) (*pb.GetAllRecipesResponse, error) {
-	h.logger.Debug("get recipes by ingredient", "ingredientId", req.GetIngredientId())
+	h.logger.Debug("get recipes by ingredient", "ingredientId", req.GetIngredientId(), "userId", req.GetUserId())
+
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
 
 	ingredientID, err := uuid.Parse(req.GetIngredientId())
 	if err != nil {
@@ -247,7 +278,7 @@ func (h *GRPCHandler) GetRecipesByIngredient(ctx context.Context, req *pb.GetRec
 	}
 
 	// Using default pagination for now
-	recipes, err := h.repo.GetByIngredient(ctx, ingredientID, 100, 0)
+	recipes, err := h.repo.GetByIngredient(ctx, userID, ingredientID, 100, 0)
 	if err != nil {
 		h.logger.Error("failed to get recipes by ingredient", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to get recipes by ingredient")
@@ -258,7 +289,12 @@ func (h *GRPCHandler) GetRecipesByIngredient(ctx context.Context, req *pb.GetRec
 
 // GetRecipesByAllergy retrieves recipes excluding a specific allergy
 func (h *GRPCHandler) GetRecipesByAllergy(ctx context.Context, req *pb.GetRecipesByAllergyRequest) (*pb.GetAllRecipesResponse, error) {
-	h.logger.Debug("get recipes excluding allergy", "allergyId", req.GetAllergyId())
+	h.logger.Debug("get recipes excluding allergy", "allergyId", req.GetAllergyId(), "userId", req.GetUserId())
+
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
 
 	allergyID, err := uuid.Parse(req.GetAllergyId())
 	if err != nil {
@@ -266,7 +302,7 @@ func (h *GRPCHandler) GetRecipesByAllergy(ctx context.Context, req *pb.GetRecipe
 	}
 
 	// Using default pagination for now - returns recipes WITHOUT this allergy
-	recipes, err := h.repo.GetExcludingAllergy(ctx, allergyID, 100, 0)
+	recipes, err := h.repo.GetExcludingAllergy(ctx, userID, allergyID, 100, 0)
 	if err != nil {
 		h.logger.Error("failed to get recipes excluding allergy", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to get recipes excluding allergy")

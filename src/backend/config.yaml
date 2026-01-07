@@ -23,6 +23,12 @@ bff:
   cors_allowed_origins:
     - "*"
 
+auth:
+  jwt_secret: "dev-secret-change-me"
+  issuer: "platepilot"
+  access_token_ttl: 15m
+  refresh_token_ttl: 720h
+
 database:
   recipe_db: "postgres://platepilot:platepilot@localhost:5432/recipedb?sslmode=disable"
   mealplanner_db: "postgres://platepilot:platepilot@localhost:5432/mealplannerdb?sslmode=disable"

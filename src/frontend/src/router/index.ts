@@ -6,6 +6,7 @@ import {
   createWebHistory,
 } from 'vue-router';
 import routes from './routes';
+import { tokenService } from '@features/auth/services/tokenService';
 
 /*
  * If not building with SSR mode, you can
@@ -31,6 +32,27 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE),
+  });
+
+  // Navigation guards for authentication
+  Router.beforeEach((to, _from, next) => {
+    const isAuthenticated = tokenService.hasValidSession();
+    const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+    const requiresGuest = to.matched.some((record) => record.meta.requiresGuest);
+
+    // Redirect to login if route requires auth and user is not authenticated
+    if (requiresAuth && !isAuthenticated) {
+      next({ name: 'login' });
+      return;
+    }
+
+    // Redirect to home if route requires guest (login/register) and user is authenticated
+    if (requiresGuest && isAuthenticated) {
+      next({ name: 'home' });
+      return;
+    }
+
+    next();
   });
 
   return Router;

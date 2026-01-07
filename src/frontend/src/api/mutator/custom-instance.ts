@@ -1,9 +1,20 @@
+import { tokenService } from '@features/auth/services/tokenService';
+
 const apiHost = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const baseURL = `${apiHost}/v1`;
 
 export interface ApiError {
   message: string;
   status: number;
+}
+
+// Helper to get auth headers
+function getAuthHeaders(): Record<string, string> {
+  const token = tokenService.getAccessToken();
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
 }
 
 export const customInstance = async <T>(config: {
@@ -38,6 +49,7 @@ export const customInstance = async <T>(config: {
     method,
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
       ...headers,
     },
   };
@@ -47,6 +59,14 @@ export const customInstance = async <T>(config: {
   }
 
   const response = await fetch(targetUrl, fetchOptions);
+
+  // Handle 401 - token may be expired
+  if (response.status === 401) {
+    // Clear tokens and let the auth guard handle redirect
+    tokenService.clearTokens();
+    window.location.href = '/login';
+    throw new Error('Session expired');
+  }
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({ error: response.statusText }));

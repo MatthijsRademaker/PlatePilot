@@ -18,6 +18,7 @@ var (
 	ErrIngredientNotFound = errors.New("ingredient not found")
 	ErrCuisineNotFound    = errors.New("cuisine not found")
 	ErrAllergyNotFound    = errors.New("allergy not found")
+	ErrUserNotFound       = errors.New("user not found")
 )
 
 // Repository provides access to the recipe write model
@@ -30,11 +31,15 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
+func accessClause(alias string, userParam int) string {
+	return fmt.Sprintf("%s.user_id = $%d OR EXISTS (SELECT 1 FROM recipe_shares rs WHERE rs.recipe_id = %s.id AND rs.shared_with_user_id = $%d)", alias, userParam, alias, userParam)
+}
+
 // GetByID retrieves a recipe by ID with all related entities
-func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Recipe, error) {
+func (r *Repository) GetByID(ctx context.Context, userID, id uuid.UUID) (*domain.Recipe, error) {
 	query := `
 		SELECT
-			r.id, r.name, r.description, r.prep_time, r.cook_time,
+			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
 			r.directions, r.nutritional_info_calories,
 			r.metadata_search_vector, r.metadata_image_url,
 			r.metadata_tags, r.metadata_published_date,
@@ -45,6 +50,7 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Recipe,
 		JOIN cuisines c ON r.cuisine_id = c.id
 		JOIN ingredients mi ON r.main_ingredient_id = mi.id
 		WHERE r.id = $1
+		  AND (` + accessClause("r", 2) + `)
 	`
 
 	var recipe domain.Recipe
@@ -55,8 +61,8 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Recipe,
 	var tags []string
 	var publishedDate time.Time
 
-	err := r.pool.QueryRow(ctx, query, id).Scan(
-		&recipe.ID, &recipe.Name, &recipe.Description,
+	err := r.pool.QueryRow(ctx, query, id, userID).Scan(
+		&recipe.ID, &recipe.UserID, &recipe.Name, &recipe.Description,
 		&recipe.PrepTime, &recipe.CookTime,
 		&recipe.Directions, &recipe.NutritionalInfo.Calories,
 		&searchVector, &imageURL, &tags, &publishedDate,
@@ -91,10 +97,10 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Recipe,
 }
 
 // GetAll retrieves all recipes with pagination
-func (r *Repository) GetAll(ctx context.Context, limit, offset int) ([]domain.Recipe, error) {
+func (r *Repository) GetAll(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
 	query := `
 		SELECT
-			r.id, r.name, r.description, r.prep_time, r.cook_time,
+			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
 			r.directions, r.nutritional_info_calories,
 			r.metadata_search_vector, r.metadata_image_url,
 			r.metadata_tags, r.metadata_published_date,
@@ -104,11 +110,12 @@ func (r *Repository) GetAll(ctx context.Context, limit, offset int) ([]domain.Re
 		FROM recipes r
 		JOIN cuisines c ON r.cuisine_id = c.id
 		JOIN ingredients mi ON r.main_ingredient_id = mi.id
+		WHERE ` + accessClause("r", 1) + `
 		ORDER BY r.created_at DESC
-		LIMIT $1 OFFSET $2
+		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.pool.Query(ctx, query, limit, offset)
+	rows, err := r.pool.Query(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query recipes: %w", err)
 	}
@@ -138,12 +145,12 @@ func (r *Repository) Create(ctx context.Context, recipe *domain.Recipe) error {
 	// Insert recipe
 	query := `
 		INSERT INTO recipes (
-			id, name, description, prep_time, cook_time,
+			id, user_id, name, description, prep_time, cook_time,
 			main_ingredient_id, cuisine_id, directions,
 			nutritional_info_calories, metadata_search_vector,
 			metadata_image_url, metadata_tags, metadata_published_date
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 		)
 	`
 
@@ -159,7 +166,7 @@ func (r *Repository) Create(ctx context.Context, recipe *domain.Recipe) error {
 	}
 
 	_, err = tx.Exec(ctx, query,
-		recipe.ID, recipe.Name, recipe.Description,
+		recipe.ID, recipe.UserID, recipe.Name, recipe.Description,
 		recipe.PrepTime, recipe.CookTime,
 		recipe.MainIngredient.ID, recipe.Cuisine.ID, recipe.Directions,
 		recipe.NutritionalInfo.Calories, recipe.Metadata.SearchVector,
@@ -201,7 +208,7 @@ func (r *Repository) Update(ctx context.Context, recipe *domain.Recipe) error {
 			main_ingredient_id = $6, cuisine_id = $7, directions = $8,
 			nutritional_info_calories = $9, metadata_search_vector = $10,
 			metadata_image_url = $11, metadata_tags = $12, metadata_published_date = $13
-		WHERE id = $1
+		WHERE id = $1 AND user_id = $14
 	`
 
 	var imageURL *string
@@ -215,6 +222,7 @@ func (r *Repository) Update(ctx context.Context, recipe *domain.Recipe) error {
 		recipe.MainIngredient.ID, recipe.Cuisine.ID, recipe.Directions,
 		recipe.NutritionalInfo.Calories, recipe.Metadata.SearchVector,
 		imageURL, recipe.Metadata.Tags, recipe.Metadata.PublishedDate,
+		recipe.UserID,
 	)
 	if err != nil {
 		return fmt.Errorf("update recipe: %w", err)
@@ -248,8 +256,8 @@ func (r *Repository) Update(ctx context.Context, recipe *domain.Recipe) error {
 }
 
 // Delete removes a recipe
-func (r *Repository) Delete(ctx context.Context, id uuid.UUID) error {
-	result, err := r.pool.Exec(ctx, `DELETE FROM recipes WHERE id = $1`, id)
+func (r *Repository) Delete(ctx context.Context, userID, id uuid.UUID) error {
+	result, err := r.pool.Exec(ctx, `DELETE FROM recipes WHERE id = $1 AND user_id = $2`, id, userID)
 	if err != nil {
 		return fmt.Errorf("delete recipe: %w", err)
 	}
@@ -264,12 +272,12 @@ func (r *Repository) Delete(ctx context.Context, id uuid.UUID) error {
 // Query operations
 
 // GetSimilar retrieves recipes similar to a given recipe using vector similarity
-func (r *Repository) GetSimilar(ctx context.Context, recipeID uuid.UUID, limit int) ([]domain.Recipe, error) {
+func (r *Repository) GetSimilar(ctx context.Context, userID, recipeID uuid.UUID, limit int) ([]domain.Recipe, error) {
 	// First get the vector for the target recipe
 	var targetVector pgvector.Vector
 	err := r.pool.QueryRow(ctx,
-		`SELECT metadata_search_vector FROM recipes WHERE id = $1`,
-		recipeID,
+		`SELECT metadata_search_vector FROM recipes r WHERE r.id = $1 AND (`+accessClause("r", 2)+`)`,
+		recipeID, userID,
 	).Scan(&targetVector)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -280,7 +288,7 @@ func (r *Repository) GetSimilar(ctx context.Context, recipeID uuid.UUID, limit i
 
 	query := `
 		SELECT
-			r.id, r.name, r.description, r.prep_time, r.cook_time,
+			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
 			r.directions, r.nutritional_info_calories,
 			r.metadata_search_vector, r.metadata_image_url,
 			r.metadata_tags, r.metadata_published_date,
@@ -291,11 +299,12 @@ func (r *Repository) GetSimilar(ctx context.Context, recipeID uuid.UUID, limit i
 		JOIN cuisines c ON r.cuisine_id = c.id
 		JOIN ingredients mi ON r.main_ingredient_id = mi.id
 		WHERE r.id != $1
-		ORDER BY r.metadata_search_vector <=> $2
-		LIMIT $3
+		  AND (` + accessClause("r", 2) + `)
+		ORDER BY r.metadata_search_vector <=> $3
+		LIMIT $4
 	`
 
-	rows, err := r.pool.Query(ctx, query, recipeID, targetVector, limit)
+	rows, err := r.pool.Query(ctx, query, recipeID, userID, targetVector, limit)
 	if err != nil {
 		return nil, fmt.Errorf("query similar recipes: %w", err)
 	}
@@ -305,10 +314,10 @@ func (r *Repository) GetSimilar(ctx context.Context, recipeID uuid.UUID, limit i
 }
 
 // GetByCuisine retrieves recipes by cuisine ID
-func (r *Repository) GetByCuisine(ctx context.Context, cuisineID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
+func (r *Repository) GetByCuisine(ctx context.Context, userID, cuisineID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
 	query := `
 		SELECT
-			r.id, r.name, r.description, r.prep_time, r.cook_time,
+			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
 			r.directions, r.nutritional_info_calories,
 			r.metadata_search_vector, r.metadata_image_url,
 			r.metadata_tags, r.metadata_published_date,
@@ -319,11 +328,12 @@ func (r *Repository) GetByCuisine(ctx context.Context, cuisineID uuid.UUID, limi
 		JOIN cuisines c ON r.cuisine_id = c.id
 		JOIN ingredients mi ON r.main_ingredient_id = mi.id
 		WHERE r.cuisine_id = $1
+		  AND (` + accessClause("r", 2) + `)
 		ORDER BY r.created_at DESC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 
-	rows, err := r.pool.Query(ctx, query, cuisineID, limit, offset)
+	rows, err := r.pool.Query(ctx, query, cuisineID, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query recipes by cuisine: %w", err)
 	}
@@ -333,10 +343,10 @@ func (r *Repository) GetByCuisine(ctx context.Context, cuisineID uuid.UUID, limi
 }
 
 // GetByIngredient retrieves recipes containing a specific ingredient (main or in list)
-func (r *Repository) GetByIngredient(ctx context.Context, ingredientID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
+func (r *Repository) GetByIngredient(ctx context.Context, userID, ingredientID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
 	query := `
 		SELECT DISTINCT
-			r.id, r.name, r.description, r.prep_time, r.cook_time,
+			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
 			r.directions, r.nutritional_info_calories,
 			r.metadata_search_vector, r.metadata_image_url,
 			r.metadata_tags, r.metadata_published_date,
@@ -347,12 +357,13 @@ func (r *Repository) GetByIngredient(ctx context.Context, ingredientID uuid.UUID
 		JOIN cuisines c ON r.cuisine_id = c.id
 		JOIN ingredients mi ON r.main_ingredient_id = mi.id
 		LEFT JOIN recipe_ingredients ri ON r.id = ri.recipe_id
-		WHERE r.main_ingredient_id = $1 OR ri.ingredient_id = $1
+		WHERE (r.main_ingredient_id = $1 OR ri.ingredient_id = $1)
+		  AND (` + accessClause("r", 2) + `)
 		ORDER BY r.created_at DESC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 
-	rows, err := r.pool.Query(ctx, query, ingredientID, limit, offset)
+	rows, err := r.pool.Query(ctx, query, ingredientID, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query recipes by ingredient: %w", err)
 	}
@@ -362,11 +373,11 @@ func (r *Repository) GetByIngredient(ctx context.Context, ingredientID uuid.UUID
 }
 
 // GetExcludingAllergy retrieves recipes that don't contain ingredients with a specific allergy
-func (r *Repository) GetExcludingAllergy(ctx context.Context, allergyID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
+func (r *Repository) GetExcludingAllergy(ctx context.Context, userID, allergyID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
 	// Find recipes that have NO ingredients with the given allergy
 	query := `
 		SELECT
-			r.id, r.name, r.description, r.prep_time, r.cook_time,
+			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
 			r.directions, r.nutritional_info_calories,
 			r.metadata_search_vector, r.metadata_image_url,
 			r.metadata_tags, r.metadata_published_date,
@@ -376,7 +387,8 @@ func (r *Repository) GetExcludingAllergy(ctx context.Context, allergyID uuid.UUI
 		FROM recipes r
 		JOIN cuisines c ON r.cuisine_id = c.id
 		JOIN ingredients mi ON r.main_ingredient_id = mi.id
-		WHERE NOT EXISTS (
+		WHERE (` + accessClause("r", 2) + `)
+		AND NOT EXISTS (
 			-- Check main ingredient for allergy
 			SELECT 1 FROM ingredient_allergies ia
 			WHERE ia.ingredient_id = r.main_ingredient_id AND ia.allergy_id = $1
@@ -388,10 +400,10 @@ func (r *Repository) GetExcludingAllergy(ctx context.Context, allergyID uuid.UUI
 			WHERE ri.recipe_id = r.id AND ia.allergy_id = $1
 		)
 		ORDER BY r.created_at DESC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 
-	rows, err := r.pool.Query(ctx, query, allergyID, limit, offset)
+	rows, err := r.pool.Query(ctx, query, allergyID, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query recipes excluding allergy: %w", err)
 	}
@@ -402,10 +414,10 @@ func (r *Repository) GetExcludingAllergy(ctx context.Context, allergyID uuid.UUI
 
 // GetByAllergy retrieves recipes that contain ingredients with a specific allergy
 // (useful for finding what TO avoid)
-func (r *Repository) GetByAllergy(ctx context.Context, allergyID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
+func (r *Repository) GetByAllergy(ctx context.Context, userID, allergyID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
 	query := `
 		SELECT DISTINCT
-			r.id, r.name, r.description, r.prep_time, r.cook_time,
+			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
 			r.directions, r.nutritional_info_calories,
 			r.metadata_search_vector, r.metadata_image_url,
 			r.metadata_tags, r.metadata_published_date,
@@ -418,11 +430,12 @@ func (r *Repository) GetByAllergy(ctx context.Context, allergyID uuid.UUID, limi
 		LEFT JOIN recipe_ingredients ri ON r.id = ri.recipe_id
 		LEFT JOIN ingredient_allergies ia ON (ri.ingredient_id = ia.ingredient_id OR r.main_ingredient_id = ia.ingredient_id)
 		WHERE ia.allergy_id = $1
+		  AND (` + accessClause("r", 2) + `)
 		ORDER BY r.created_at DESC
-		LIMIT $2 OFFSET $3
+		LIMIT $3 OFFSET $4
 	`
 
-	rows, err := r.pool.Query(ctx, query, allergyID, limit, offset)
+	rows, err := r.pool.Query(ctx, query, allergyID, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("query recipes by allergy: %w", err)
 	}
@@ -432,13 +445,73 @@ func (r *Repository) GetByAllergy(ctx context.Context, allergyID uuid.UUID, limi
 }
 
 // Count returns the total number of recipes
-func (r *Repository) Count(ctx context.Context) (int64, error) {
+func (r *Repository) Count(ctx context.Context, userID uuid.UUID) (int64, error) {
 	var count int64
-	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM recipes`).Scan(&count)
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM recipes r WHERE `+accessClause("r", 1), userID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("count recipes: %w", err)
 	}
 	return count, nil
+}
+
+// User operations
+
+// GetUserByEmail retrieves a user by email
+func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+	query := `SELECT id, email, display_name, created_at, updated_at FROM users WHERE email = $1`
+
+	var user domain.User
+	err := r.pool.QueryRow(ctx, query, email).Scan(
+		&user.ID, &user.Email, &user.DisplayName, &user.CreatedAt, &user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("query user: %w", err)
+	}
+
+	return &user, nil
+}
+
+// CreateUser creates a new user record
+func (r *Repository) CreateUser(ctx context.Context, user *domain.User) error {
+	if user.ID == uuid.Nil {
+		user.ID = uuid.New()
+	}
+
+	query := `INSERT INTO users (id, email, display_name) VALUES ($1, $2, $3)`
+	_, err := r.pool.Exec(ctx, query, user.ID, user.Email, user.DisplayName)
+	if err != nil {
+		return fmt.Errorf("insert user: %w", err)
+	}
+
+	return nil
+}
+
+// GetUserPasswordHash retrieves the password hash for a user
+func (r *Repository) GetUserPasswordHash(ctx context.Context, userID uuid.UUID) (string, error) {
+	var hash string
+	err := r.pool.QueryRow(ctx, `SELECT password_hash FROM user_credentials WHERE user_id = $1`, userID).Scan(&hash)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", ErrUserNotFound
+		}
+		return "", fmt.Errorf("query user credentials: %w", err)
+	}
+	return hash, nil
+}
+
+// CreateUserCredentials creates password credentials for a user
+func (r *Repository) CreateUserCredentials(ctx context.Context, userID uuid.UUID, passwordHash string) error {
+	_, err := r.pool.Exec(ctx,
+		`INSERT INTO user_credentials (user_id, password_hash) VALUES ($1, $2)`,
+		userID, passwordHash,
+	)
+	if err != nil {
+		return fmt.Errorf("insert user credentials: %w", err)
+	}
+	return nil
 }
 
 // Ingredient operations
@@ -765,7 +838,7 @@ func (r *Repository) scanRecipes(ctx context.Context, rows pgx.Rows) ([]domain.R
 		var publishedDate time.Time
 
 		err := rows.Scan(
-			&recipe.ID, &recipe.Name, &recipe.Description,
+			&recipe.ID, &recipe.UserID, &recipe.Name, &recipe.Description,
 			&recipe.PrepTime, &recipe.CookTime,
 			&recipe.Directions, &recipe.NutritionalInfo.Calories,
 			&searchVector, &imageURL, &tags, &publishedDate,

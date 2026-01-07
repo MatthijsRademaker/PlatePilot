@@ -5,6 +5,8 @@ import (
 	"io"
 	"log/slog"
 
+	"github.com/google/uuid"
+
 	"github.com/platepilot/backend/internal/mealplanner/domain"
 	"github.com/platepilot/backend/internal/mealplanner/handler"
 )
@@ -12,6 +14,7 @@ import (
 // HandlerTestContext contains all test dependencies for handler tests
 type HandlerTestContext struct {
 	Ctx     context.Context
+	UserID  uuid.UUID
 	Planner *FakeMealPlanner
 	Handler *handler.GRPCHandler
 	Logger  *slog.Logger
@@ -20,6 +23,7 @@ type HandlerTestContext struct {
 // NewHandlerTestContext creates a new test context for handler testing
 func NewHandlerTestContext() *HandlerTestContext {
 	ctx := context.Background()
+	userID := uuid.New()
 	planner := NewFakeMealPlanner()
 
 	// Create a silent logger for tests (writes to io.Discard)
@@ -29,6 +33,7 @@ func NewHandlerTestContext() *HandlerTestContext {
 
 	return &HandlerTestContext{
 		Ctx:     ctx,
+		UserID:  userID,
 		Planner: planner,
 		Handler: h,
 		Logger:  logger,
@@ -38,6 +43,7 @@ func NewHandlerTestContext() *HandlerTestContext {
 // PlannerTestContext contains all test dependencies for planner/domain tests
 type PlannerTestContext struct {
 	Ctx     context.Context
+	UserID  uuid.UUID
 	Repo    *FakeRecipeRepository
 	Planner *domain.Planner
 	Logger  *slog.Logger
@@ -46,6 +52,7 @@ type PlannerTestContext struct {
 // NewPlannerTestContext creates a new test context for planner testing
 func NewPlannerTestContext() *PlannerTestContext {
 	ctx := context.Background()
+	userID := uuid.New()
 	repo := NewFakeRecipeRepository()
 
 	// Create a silent logger for tests
@@ -55,6 +62,7 @@ func NewPlannerTestContext() *PlannerTestContext {
 
 	return &PlannerTestContext{
 		Ctx:     ctx,
+		UserID:  userID,
 		Repo:    repo,
 		Planner: planner,
 		Logger:  logger,
