@@ -1,15 +1,17 @@
 <template>
   <div class="today-plan-card">
     <!-- Card Header -->
-    <div class="card-header tw-px-4 tw-pt-4 tw-pb-3">
+    <div class="card-header">
       <div class="tw-flex tw-items-center tw-gap-2">
-        <q-icon name="restaurant" size="18px" color="white" class="tw-opacity-80" />
-        <span class="tw-text-white tw-font-medium">Your Meal Plan Today</span>
+        <div class="header-icon">
+          <q-icon name="restaurant" size="16px" color="white" />
+        </div>
+        <span class="header-title">Your Meal Plan Today</span>
       </div>
     </div>
 
     <!-- Featured Meal Content -->
-    <div class="card-content tw-px-4 tw-pb-4">
+    <div class="card-content">
       <div class="featured-meal-wrapper">
         <template v-if="featuredMeal?.recipe">
           <!-- Recipe Image -->
@@ -19,29 +21,31 @@
               :alt="featuredMeal.recipe.name"
               class="meal-image"
             />
+            <div class="meal-badge">
+              {{ formatMealType(featuredMeal.mealType) }}
+            </div>
           </div>
 
           <!-- Recipe Info -->
-          <div class="meal-info tw-p-3">
-            <div class="tw-text-sm tw-text-gray-500 tw-mb-1">
-              {{ formatMealType(featuredMeal.mealType) }}
-            </div>
-            <div class="tw-text-lg tw-font-semibold tw-text-gray-800 tw-mb-3">
+          <div class="meal-info">
+            <h3 class="meal-name">
               {{ featuredMeal.recipe.name }}
-            </div>
+            </h3>
 
             <!-- Action Buttons -->
-            <div class="tw-flex tw-flex-col tw-gap-2">
+            <div class="tw-flex tw-gap-3 tw-mt-4">
               <q-btn
                 label="View Recipe"
                 unelevated
-                class="view-recipe-btn"
+                no-caps
+                class="view-btn tw-flex-1"
                 @click="viewRecipe"
               />
               <q-btn
-                label="Meal Planner Overview"
+                icon="mdi-calendar"
                 flat
-                class="overview-btn"
+                round
+                class="plan-btn"
                 @click="goToMealPlanner"
               />
             </div>
@@ -50,15 +54,16 @@
 
         <template v-else>
           <!-- Empty State -->
-          <div class="empty-state tw-p-6 tw-text-center">
-            <div class="empty-icon tw-mx-auto tw-mb-3">
-              <q-icon name="event_busy" size="32px" color="grey-5" />
+          <div class="empty-state">
+            <div class="empty-icon">
+              <q-icon name="event_busy" size="28px" color="grey-5" />
             </div>
-            <div class="tw-text-gray-600 tw-mb-3">No meals planned for today</div>
+            <p class="empty-text">No meals planned for today</p>
             <q-btn
               label="Plan Your Meals"
               unelevated
-              class="view-recipe-btn"
+              no-caps
+              class="view-btn"
               @click="goToMealPlanner"
             />
           </div>
@@ -104,7 +109,6 @@ function formatMealType(mealType: MealType): string {
 }
 
 function getRecipeImage(recipeName: string | undefined): string {
-  // Generate a placeholder image based on recipe name
   const seed = recipeName?.replace(/\s+/g, '-').toLowerCase() || 'default';
   return `https://picsum.photos/seed/${seed}/400/240`;
 }
@@ -121,21 +125,50 @@ function goToMealPlanner() {
 </script>
 
 <style scoped lang="scss">
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600&display=swap');
+
 .today-plan-card {
   background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
-  border-radius: 20px;
+  border-radius: 24px;
   overflow: hidden;
+  box-shadow: 0 8px 32px rgba(255, 99, 71, 0.25);
+}
+
+.card-header {
+  padding: 16px 16px 12px;
+}
+
+.header-icon {
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.card-content {
+  padding: 0 12px 12px;
 }
 
 .featured-meal-wrapper {
   background: white;
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
 }
 
 .meal-image-container {
+  position: relative;
   width: 100%;
-  height: 160px;
+  height: 140px;
   overflow: hidden;
 }
 
@@ -145,32 +178,69 @@ function goToMealPlanner() {
   object-fit: cover;
 }
 
-.view-recipe-btn {
-  background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%) !important;
-  color: white !important;
-  border-radius: 10px;
-  font-weight: 500;
-  text-transform: none;
+.meal-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(45, 31, 26, 0.75);
+  backdrop-filter: blur(8px);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
 }
 
-.overview-btn {
-  color: #ff7f50 !important;
-  font-weight: 500;
-  text-transform: none;
+.meal-info {
+  padding: 16px;
+}
+
+.meal-name {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2d1f1a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.view-btn {
+  background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%) !important;
+  color: white !important;
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  height: 44px;
+}
+
+.plan-btn {
+  background: #fff5f2 !important;
+  color: #ff6347 !important;
+  width: 44px;
+  height: 44px;
 }
 
 .empty-state {
-  background: white;
-  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
 }
 
 .empty-icon {
-  width: 64px;
-  height: 64px;
-  background: #f5f5f5;
+  width: 56px;
+  height: 56px;
+  background: #f5f2f0;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.empty-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: #6b5f5a;
+  margin: 0 0 16px;
 }
 </style>

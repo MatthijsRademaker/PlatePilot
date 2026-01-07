@@ -1,0 +1,221 @@
+// PlatePilot Theme - Shared Design Tokens
+// Typography: DM Sans (body) + Fraunces (headings)
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap');
+
+// ============================================
+// COLOR PALETTE
+// ============================================
+
+:root {
+  // Primary - Warm Coral
+  --pp-primary-50: #fff5f2;
+  --pp-primary-100: #ffebe5;
+  --pp-primary-200: #ffd4c7;
+  --pp-primary-300: #ffb8a3;
+  --pp-primary-400: #ff8c69;
+  --pp-primary-500: #ff7f50; // Main coral
+  --pp-primary-600: #ff6347; // Tomato
+  --pp-primary-700: #e5533d;
+  --pp-primary-800: #c44433;
+  --pp-primary-900: #a3392b;
+
+  // Neutral - Warm Browns
+  --pp-neutral-50: #faf8f7;
+  --pp-neutral-100: #f5f2f0;
+  --pp-neutral-200: #e8e2df;
+  --pp-neutral-300: #d4ccc8;
+  --pp-neutral-400: #a8a0a0;
+  --pp-neutral-500: #6b5f5a;
+  --pp-neutral-600: #4a3f3a;
+  --pp-neutral-700: #3d332f;
+  --pp-neutral-800: #2d1f1a;
+  --pp-neutral-900: #1a110e;
+
+  // Background
+  --pp-bg-warm: linear-gradient(180deg, #fff8f5 0%, #ffffff 100%);
+  --pp-bg-coral: linear-gradient(165deg, #ff8c69 0%, #ff6347 50%, #e5533d 100%);
+
+  // Typography
+  --pp-font-body: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --pp-font-display: 'Fraunces', Georgia, serif;
+
+  // Shadows
+  --pp-shadow-sm: 0 2px 8px rgba(45, 31, 26, 0.06);
+  --pp-shadow-md: 0 4px 20px rgba(45, 31, 26, 0.08);
+  --pp-shadow-lg: 0 8px 32px rgba(45, 31, 26, 0.12);
+  --pp-shadow-coral: 0 8px 24px rgba(255, 99, 71, 0.25);
+
+  // Border Radius
+  --pp-radius-sm: 8px;
+  --pp-radius-md: 14px;
+  --pp-radius-lg: 20px;
+  --pp-radius-xl: 28px;
+}
+
+// ============================================
+// TYPOGRAPHY MIXINS
+// ============================================
+
+@mixin font-body {
+  font-family: var(--pp-font-body);
+}
+
+@mixin font-display {
+  font-family: var(--pp-font-display);
+}
+
+@mixin heading-xl {
+  @include font-display;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  color: var(--pp-neutral-800);
+}
+
+@mixin heading-lg {
+  @include font-display;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.3px;
+  color: var(--pp-neutral-800);
+}
+
+@mixin heading-md {
+  @include font-display;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--pp-neutral-800);
+}
+
+@mixin heading-sm {
+  @include font-body;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--pp-neutral-800);
+}
+
+@mixin body-lg {
+  @include font-body;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--pp-neutral-600);
+}
+
+@mixin body-md {
+  @include font-body;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--pp-neutral-500);
+}
+
+@mixin body-sm {
+  @include font-body;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--pp-neutral-400);
+}
+
+@mixin label {
+  @include font-body;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--pp-neutral-400);
+}
+
+// ============================================
+// CARD MIXINS
+// ============================================
+
+@mixin card-base {
+  background: white;
+  border-radius: var(--pp-radius-lg);
+  border: 1px solid rgba(45, 31, 26, 0.04);
+  box-shadow: var(--pp-shadow-sm);
+}
+
+@mixin card-elevated {
+  @include card-base;
+  box-shadow: var(--pp-shadow-md);
+}
+
+@mixin card-interactive {
+  @include card-base;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--pp-shadow-lg);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// ============================================
+// BUTTON MIXINS
+// ============================================
+
+@mixin btn-primary {
+  @include font-body;
+  background: linear-gradient(135deg, var(--pp-primary-500) 0%, var(--pp-primary-600) 100%);
+  color: white;
+  font-weight: 600;
+  border-radius: var(--pp-radius-md);
+  box-shadow: var(--pp-shadow-coral);
+  transition: all 0.2s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+@mixin btn-secondary {
+  @include font-body;
+  background: var(--pp-primary-50);
+  color: var(--pp-primary-600);
+  font-weight: 500;
+  border-radius: var(--pp-radius-md);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--pp-primary-100);
+  }
+}
+
+// ============================================
+// PAGE LAYOUT MIXINS
+// ============================================
+
+@mixin page-background {
+  background: var(--pp-bg-warm);
+  min-height: 100vh;
+}
+
+@mixin page-header-coral {
+  background: linear-gradient(135deg, var(--pp-primary-500) 0%, var(--pp-primary-600) 100%);
+  padding: 24px 16px;
+  color: white;
+}
+
+@mixin header-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

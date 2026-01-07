@@ -1,57 +1,57 @@
 <template>
   <q-page class="search-page">
-    <div class="page-header">
+    <header class="page-header">
       <div class="tw-flex tw-items-center tw-gap-3 tw-mb-4">
         <div class="header-icon">
-          <q-icon name="search" size="24px" color="white" />
+          <q-icon name="search" size="22px" color="white" />
         </div>
-        <h1 class="text-h5 q-ma-none tw-font-semibold">Search Recipes</h1>
+        <h1 class="page-title">Search Recipes</h1>
       </div>
 
       <q-input
         v-model="searchQuery"
         outlined
-        placeholder="Search for recipes..."
+        placeholder="What are you looking for?"
         debounce="300"
         clearable
         class="search-input"
         bg-color="white"
       >
         <template #prepend>
-          <q-icon name="search" />
+          <q-icon name="search" color="grey-6" />
         </template>
       </q-input>
-    </div>
+    </header>
 
-    <div class="tw-px-4 tw-pb-4">
-      <div v-if="loading" class="row justify-center tw-py-8">
-        <q-spinner size="lg" color="primary" />
+    <div class="tw-px-4 tw-pb-24">
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-state">
+        <q-spinner size="40px" color="deep-orange" />
       </div>
 
-      <div v-else-if="results.length === 0 && searchQuery" class="empty-state tw-text-center tw-py-12">
-        <div class="empty-icon tw-mx-auto tw-mb-4">
-          <q-icon name="search_off" size="48px" color="grey-5" />
+      <!-- No Results -->
+      <div v-else-if="results.length === 0 && searchQuery" class="empty-state">
+        <div class="empty-icon">
+          <q-icon name="search_off" size="40px" color="grey-4" />
         </div>
-        <div class="text-body1 text-grey-6">No recipes found for "{{ searchQuery }}"</div>
-        <div class="text-caption text-grey-5 tw-mt-1">Try a different search term</div>
+        <h3 class="empty-title">No recipes found</h3>
+        <p class="empty-text">Try a different search term</p>
       </div>
 
-      <div v-else-if="results.length === 0" class="empty-state tw-text-center tw-py-12">
-        <div class="empty-icon tw-mx-auto tw-mb-4">
-          <q-icon name="restaurant_menu" size="48px" color="grey-5" />
+      <!-- Initial State -->
+      <div v-else-if="results.length === 0" class="empty-state">
+        <div class="empty-icon empty-icon--warm">
+          <q-icon name="restaurant_menu" size="40px" color="deep-orange-3" />
         </div>
-        <div class="text-body1 text-grey-6">Start typing to search</div>
-        <div class="text-caption text-grey-5 tw-mt-1">Find recipes by name or description</div>
+        <h3 class="empty-title">Start searching</h3>
+        <p class="empty-text">Find recipes by name or description</p>
       </div>
 
-      <div v-else class="row q-col-gutter-md">
-        <div
-          v-for="recipe in results"
-          :key="recipe.id"
-          class="col-12 col-sm-6 col-md-4 col-lg-3"
-        >
-          <RecipeCard :recipe="recipe" @click="goToRecipe(recipe)" />
-        </div>
+      <!-- Results Grid -->
+      <div v-else class="results-grid">
+        <template v-for="recipe in results" :key="recipe.id">
+          <RecipeCard :recipe="recipe" @click="goToRecipe(recipe)"
+        /></template>
       </div>
     </div>
   </q-page>
@@ -87,7 +87,7 @@ watch(searchQuery, async (query) => {
     results.value = recipeStore.recipes.filter(
       (r) =>
         (r.name?.toLowerCase().includes(query.toLowerCase()) ?? false) ||
-        (r.description?.toLowerCase().includes(query.toLowerCase()) ?? false)
+        (r.description?.toLowerCase().includes(query.toLowerCase()) ?? false),
     );
   } finally {
     loading.value = false;
@@ -100,15 +100,17 @@ function goToRecipe(recipe: HandlerRecipeJSON) {
 </script>
 
 <style scoped lang="scss">
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:opsz,wght@9..144,600&display=swap');
+
 .search-page {
+  padding-top: env(safe-area-inset-top);
   background: linear-gradient(180deg, #fff8f5 0%, #ffffff 100%);
   min-height: 100vh;
 }
 
 .page-header {
   background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
-  padding: 24px 16px;
-  margin-bottom: 16px;
+  padding: 20px 16px 24px;
   color: white;
 }
 
@@ -116,35 +118,94 @@ function goToRecipe(recipe: HandlerRecipeJSON) {
   width: 44px;
   height: 44px;
   background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.page-title {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
 .search-input {
   :deep(.q-field__control) {
     border-radius: 14px;
+    height: 52px;
   }
 
   :deep(.q-field__native) {
-    color: #333;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    color: #2d1f1a;
+
+    &::placeholder {
+      color: #a8a0a0;
+    }
   }
+}
+
+// States
+.loading-state {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
 }
 
 .empty-state {
   background: white;
-  border-radius: 20px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 24px;
+  padding: 48px 24px;
+  text-align: center;
+  margin-top: 16px;
+  box-shadow: 0 4px 20px rgba(45, 31, 26, 0.04);
+  border: 1px solid rgba(45, 31, 26, 0.04);
 }
 
 .empty-icon {
   width: 80px;
   height: 80px;
-  background: #f5f5f5;
-  border-radius: 20px;
+  background: #f5f2f0;
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0 auto 20px;
+
+  &--warm {
+    background: #fff5f2;
+  }
+}
+
+.empty-title {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2d1f1a;
+  margin: 0 0 8px;
+}
+
+.empty-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: #a8a0a0;
+  margin: 0;
+}
+
+// Results Grid
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

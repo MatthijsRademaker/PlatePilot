@@ -1,40 +1,41 @@
 <template>
   <div class="calorie-tracker">
-    <div class="tw-text-lg tw-font-semibold tw-text-gray-800 tw-mb-4">Daily Calorie Tracker</div>
+    <h2 class="section-title">Daily Calorie Tracker</h2>
 
-    <div class="tw-flex tw-items-center tw-gap-4">
+    <div class="tracker-content">
       <!-- Main Calorie Circle -->
       <div class="main-progress">
         <q-circular-progress
           :value="caloriePercentage"
-          size="80px"
-          :thickness="0.15"
-          color="orange"
+          size="90px"
+          :thickness="0.12"
+          color="deep-orange"
           track-color="grey-3"
           class="main-circle"
         />
         <div class="progress-text">
-          <div class="tw-text-lg tw-font-bold tw-text-gray-800">{{ currentCalories }}</div>
-          <div class="tw-text-xs tw-text-gray-500">/ {{ targetCalories }} cal</div>
+          <span class="calories-value">{{ currentCalories }}</span>
+          <span class="calories-target">/ {{ targetCalories }}</span>
         </div>
       </div>
 
       <!-- Meal Breakdown -->
-      <div class="tw-flex tw-gap-3 tw-flex-1 tw-overflow-x-auto">
+      <div class="meals-grid">
         <div v-for="item in mealBreakdown" :key="item.name" class="meal-item">
-          <q-circular-progress
-            :value="item.percentage"
-            size="48px"
-            :thickness="0.12"
-            :color="item.color"
-            track-color="grey-3"
-          />
-          <div class="meal-item-image">
-            <img :src="item.image" :alt="item.name" />
+          <div class="meal-progress">
+            <q-circular-progress
+              :value="item.percentage"
+              size="52px"
+              :thickness="0.1"
+              :color="item.color"
+              track-color="grey-2"
+            />
+            <div class="meal-image">
+              <img :src="item.image" :alt="item.name" />
+            </div>
           </div>
-          <div class="tw-text-xs tw-text-gray-600 tw-text-center tw-mt-1 tw-truncate tw-max-w-12">
-            {{ item.name }}
-          </div>
+          <span class="meal-name">{{ item.name }}</span>
+          <span class="meal-cals">{{ item.calories }} cal</span>
         </div>
       </div>
     </div>
@@ -65,32 +66,49 @@ const mealBreakdown: MealBreakdownItem[] = [
     name: 'Stir Fry',
     calories: 450,
     percentage: 75,
-    color: 'orange',
+    color: 'deep-orange',
     image: 'https://picsum.photos/seed/stirfry/100/100',
   },
   {
     name: 'Salad',
     calories: 280,
     percentage: 60,
-    color: 'green',
+    color: 'green-6',
     image: 'https://picsum.photos/seed/salad/100/100',
   },
   {
     name: 'Smoothie',
     calories: 320,
     percentage: 85,
-    color: 'purple',
+    color: 'purple-5',
     image: 'https://picsum.photos/seed/smoothie/100/100',
   },
 ];
 </script>
 
 <style scoped lang="scss">
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600&display=swap');
+
 .calorie-tracker {
   background: white;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(45, 31, 26, 0.06);
+  border: 1px solid rgba(45, 31, 26, 0.04);
+}
+
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d1f1a;
+  margin: 0 0 16px;
+}
+
+.tracker-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .main-progress {
@@ -98,33 +116,94 @@ const mealBreakdown: MealBreakdownItem[] = [
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .progress-text {
   position: absolute;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.calories-value {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #2d1f1a;
+  line-height: 1;
+}
+
+.calories-target {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #a8a0a0;
+  margin-top: 2px;
+}
+
+.meals-grid {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  overflow-x: auto;
+  padding: 4px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .meal-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
   flex-shrink: 0;
 }
 
-.meal-item-image {
+.meal-progress {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meal-image {
   position: absolute;
-  top: 8px;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
+}
+
+.meal-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a3f3a;
+  margin-top: 8px;
+  max-width: 60px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meal-cals {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #a8a0a0;
+  margin-top: 2px;
 }
 </style>

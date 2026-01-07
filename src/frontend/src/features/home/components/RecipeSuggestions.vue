@@ -1,17 +1,24 @@
 <template>
   <div class="recipe-suggestions">
-    <div class="tw-text-lg tw-font-semibold tw-text-gray-800 tw-mb-4">Recipe Suggestions</div>
+    <div class="section-header">
+      <h2 class="section-title">Recipe Suggestions</h2>
+      <router-link :to="{ name: 'recipes' }" class="see-all">
+        See all
+        <q-icon name="chevron_right" size="18px" />
+      </router-link>
+    </div>
 
-    <div v-if="loading" class="tw-flex tw-gap-3 tw-overflow-x-auto tw-pb-2">
-      <div v-for="n in 4" :key="n" class="suggestion-card-skeleton">
-        <q-skeleton height="100px" class="tw-rounded-t-xl" />
-        <div class="tw-p-2">
+    <div v-if="loading" class="suggestions-scroll">
+      <div v-for="n in 4" :key="n" class="suggestion-card suggestion-card--skeleton">
+        <q-skeleton height="100px" class="skeleton-image" />
+        <div class="skeleton-content">
           <q-skeleton type="text" width="80%" />
+          <q-skeleton type="text" width="50%" class="tw-mt-1" />
         </div>
       </div>
     </div>
 
-    <div v-else-if="recipes.length > 0" class="suggestions-scroll tw-flex tw-gap-3 tw-overflow-x-auto tw-pb-2">
+    <div v-else-if="recipes.length > 0" class="suggestions-scroll">
       <div
         v-for="recipe in recipes"
         :key="recipe.id"
@@ -21,19 +28,18 @@
         <div class="card-image">
           <img :src="getRecipeImage(recipe.name)" :alt="recipe.name" />
         </div>
-        <div class="tw-p-2">
-          <div class="tw-text-sm tw-font-medium tw-text-gray-800 tw-truncate">
-            {{ recipe.name }}
-          </div>
-          <div v-if="recipe.cuisine?.name" class="tw-text-xs tw-text-gray-500">
+        <div class="card-content">
+          <h3 class="card-title">{{ recipe.name }}</h3>
+          <span v-if="recipe.cuisine?.name" class="card-cuisine">
             {{ recipe.cuisine.name }}
-          </div>
+          </span>
         </div>
       </div>
     </div>
 
-    <div v-else class="tw-text-center tw-py-6 tw-text-gray-500">
-      No recipes available
+    <div v-else class="empty-state">
+      <q-icon name="restaurant_menu" size="32px" color="grey-4" />
+      <p>No recipes available</p>
     </div>
   </div>
 </template>
@@ -74,21 +80,57 @@ function viewRecipe(id: string | undefined) {
 </script>
 
 <style scoped lang="scss">
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:opsz,wght@9..144,600&display=swap');
+
 .recipe-suggestions {
   background: white;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(45, 31, 26, 0.06);
+  border: 1px solid rgba(45, 31, 26, 0.04);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2d1f1a;
+  margin: 0;
+}
+
+.see-all {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ff6347;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+
+  &:active {
+    opacity: 0.7;
+  }
 }
 
 .suggestions-scroll {
-  margin: 0 -16px;
-  padding: 0 16px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  margin: 0 -20px;
+  padding: 4px 20px 8px;
 
   &::-webkit-scrollbar {
     display: none;
   }
-
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
@@ -96,24 +138,26 @@ function viewRecipe(id: string | undefined) {
 .suggestion-card {
   flex-shrink: 0;
   width: 140px;
-  background: #fafafa;
-  border-radius: 12px;
+  background: #faf8f7;
+  border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 127, 80, 0.15);
+  &:active {
+    transform: scale(0.98);
   }
-}
 
-.suggestion-card-skeleton {
-  flex-shrink: 0;
-  width: 140px;
-  background: #fafafa;
-  border-radius: 12px;
-  overflow: hidden;
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(255, 127, 80, 0.15);
+    }
+  }
+
+  &--skeleton {
+    pointer-events: none;
+  }
 }
 
 .card-image {
@@ -125,6 +169,55 @@ function viewRecipe(id: string | undefined) {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+}
+
+.suggestion-card:hover .card-image img {
+  transform: scale(1.05);
+}
+
+.skeleton-image {
+  border-radius: 0;
+}
+
+.skeleton-content {
+  padding: 10px 12px;
+}
+
+.card-content {
+  padding: 10px 12px;
+}
+
+.card-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d1f1a;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-cuisine {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #a8a0a0;
+  display: block;
+  margin-top: 2px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+
+  p {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: #a8a0a0;
+    margin: 12px 0 0;
   }
 }
 </style>

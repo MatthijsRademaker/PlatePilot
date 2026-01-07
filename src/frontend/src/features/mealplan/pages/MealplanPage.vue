@@ -1,21 +1,21 @@
 <template>
   <q-page class="mealplan-page">
-    <div class="page-header">
+    <header class="page-header">
       <div class="tw-flex tw-items-center tw-justify-between">
         <div class="tw-flex tw-items-center tw-gap-3">
           <div class="header-icon">
-            <q-icon name="calendar_month" size="24px" color="white" />
+            <q-icon name="calendar_month" size="22px" color="white" />
           </div>
-          <h1 class="text-h5 q-ma-none tw-font-semibold">Meal Plan</h1>
+          <h1 class="page-title">Meal Plan</h1>
         </div>
-        <div class="row q-gutter-sm">
-          <q-btn flat label="Today" class="header-btn" @click="goToCurrentWeek" />
-          <q-btn flat icon="delete_sweep" class="header-btn" @click="confirmClearWeek" />
+        <div class="tw-flex tw-gap-2">
+          <q-btn flat no-caps label="Today" class="header-btn" @click="goToCurrentWeek" />
+          <q-btn flat round icon="delete_sweep" class="header-btn-icon" @click="confirmClearWeek" />
         </div>
       </div>
-    </div>
+    </header>
 
-    <div class="tw-px-4 tw-pb-4">
+    <div class="tw-px-4 tw-pb-24">
       <WeekView
         :week-plan="currentWeek"
         @prev="navigateWeek('prev')"
@@ -25,105 +25,98 @@
       />
     </div>
 
+    <!-- Recipe Selector Dialog -->
     <q-dialog v-model="selectorOpen">
-      <q-card class="selector-card">
-        <q-card-section class="selector-header">
-          <div class="tw-flex tw-items-center tw-gap-2">
+      <div class="selector-dialog">
+        <div class="selector-header">
+          <div class="tw-flex tw-items-center tw-gap-3">
             <div class="selector-icon">
-              <q-icon name="restaurant_menu" size="20px" color="white" />
+              <q-icon name="restaurant_menu" size="18px" color="white" />
             </div>
-            <div class="text-h6 tw-font-semibold">Select a Recipe</div>
+            <h2 class="selector-title">Select a Recipe</h2>
           </div>
-        </q-card-section>
+          <q-btn flat round icon="close" size="sm" color="white" v-close-popup />
+        </div>
 
-        <q-card-section class="q-pt-none">
-          <div class="row q-gutter-sm q-mb-md">
+        <div class="selector-content">
+          <!-- Search & AI Suggest -->
+          <div class="tw-flex tw-gap-3 tw-mb-4">
             <q-input
               v-model="searchQuery"
               dense
               outlined
               placeholder="Search recipes..."
-              class="col search-input"
+              class="search-input tw-flex-1"
             >
               <template #prepend>
-                <q-icon name="search" />
+                <q-icon name="search" color="grey-6" />
               </template>
             </q-input>
             <q-btn
-              color="primary"
               icon="auto_awesome"
-              label="AI Suggest"
               unelevated
+              no-caps
+              class="suggest-btn"
               :loading="suggestionsLoading"
               @click="handleGetSuggestions"
             />
           </div>
-        </q-card-section>
 
-        <!-- AI Suggestions Section -->
-        <q-card-section v-if="suggestionsError" class="q-pt-none">
-          <q-banner class="bg-negative text-white tw-rounded-lg">
-            {{ suggestionsError }}
-          </q-banner>
-        </q-card-section>
-
-        <q-card-section v-if="suggestedRecipes.length > 0" class="q-pt-none">
-          <div class="q-mb-sm row items-center justify-between">
-            <span class="text-subtitle2 text-primary tw-flex tw-items-center tw-gap-1">
-              <q-icon name="auto_awesome" />
-              AI Suggestions
-            </span>
-            <q-btn flat dense size="sm" icon="close" @click="clearSuggestions" />
+          <!-- Error Banner -->
+          <div v-if="suggestionsError" class="error-banner tw-mb-4">
+            <q-icon name="error_outline" size="18px" />
+            <span>{{ suggestionsError }}</span>
           </div>
-          <q-list bordered separator class="suggestions-list tw-rounded-lg">
-            <q-item
-              v-for="recipe in suggestedRecipes"
-              :key="'suggestion-' + recipe.id"
-              clickable
-              v-ripple
-              @click="selectRecipe(recipe)"
-            >
-              <q-item-section avatar>
-                <div class="suggestion-avatar">
+
+          <!-- AI Suggestions -->
+          <div v-if="suggestedRecipes.length > 0" class="suggestions-section tw-mb-4">
+            <div class="tw-flex tw-items-center tw-justify-between tw-mb-3">
+              <span class="section-label">
+                <q-icon name="auto_awesome" size="16px" class="tw-mr-1" />
+                AI Suggestions
+              </span>
+              <q-btn flat dense size="sm" icon="close" color="grey" @click="clearSuggestions" />
+            </div>
+            <div class="recipe-list suggestions-list">
+              <div
+                v-for="recipe in suggestedRecipes"
+                :key="'suggestion-' + recipe.id"
+                class="recipe-item recipe-item--suggested"
+                @click="selectRecipe(recipe)"
+              >
+                <div class="recipe-icon">
                   <q-icon name="auto_awesome" size="16px" color="white" />
                 </div>
-              </q-item-section>
-              <q-item-section>
-                <q-item-label class="tw-font-medium">{{ recipe.name }}</q-item-label>
-                <q-item-label caption>{{ recipe.description }}</q-item-label>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card-section>
+                <div class="recipe-info">
+                  <span class="recipe-name">{{ recipe.name }}</span>
+                  <span class="recipe-desc">{{ recipe.description }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
-        <!-- All Recipes Section -->
-        <q-card-section class="scroll q-pt-none" style="max-height: 300px">
-          <div class="text-subtitle2 text-grey-7 q-mb-sm">All Recipes</div>
-          <q-list separator class="recipes-list tw-rounded-lg">
-            <q-item
-              v-for="recipe in filteredRecipes"
-              :key="recipe.id ?? ''"
-              clickable
-              v-ripple
-              @click="selectRecipe(recipe)"
-            >
-              <q-item-section avatar>
-                <div class="recipe-avatar">
+          <!-- All Recipes -->
+          <div class="all-recipes-section">
+            <span class="section-label">All Recipes</span>
+            <div class="recipe-list">
+              <div
+                v-for="recipe in filteredRecipes"
+                :key="recipe.id ?? ''"
+                class="recipe-item"
+                @click="selectRecipe(recipe)"
+              >
+                <div class="recipe-icon recipe-icon--default">
                   <q-icon name="restaurant_menu" size="16px" color="white" />
                 </div>
-              </q-item-section>
-              <q-item-section>
-                <q-item-label class="tw-font-medium">{{ recipe.name }}</q-item-label>
-                <q-item-label caption>{{ recipe.description }}</q-item-label>
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card-section>
-
-        <q-card-actions align="right" class="tw-px-4 tw-pb-4">
-          <q-btn flat label="Cancel" v-close-popup />
-        </q-card-actions>
-      </q-card>
+                <div class="recipe-info">
+                  <span class="recipe-name">{{ recipe.name }}</span>
+                  <span class="recipe-desc">{{ recipe.description }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </q-dialog>
   </q-page>
 </template>
@@ -212,15 +205,17 @@ function confirmClearWeek() {
 </script>
 
 <style scoped lang="scss">
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:opsz,wght@9..144,600&display=swap');
+
 .mealplan-page {
+  padding-top: env(safe-area-inset-top);
   background: linear-gradient(180deg, #fff8f5 0%, #ffffff 100%);
   min-height: 100vh;
 }
 
 .page-header {
   background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
-  padding: 24px 16px;
-  margin-bottom: 16px;
+  padding: 20px 16px 24px;
   color: white;
 }
 
@@ -228,13 +223,34 @@ function confirmClearWeek() {
   width: 44px;
   height: 44px;
   background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.page-title {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
 .header-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  color: white;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+.header-btn-icon {
   color: white;
   background: rgba(255, 255, 255, 0.15);
 
@@ -243,16 +259,25 @@ function confirmClearWeek() {
   }
 }
 
-.selector-card {
-  min-width: 400px;
-  max-width: 600px;
-  border-radius: 20px;
+// Selector Dialog
+.selector-dialog {
+  background: white;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .selector-header {
   background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   color: white;
-  border-radius: 20px 20px 0 0;
 }
 
 .selector-icon {
@@ -265,38 +290,139 @@ function confirmClearWeek() {
   justify-content: center;
 }
 
+.selector-title {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.selector-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
 .search-input {
   :deep(.q-field__control) {
     border-radius: 12px;
   }
+
+  :deep(.q-field__native) {
+    font-family: 'DM Sans', sans-serif;
+  }
+}
+
+.suggest-btn {
+  background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%) !important;
+  color: white !important;
+  border-radius: 12px;
+  width: 48px;
+}
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #ffebee;
+  border-radius: 12px;
+  color: #c62828;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ff6347;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .suggestions-list {
   background: #fff5f2;
-  border-color: rgba(255, 127, 80, 0.2) !important;
+  border-radius: 16px;
+  padding: 8px;
 }
 
-.suggestion-avatar {
-  width: 32px;
-  height: 32px;
+.all-recipes-section {
+  .recipe-list {
+    max-height: 300px;
+    overflow-y: auto;
+    background: #faf8f7;
+    border-radius: 16px;
+    padding: 8px;
+  }
+}
+
+.recipe-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 127, 80, 0.1);
+  }
+
+  &--suggested {
+    background: white;
+  }
+}
+
+.recipe-icon {
+  width: 36px;
+  height: 36px;
   background: linear-gradient(135deg, #ff7f50 0%, #ff6347 100%);
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+
+  &--default {
+    background: linear-gradient(135deg, #ffa07a 0%, #ff7f50 100%);
+  }
 }
 
-.recipes-list {
-  border: 1px solid rgba(0, 0, 0, 0.08);
+.recipe-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.recipe-avatar {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #ffa07a 0%, #ff7f50 100%);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.recipe-name {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d1f1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recipe-desc {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: #6b5f5a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
 }
 </style>
