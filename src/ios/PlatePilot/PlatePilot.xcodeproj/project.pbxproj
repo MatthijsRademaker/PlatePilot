@@ -35,6 +35,7 @@
 		DD03EB2CCD156FBA427809DE /* RecipeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37BAD166678768C77CF7D555 /* RecipeListView.swift */; };
 		DEBBE363A13B757A6BC887E8 /* AuthFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AE6EA5A7F5BB1BE9BA6652 /* AuthFlowView.swift */; };
 		DF107FB2428335302E7DF544 /* RecipeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB6565A20E73EC5F4025667E /* RecipeDetailView.swift */; };
+		E2C1B4A5968778695A4B3C2D /* RecipeCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F60718293A4B5C6D7E8F /* RecipeCreateView.swift */; };
 		E615C9A4AA9C178C1D503D05 /* MealPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7904B81712F29B3E95EB6BA /* MealPlanView.swift */; };
 		E6379F77194370E1FFFF1D97 /* MockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D3F6B155D483093EBF7BF2 /* MockData.swift */; };
 		E7272079A2881570E2A3D072 /* PlatePilotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDDA9DE54BBC80FA2340D921 /* PlatePilotApp.swift */; };
@@ -79,6 +80,7 @@
 		C7A4088423CB01BFBAF87224 /* RecipeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeCardView.swift; sourceTree = "<group>"; };
 		CA846221304E73474EDA713A /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		DB6565A20E73EC5F4025667E /* RecipeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailView.swift; sourceTree = "<group>"; };
+		D4E5F60718293A4B5C6D7E8F /* RecipeCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeCreateView.swift; sourceTree = "<group>"; };
 		DECB933935D99A8076C1362C /* MealPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPlan.swift; sourceTree = "<group>"; };
 		DFC154D4EC3F112DF321679C /* Router.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Router.swift; sourceTree = "<group>"; };
 		E9912A07D4D2BF8B2BD86DEC /* AuthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStore.swift; sourceTree = "<group>"; };
@@ -235,6 +237,7 @@
 			isa = PBXGroup;
 			children = (
 				C7A4088423CB01BFBAF87224 /* RecipeCardView.swift */,
+				D4E5F60718293A4B5C6D7E8F /* RecipeCreateView.swift */,
 				DB6565A20E73EC5F4025667E /* RecipeDetailView.swift */,
 				37BAD166678768C77CF7D555 /* RecipeListView.swift */,
 			);
@@ -382,6 +385,7 @@
 				6EEFEE89C89B0A9B1812F6ED /* PlatePilotTheme.swift in Sources */,
 				CBB0DE4DA0E75F0240E96267 /* Recipe.swift in Sources */,
 				FA38F6520212D03A342150D1 /* RecipeCardView.swift in Sources */,
+				E2C1B4A5968778695A4B3C2D /* RecipeCreateView.swift in Sources */,
 				DF107FB2428335302E7DF544 /* RecipeDetailView.swift in Sources */,
 				DD03EB2CCD156FBA427809DE /* RecipeListView.swift in Sources */,
 				8D956FE85B920FDA8303D8E8 /* RecipeStore.swift in Sources */,

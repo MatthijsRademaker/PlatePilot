@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -293,26 +294,33 @@ func (h *RecipeHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 // CreateRecipeRequest is the request body for creating a recipe
 type CreateRecipeRequest struct {
-	Name             string   `json:"name"`
-	Description      string   `json:"description"`
-	PrepTime         string   `json:"prepTime"`
-	CookTime         string   `json:"cookTime"`
-	MainIngredientID string   `json:"mainIngredientId"`
-	CuisineID        string   `json:"cuisineId"`
-	IngredientIDs    []string `json:"ingredientIds"`
-	Directions       []string `json:"directions"`
+	Name               string   `json:"name"`
+	Description        string   `json:"description"`
+	PrepTime           string   `json:"prepTime"`
+	CookTime           string   `json:"cookTime"`
+	MainIngredientID   string   `json:"mainIngredientId"`
+	MainIngredientName string   `json:"mainIngredientName"`
+	CuisineID          string   `json:"cuisineId"`
+	CuisineName        string   `json:"cuisineName"`
+	IngredientIDs      []string `json:"ingredientIds"`
+	IngredientNames    []string `json:"ingredientNames"`
+	Directions         []string `json:"directions"`
+	Tags               []string `json:"tags"`
+	GuidedMode         bool     `json:"guidedMode"`
 }
 
 // Validate validates the create recipe request
 func (r *CreateRecipeRequest) Validate() error {
-	if r.Name == "" {
+	if strings.TrimSpace(r.Name) == "" {
 		return &ValidationError{Field: "name", Message: "name is required"}
 	}
-	if r.MainIngredientID == "" {
-		return &ValidationError{Field: "mainIngredientId", Message: "mainIngredientId is required"}
+	hasMainIngredient := strings.TrimSpace(r.MainIngredientID) != "" || strings.TrimSpace(r.MainIngredientName) != ""
+	hasIngredients := len(r.IngredientIDs) > 0 || hasNonEmpty(r.IngredientNames)
+	if !hasMainIngredient && !hasIngredients {
+		return &ValidationError{Field: "ingredients", Message: "at least one ingredient is required"}
 	}
-	if r.CuisineID == "" {
-		return &ValidationError{Field: "cuisineId", Message: "cuisineId is required"}
+	if !hasNonEmpty(r.Directions) {
+		return &ValidationError{Field: "directions", Message: "at least one direction is required"}
 	}
 	return nil
 }
@@ -320,16 +328,42 @@ func (r *CreateRecipeRequest) Validate() error {
 // ToProto converts the request to a protobuf message
 func (r *CreateRecipeRequest) ToProto(userID string) *recipepb.CreateRecipeRequest {
 	return &recipepb.CreateRecipeRequest{
-		UserId:           userID,
-		Name:             r.Name,
-		Description:      r.Description,
-		PrepTime:         r.PrepTime,
-		CookTime:         r.CookTime,
-		MainIngredientId: r.MainIngredientID,
-		CuisineId:        r.CuisineID,
-		IngredientIds:    r.IngredientIDs,
-		Directions:       r.Directions,
+		UserId:             userID,
+		Name:               r.Name,
+		Description:        r.Description,
+		PrepTime:           r.PrepTime,
+		CookTime:           r.CookTime,
+		MainIngredientId:   r.MainIngredientID,
+		MainIngredientName: strings.TrimSpace(r.MainIngredientName),
+		CuisineId:          r.CuisineID,
+		CuisineName:        strings.TrimSpace(r.CuisineName),
+		IngredientIds:      r.IngredientIDs,
+		IngredientNames:    sanitizeStrings(r.IngredientNames),
+		Directions:         sanitizeStrings(r.Directions),
+		Tags:               sanitizeStrings(r.Tags),
+		GuidedMode:         r.GuidedMode,
 	}
+}
+
+func hasNonEmpty(values []string) bool {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func sanitizeStrings(values []string) []string {
+	cleaned := make([]string, 0, len(values))
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		cleaned = append(cleaned, trimmed)
+	}
+	return cleaned
 }
 
 // RecipeJSON is the JSON response for a recipe

@@ -18,15 +18,17 @@ type FakeRecipeRepository struct {
 	Cuisines    map[uuid.UUID]*domain.Cuisine
 
 	// Failure modes for testing error paths
-	FailOnGetByID             bool
-	FailOnGetAll              bool
-	FailOnCreate              bool
-	FailOnGetSimilar          bool
-	FailOnGetByCuisine        bool
-	FailOnGetByIngredient     bool
-	FailOnGetExcludingAllergy bool
-	FailOnGetIngredientByID   bool
-	FailOnGetCuisineByID      bool
+	FailOnGetByID               bool
+	FailOnGetAll                bool
+	FailOnCreate                bool
+	FailOnGetSimilar            bool
+	FailOnGetByCuisine          bool
+	FailOnGetByIngredient       bool
+	FailOnGetExcludingAllergy   bool
+	FailOnGetIngredientByID     bool
+	FailOnGetCuisineByID        bool
+	FailOnGetOrCreateIngredient bool
+	FailOnGetOrCreateCuisine    bool
 
 	// Call tracking for assertions
 	CreateCalls  []CreateCall
@@ -214,6 +216,27 @@ func (r *FakeRecipeRepository) GetIngredientByID(ctx context.Context, id uuid.UU
 	return ingredient, nil
 }
 
+// GetOrCreateIngredient retrieves an ingredient by name or creates it.
+func (r *FakeRecipeRepository) GetOrCreateIngredient(ctx context.Context, name string, quantity string) (*domain.Ingredient, error) {
+	if r.FailOnGetOrCreateIngredient {
+		return nil, errors.New("fake repository error")
+	}
+
+	for _, ingredient := range r.Ingredients {
+		if ingredient.Name == name {
+			return ingredient, nil
+		}
+	}
+
+	ingredient := &domain.Ingredient{
+		ID:       uuid.New(),
+		Name:     name,
+		Quantity: quantity,
+	}
+	r.Ingredients[ingredient.ID] = ingredient
+	return ingredient, nil
+}
+
 // GetCuisineByID retrieves a cuisine by ID
 func (r *FakeRecipeRepository) GetCuisineByID(ctx context.Context, id uuid.UUID) (*domain.Cuisine, error) {
 	if r.FailOnGetCuisineByID {
@@ -224,6 +247,26 @@ func (r *FakeRecipeRepository) GetCuisineByID(ctx context.Context, id uuid.UUID)
 	if !ok {
 		return nil, repository.ErrCuisineNotFound
 	}
+	return cuisine, nil
+}
+
+// GetOrCreateCuisine retrieves a cuisine by name or creates it.
+func (r *FakeRecipeRepository) GetOrCreateCuisine(ctx context.Context, name string) (*domain.Cuisine, error) {
+	if r.FailOnGetOrCreateCuisine {
+		return nil, errors.New("fake repository error")
+	}
+
+	for _, cuisine := range r.Cuisines {
+		if cuisine.Name == name {
+			return cuisine, nil
+		}
+	}
+
+	cuisine := &domain.Cuisine{
+		ID:   uuid.New(),
+		Name: name,
+	}
+	r.Cuisines[cuisine.ID] = cuisine
 	return cuisine, nil
 }
 

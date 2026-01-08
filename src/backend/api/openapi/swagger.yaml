@@ -6,6 +6,8 @@ definitions:
         type: string
       cuisineId:
         type: string
+      cuisineName:
+        type: string
       description:
         type: string
       directions:
@@ -16,12 +18,24 @@ definitions:
         items:
           type: string
         type: array
+      ingredientNames:
+        items:
+          type: string
+        type: array
+      guidedMode:
+        type: boolean
       mainIngredientId:
+        type: string
+      mainIngredientName:
         type: string
       name:
         type: string
       prepTime:
         type: string
+      tags:
+        items:
+          type: string
+        type: array
     type: object
   handler.CuisineJSON:
     properties:

@@ -226,6 +226,32 @@ func TestCreateRecipe_ValidInput_PersistsAndPublishesEvent(t *testing.T) {
 	thenResponseHasRecipeName(t, resp, "New Recipe")
 }
 
+func TestCreateRecipe_UsesNamesAndTags_WhenProvided(t *testing.T) {
+	// Given
+	tc := givenRecipeAPI()
+
+	req := &pb.CreateRecipeRequest{
+		Name:            "Garden Pasta",
+		Description:     "Fresh and light",
+		IngredientNames: []string{"Tomato", "Basil"},
+		Directions:      []string{"Step 1"},
+		CuisineName:     "Italian",
+		Tags:            []string{"Vegetarian", " gluten-free "},
+		GuidedMode:      true,
+	}
+
+	// When
+	resp, err := whenCreatingRecipe(tc, req)
+
+	// Then
+	thenNoError(t, err)
+	thenRecipeIsPersisted(t, tc)
+	thenResponseHasRecipeName(t, resp, "Garden Pasta")
+	thenRecipeHasCuisine(t, tc, "Italian")
+	thenRecipeHasMainIngredient(t, tc, "Tomato")
+	thenRecipeHasTags(t, tc, []string{"vegetarian", "gluten-free", "guided-mode"})
+}
+
 func TestCreateRecipe_MissingName_ReturnsValidationError(t *testing.T) {
 	// Given
 	tc := givenRecipeAPI()
@@ -1040,4 +1066,39 @@ func thenResponseHasRecipeName(t *testing.T, resp *pb.RecipeResponse, name strin
 	if resp.Name != name {
 		t.Fatalf("expected recipe name %s, got %s", name, resp.Name)
 	}
+}
+
+func thenRecipeHasCuisine(t *testing.T, tc *testutil.TestContext, name string) {
+	t.Helper()
+	recipe := tc.Repo.CreateCalls[0].Recipe
+	if recipe.Cuisine == nil || recipe.Cuisine.Name != name {
+		t.Fatalf("expected cuisine %s, got %#v", name, recipe.Cuisine)
+	}
+}
+
+func thenRecipeHasMainIngredient(t *testing.T, tc *testutil.TestContext, name string) {
+	t.Helper()
+	recipe := tc.Repo.CreateCalls[0].Recipe
+	if recipe.MainIngredient == nil || recipe.MainIngredient.Name != name {
+		t.Fatalf("expected main ingredient %s, got %#v", name, recipe.MainIngredient)
+	}
+}
+
+func thenRecipeHasTags(t *testing.T, tc *testutil.TestContext, tags []string) {
+	t.Helper()
+	recipe := tc.Repo.CreateCalls[0].Recipe
+	for _, tag := range tags {
+		if !containsTag(recipe.Metadata.Tags, tag) {
+			t.Fatalf("expected tags to include %s, got %v", tag, recipe.Metadata.Tags)
+		}
+	}
+}
+
+func containsTag(tags []string, target string) bool {
+	for _, tag := range tags {
+		if tag == target {
+			return true
+		}
+	}
+	return false
 }

@@ -33,6 +33,19 @@ struct IngredientDTO: Decodable {
     let name: String?
 }
 
+struct CreateRecipeRequestDTO: Encodable {
+    let name: String
+    let description: String
+    let prepTime: String
+    let cookTime: String
+    let mainIngredientName: String?
+    let cuisineName: String?
+    let ingredientNames: [String]
+    let directions: [String]
+    let tags: [String]
+    let guidedMode: Bool
+}
+
 struct RegisterRequestDTO: Encodable {
     let email: String
     let password: String

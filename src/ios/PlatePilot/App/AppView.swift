@@ -31,12 +31,17 @@ extension View {
             case .recipeDetail(let id):
                 RecipeDetailView(recipeID: id)
             case .hubDestination(let destination):
-                PlaceholderDetailView(
-                    title: destination.title,
-                    subtitle: destination.subtitle,
-                    icon: destination.icon,
-                    accent: destination.accent
-                )
+                switch destination {
+                case .recipesCreate:
+                    RecipeCreateView()
+                default:
+                    PlaceholderDetailView(
+                        title: destination.title,
+                        subtitle: destination.subtitle,
+                        icon: destination.icon,
+                        accent: destination.accent
+                    )
+                }
             }
         }
     }

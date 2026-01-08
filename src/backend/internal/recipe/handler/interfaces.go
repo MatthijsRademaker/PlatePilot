@@ -21,9 +21,11 @@ type RecipeRepository interface {
 
 	// Ingredient operations
 	GetIngredientByID(ctx context.Context, id uuid.UUID) (*domain.Ingredient, error)
+	GetOrCreateIngredient(ctx context.Context, name string, quantity string) (*domain.Ingredient, error)
 
 	// Cuisine operations
 	GetCuisineByID(ctx context.Context, id uuid.UUID) (*domain.Cuisine, error)
+	GetOrCreateCuisine(ctx context.Context, name string) (*domain.Cuisine, error)
 }
 
 // EventPublisher defines the event publishing operations needed by the handler

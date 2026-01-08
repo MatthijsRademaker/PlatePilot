@@ -56,9 +56,47 @@ final class RecipeStore {
         }
     }
 
+    func createRecipe(
+        name: String,
+        description: String,
+        prepMinutes: Int,
+        cookMinutes: Int,
+        ingredients: [String],
+        instructions: [String],
+        tags: [String],
+        guidedMode: Bool
+    ) async throws -> Recipe {
+        let payload = CreateRecipeRequestDTO(
+            name: name,
+            description: description,
+            prepTime: formattedTime(prepMinutes),
+            cookTime: formattedTime(cookMinutes),
+            mainIngredientName: ingredients.first,
+            cuisineName: nil,
+            ingredientNames: ingredients,
+            directions: instructions,
+            tags: tags,
+            guidedMode: guidedMode
+        )
+
+        do {
+            let dto = try await apiClient.createRecipe(payload: payload)
+            let recipe = Recipe(dto: dto)
+            recipes.insert(recipe, at: 0)
+            return recipe
+        } catch {
+            throw error
+        }
+    }
+
     func reset() {
         recipes = []
         errorMessage = nil
         isLoading = false
+    }
+
+    private func formattedTime(_ minutes: Int) -> String {
+        guard minutes > 0 else { return "" }
+        return "\(minutes) min"
     }
 }

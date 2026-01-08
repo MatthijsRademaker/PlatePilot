@@ -214,18 +214,23 @@ func (x *GetAllRecipesResponse) GetTotalPages() int32 {
 
 // Request for creating a new recipe
 type CreateRecipeRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Description      string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	PrepTime         string                 `protobuf:"bytes,3,opt,name=prep_time,json=prepTime,proto3" json:"prep_time,omitempty"`
-	CookTime         string                 `protobuf:"bytes,4,opt,name=cook_time,json=cookTime,proto3" json:"cook_time,omitempty"`
-	MainIngredientId string                 `protobuf:"bytes,5,opt,name=main_ingredient_id,json=mainIngredientId,proto3" json:"main_ingredient_id,omitempty"` // UUID string
-	CuisineId        string                 `protobuf:"bytes,6,opt,name=cuisine_id,json=cuisineId,proto3" json:"cuisine_id,omitempty"`                        // UUID string
-	IngredientIds    []string               `protobuf:"bytes,7,rep,name=ingredient_ids,json=ingredientIds,proto3" json:"ingredient_ids,omitempty"`            // UUID strings
-	Directions       []string               `protobuf:"bytes,8,rep,name=directions,proto3" json:"directions,omitempty"`
-	UserId           string                 `protobuf:"bytes,9,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID string
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Name               string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Description        string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	PrepTime           string                 `protobuf:"bytes,3,opt,name=prep_time,json=prepTime,proto3" json:"prep_time,omitempty"`
+	CookTime           string                 `protobuf:"bytes,4,opt,name=cook_time,json=cookTime,proto3" json:"cook_time,omitempty"`
+	MainIngredientId   string                 `protobuf:"bytes,5,opt,name=main_ingredient_id,json=mainIngredientId,proto3" json:"main_ingredient_id,omitempty"` // UUID string
+	CuisineId          string                 `protobuf:"bytes,6,opt,name=cuisine_id,json=cuisineId,proto3" json:"cuisine_id,omitempty"`                        // UUID string
+	IngredientIds      []string               `protobuf:"bytes,7,rep,name=ingredient_ids,json=ingredientIds,proto3" json:"ingredient_ids,omitempty"`            // UUID strings
+	Directions         []string               `protobuf:"bytes,8,rep,name=directions,proto3" json:"directions,omitempty"`
+	UserId             string                 `protobuf:"bytes,9,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID string
+	MainIngredientName string                 `protobuf:"bytes,10,opt,name=main_ingredient_name,json=mainIngredientName,proto3" json:"main_ingredient_name,omitempty"`
+	CuisineName        string                 `protobuf:"bytes,11,opt,name=cuisine_name,json=cuisineName,proto3" json:"cuisine_name,omitempty"`
+	IngredientNames    []string               `protobuf:"bytes,12,rep,name=ingredient_names,json=ingredientNames,proto3" json:"ingredient_names,omitempty"`
+	Tags               []string               `protobuf:"bytes,13,rep,name=tags,proto3" json:"tags,omitempty"`
+	GuidedMode         bool                   `protobuf:"varint,14,opt,name=guided_mode,json=guidedMode,proto3" json:"guided_mode,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateRecipeRequest) Reset() {
@@ -319,6 +324,41 @@ func (x *CreateRecipeRequest) GetUserId() string {
 		return x.UserId
 	}
 	return ""
+}
+
+func (x *CreateRecipeRequest) GetMainIngredientName() string {
+	if x != nil {
+		return x.MainIngredientName
+	}
+	return ""
+}
+
+func (x *CreateRecipeRequest) GetCuisineName() string {
+	if x != nil {
+		return x.CuisineName
+	}
+	return ""
+}
+
+func (x *CreateRecipeRequest) GetIngredientNames() []string {
+	if x != nil {
+		return x.IngredientNames
+	}
+	return nil
+}
+
+func (x *CreateRecipeRequest) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+func (x *CreateRecipeRequest) GetGuidedMode() bool {
+	if x != nil {
+		return x.GuidedMode
+	}
+	return false
 }
 
 // Request for getting similar recipes
@@ -777,7 +817,7 @@ const file_recipe_v1_recipe_proto_rawDesc = "" +
 	"\vtotal_count\x18\x04 \x01(\x05R\n" +
 	"totalCount\x12\x1f\n" +
 	"\vtotal_pages\x18\x05 \x01(\x05R\n" +
-	"totalPages\"\xb2\x02\n" +
+	"totalPages\"\xe7\x03\n" +
 	"\x13CreateRecipeRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1b\n" +
@@ -790,7 +830,14 @@ const file_recipe_v1_recipe_proto_rawDesc = "" +
 	"\n" +
 	"directions\x18\b \x03(\tR\n" +
 	"directions\x12\x17\n" +
-	"\auser_id\x18\t \x01(\tR\x06userId\"h\n" +
+	"\auser_id\x18\t \x01(\tR\x06userId\x120\n" +
+	"\x14main_ingredient_name\x18\n" +
+	" \x01(\tR\x12mainIngredientName\x12!\n" +
+	"\fcuisine_name\x18\v \x01(\tR\vcuisineName\x12)\n" +
+	"\x10ingredient_names\x18\f \x03(\tR\x0fingredientNames\x12\x12\n" +
+	"\x04tags\x18\r \x03(\tR\x04tags\x12\x1f\n" +
+	"\vguided_mode\x18\x0e \x01(\bR\n" +
+	"guidedMode\"h\n" +
 	"\x18GetSimilarRecipesRequest\x12\x1b\n" +
 	"\trecipe_id\x18\x01 \x01(\tR\brecipeId\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x05R\x06amount\x12\x17\n" +

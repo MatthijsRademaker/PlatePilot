@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,6 +25,11 @@ type GRPCHandler struct {
 	publisher EventPublisher
 	logger    *slog.Logger
 }
+
+const (
+	defaultCuisineName = "General"
+	guidedModeTag      = "guided-mode"
+)
 
 // NewGRPCHandler creates a new gRPC handler
 func NewGRPCHandler(repo RecipeRepository, vectorGen vector.Generator, publisher EventPublisher, logger *slog.Logger) *GRPCHandler {
@@ -113,55 +119,22 @@ func (h *GRPCHandler) CreateRecipe(ctx context.Context, req *pb.CreateRecipeRequ
 		return nil, status.Errorf(codes.InvalidArgument, "name is required")
 	}
 
-	// Parse main ingredient ID
-	mainIngredientID, err := uuid.Parse(req.GetMainIngredientId())
+	ingredients, err := h.resolveIngredients(ctx, req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid main ingredient ID: %v", err)
+		return nil, err
 	}
 
-	// Parse cuisine ID
-	cuisineID, err := uuid.Parse(req.GetCuisineId())
+	mainIngredient, err := h.resolveMainIngredient(ctx, req, ingredients)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid cuisine ID: %v", err)
+		return nil, err
 	}
 
-	// Get main ingredient
-	mainIngredient, err := h.repo.GetIngredientByID(ctx, mainIngredientID)
+	cuisine, err := h.resolveCuisine(ctx, req)
 	if err != nil {
-		if errors.Is(err, repository.ErrIngredientNotFound) {
-			return nil, status.Errorf(codes.NotFound, "main ingredient not found")
-		}
-		h.logger.Error("failed to get main ingredient", "error", err)
-		return nil, status.Errorf(codes.Internal, "failed to get main ingredient")
+		return nil, err
 	}
 
-	// Get cuisine
-	cuisine, err := h.repo.GetCuisineByID(ctx, cuisineID)
-	if err != nil {
-		if errors.Is(err, repository.ErrCuisineNotFound) {
-			return nil, status.Errorf(codes.NotFound, "cuisine not found")
-		}
-		h.logger.Error("failed to get cuisine", "error", err)
-		return nil, status.Errorf(codes.Internal, "failed to get cuisine")
-	}
-
-	// Parse and get ingredients
-	var ingredients []domain.Ingredient
-	for _, idStr := range req.GetIngredientIds() {
-		ingredientID, err := uuid.Parse(idStr)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid ingredient ID: %v", err)
-		}
-		ingredient, err := h.repo.GetIngredientByID(ctx, ingredientID)
-		if err != nil {
-			if errors.Is(err, repository.ErrIngredientNotFound) {
-				return nil, status.Errorf(codes.NotFound, "ingredient not found: %s", idStr)
-			}
-			h.logger.Error("failed to get ingredient", "error", err, "ingredientId", idStr)
-			return nil, status.Errorf(codes.Internal, "failed to get ingredient")
-		}
-		ingredients = append(ingredients, *ingredient)
-	}
+	ingredients = ensureMainIngredientIncluded(ingredients, mainIngredient)
 
 	// Build the recipe
 	recipe := &domain.Recipe{
@@ -177,6 +150,7 @@ func (h *GRPCHandler) CreateRecipe(ctx context.Context, req *pb.CreateRecipeRequ
 		Directions:     req.GetDirections(),
 		Metadata: domain.Metadata{
 			PublishedDate: time.Now().UTC(),
+			Tags:          normalizeTags(req.GetTags(), req.GetGuidedMode()),
 		},
 	}
 
@@ -309,6 +283,174 @@ func (h *GRPCHandler) GetRecipesByAllergy(ctx context.Context, req *pb.GetRecipe
 	}
 
 	return toRecipesResponse(recipes), nil
+}
+
+func (h *GRPCHandler) resolveIngredients(ctx context.Context, req *pb.CreateRecipeRequest) ([]domain.Ingredient, error) {
+	var ingredients []domain.Ingredient
+	seen := make(map[uuid.UUID]struct{})
+
+	appendIngredient := func(ingredient *domain.Ingredient) {
+		if ingredient == nil {
+			return
+		}
+		if _, ok := seen[ingredient.ID]; ok {
+			return
+		}
+		seen[ingredient.ID] = struct{}{}
+		ingredients = append(ingredients, *ingredient)
+	}
+
+	for _, idStr := range req.GetIngredientIds() {
+		idStr = strings.TrimSpace(idStr)
+		if idStr == "" {
+			continue
+		}
+		ingredientID, err := uuid.Parse(idStr)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid ingredient ID: %v", err)
+		}
+		ingredient, err := h.repo.GetIngredientByID(ctx, ingredientID)
+		if err != nil {
+			if errors.Is(err, repository.ErrIngredientNotFound) {
+				return nil, status.Errorf(codes.NotFound, "ingredient not found: %s", idStr)
+			}
+			h.logger.Error("failed to get ingredient", "error", err, "ingredientId", idStr)
+			return nil, status.Errorf(codes.Internal, "failed to get ingredient")
+		}
+		appendIngredient(ingredient)
+	}
+
+	for _, name := range req.GetIngredientNames() {
+		cleaned := strings.TrimSpace(name)
+		if cleaned == "" {
+			continue
+		}
+		ingredient, err := h.repo.GetOrCreateIngredient(ctx, cleaned, "")
+		if err != nil {
+			h.logger.Error("failed to get or create ingredient", "error", err, "ingredientName", cleaned)
+			return nil, status.Errorf(codes.Internal, "failed to create ingredient")
+		}
+		appendIngredient(ingredient)
+	}
+
+	return ingredients, nil
+}
+
+func (h *GRPCHandler) resolveMainIngredient(
+	ctx context.Context,
+	req *pb.CreateRecipeRequest,
+	ingredients []domain.Ingredient,
+) (*domain.Ingredient, error) {
+	mainIngredientID := strings.TrimSpace(req.GetMainIngredientId())
+	if mainIngredientID != "" {
+		parsedID, err := uuid.Parse(mainIngredientID)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid main ingredient ID: %v", err)
+		}
+		ingredient, err := h.repo.GetIngredientByID(ctx, parsedID)
+		if err != nil {
+			if errors.Is(err, repository.ErrIngredientNotFound) {
+				return nil, status.Errorf(codes.NotFound, "main ingredient not found")
+			}
+			h.logger.Error("failed to get main ingredient", "error", err)
+			return nil, status.Errorf(codes.Internal, "failed to get main ingredient")
+		}
+		return ingredient, nil
+	}
+
+	mainIngredientName := strings.TrimSpace(req.GetMainIngredientName())
+	if mainIngredientName != "" {
+		ingredient, err := h.repo.GetOrCreateIngredient(ctx, mainIngredientName, "")
+		if err != nil {
+			h.logger.Error("failed to get or create main ingredient", "error", err, "ingredientName", mainIngredientName)
+			return nil, status.Errorf(codes.Internal, "failed to create main ingredient")
+		}
+		return ingredient, nil
+	}
+
+	if len(ingredients) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "at least one ingredient is required")
+	}
+
+	return &ingredients[0], nil
+}
+
+func (h *GRPCHandler) resolveCuisine(ctx context.Context, req *pb.CreateRecipeRequest) (*domain.Cuisine, error) {
+	cuisineID := strings.TrimSpace(req.GetCuisineId())
+	if cuisineID != "" {
+		parsedID, err := uuid.Parse(cuisineID)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid cuisine ID: %v", err)
+		}
+		cuisine, err := h.repo.GetCuisineByID(ctx, parsedID)
+		if err != nil {
+			if errors.Is(err, repository.ErrCuisineNotFound) {
+				return nil, status.Errorf(codes.NotFound, "cuisine not found")
+			}
+			h.logger.Error("failed to get cuisine", "error", err)
+			return nil, status.Errorf(codes.Internal, "failed to get cuisine")
+		}
+		return cuisine, nil
+	}
+
+	cuisineName := strings.TrimSpace(req.GetCuisineName())
+	if cuisineName == "" {
+		cuisineName = defaultCuisineName
+	}
+	cuisine, err := h.repo.GetOrCreateCuisine(ctx, cuisineName)
+	if err != nil {
+		h.logger.Error("failed to get or create cuisine", "error", err, "cuisineName", cuisineName)
+		return nil, status.Errorf(codes.Internal, "failed to create cuisine")
+	}
+	return cuisine, nil
+}
+
+func ensureMainIngredientIncluded(ingredients []domain.Ingredient, mainIngredient *domain.Ingredient) []domain.Ingredient {
+	if mainIngredient == nil {
+		return ingredients
+	}
+
+	for _, ingredient := range ingredients {
+		if ingredient.ID == mainIngredient.ID {
+			return ingredients
+		}
+	}
+
+	return append([]domain.Ingredient{*mainIngredient}, ingredients...)
+}
+
+func normalizeTags(tags []string, guidedMode bool) []string {
+	if len(tags) == 0 && !guidedMode {
+		return nil
+	}
+
+	normalized := make([]string, 0, len(tags)+1)
+	seen := make(map[string]struct{})
+
+	for _, tag := range tags {
+		cleaned := strings.TrimSpace(tag)
+		if cleaned == "" {
+			continue
+		}
+		cleaned = strings.ToLower(cleaned)
+		if _, ok := seen[cleaned]; ok {
+			continue
+		}
+		seen[cleaned] = struct{}{}
+		normalized = append(normalized, cleaned)
+	}
+
+	if guidedMode {
+		if _, ok := seen[guidedModeTag]; !ok {
+			normalized = append(normalized, guidedModeTag)
+		}
+	}
+
+	if len(normalized) == 0 {
+		return nil
+	}
+
+	return normalized
 }
 
 // Conversion helpers

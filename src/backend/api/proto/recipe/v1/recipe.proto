@@ -61,6 +61,11 @@ message CreateRecipeRequest {
   repeated string ingredient_ids = 7; // UUID strings
   repeated string directions = 8;
   string user_id = 9; // UUID string
+  string main_ingredient_name = 10;
+  string cuisine_name = 11;
+  repeated string ingredient_names = 12;
+  repeated string tags = 13;
+  bool guided_mode = 14;
 }
 
 // Request for getting similar recipes
