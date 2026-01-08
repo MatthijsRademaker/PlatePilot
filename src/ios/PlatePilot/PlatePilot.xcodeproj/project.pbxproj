@@ -10,6 +10,9 @@
 		00B3D64AC419CEB7DE4049CE /* APIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F735357832B55CCE34FB791 /* APIConfig.swift */; };
 		02C42ED42663A73A740B8328 /* AuthTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5521888E10198B7FCC25DC5C /* AuthTokens.swift */; };
 		07DF95A05CF925A3106C4F40 /* DailyCalorieTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0C9B84A1B66F00C8997300 /* DailyCalorieTrackerView.swift */; };
+		A7B8C9D0E1F2A3B4C5D6E7F8 /* CalorieTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C9D0E1F2A3B4C5D6E7F809 /* CalorieTrackerView.swift */; };
+		B1C2D3E4F5061728394A5B6D /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5061728394A5B6C /* InsightsView.swift */; };
+		C1D2E3F405162738495A6B7D /* PlaceholderDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F405162738495A6B7C /* PlaceholderDetailView.swift */; };
 		A1B2C3D4E5F60718293A4B5C /* GlassHubNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* GlassHubNavigationView.swift */; };
 		0BF2252431B81D33E319BC20 /* AppTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA13A448F59F7C75158B18C6 /* AppTab.swift */; };
 		11BBEF901E56C83F0E6D60D5 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA846221304E73474EDA713A /* AppState.swift */; };
@@ -63,6 +66,9 @@
 		6F735357832B55CCE34FB791 /* APIConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConfig.swift; sourceTree = "<group>"; };
 		73A5E6DE1A4864D95EF7CA2F /* MealSlotCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealSlotCardView.swift; sourceTree = "<group>"; };
 		9F0C9B84A1B66F00C8997300 /* DailyCalorieTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCalorieTrackerView.swift; sourceTree = "<group>"; };
+		B8C9D0E1F2A3B4C5D6E7F809 /* CalorieTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalorieTrackerView.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5061728394A5B6C /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
+		C1D2E3F405162738495A6B7C /* PlaceholderDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderDetailView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5D /* GlassHubNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassHubNavigationView.swift; sourceTree = "<group>"; };
 		B122D02C4C38631608E8A602 /* Recipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recipe.swift; sourceTree = "<group>"; };
 		B1D3F6B155D483093EBF7BF2 /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
@@ -109,6 +115,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60718293A4B5D /* GlassHubNavigationView.swift */,
+				C1D2E3F405162738495A6B7C /* PlaceholderDetailView.swift */,
 				C3677C73575B2512D7532B30 /* GlassEffectHelpers.swift */,
 				FE49BDAC6949A1D3B5771CF5 /* RemoteImageView.swift */,
 			);
@@ -130,6 +137,14 @@
 				3FFFAB72FCF7C00A0701810D /* SearchView.swift */,
 			);
 			path = Search;
+			sourceTree = "<group>";
+		};
+		C9D0E1F2A3B4C5D6E7F8091A /* CalorieTracker */ = {
+			isa = PBXGroup;
+			children = (
+				B8C9D0E1F2A3B4C5D6E7F809 /* CalorieTrackerView.swift */,
+			);
+			path = CalorieTracker;
 			sourceTree = "<group>";
 		};
 		3FA4054627290033D90A2C41 /* MealPlan */ = {
@@ -226,12 +241,22 @@
 			path = Recipes;
 			sourceTree = "<group>";
 		};
+		D1E2F30415263748596A7B8C /* Insights */ = {
+			isa = PBXGroup;
+			children = (
+				B1C2D3E4F5061728394A5B6C /* InsightsView.swift */,
+			);
+			path = Insights;
+			sourceTree = "<group>";
+		};
 		CA56EC284D50A4AF503240B3 /* Features */ = {
 			isa = PBXGroup;
 			children = (
 				0AA492B2272F7FE4466616A5 /* Auth */,
+				C9D0E1F2A3B4C5D6E7F8091A /* CalorieTracker */,
 				4DD69A21A4CEF2BDC8D5F795 /* Home */,
 				3FA4054627290033D90A2C41 /* MealPlan */,
+				D1E2F30415263748596A7B8C /* Insights */,
 				BBEC99BD4DA42E96CBF50C84 /* Recipes */,
 				25741888584518A6538F3ACD /* Search */,
 			);
@@ -340,10 +365,13 @@
 				DEBBE363A13B757A6BC887E8 /* AuthFlowView.swift in Sources */,
 				7986C7BBC5BD47A957C07BE3 /* AuthStore.swift in Sources */,
 				02C42ED42663A73A740B8328 /* AuthTokens.swift in Sources */,
+				A7B8C9D0E1F2A3B4C5D6E7F8 /* CalorieTrackerView.swift in Sources */,
 				07DF95A05CF925A3106C4F40 /* DailyCalorieTrackerView.swift in Sources */,
+				B1C2D3E4F5061728394A5B6D /* InsightsView.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5C /* GlassHubNavigationView.swift in Sources */,
 				FA4089BBE53B4825F6A4230B /* GlassEffectHelpers.swift in Sources */,
 				EA66F34AB791983714617803 /* HomeView.swift in Sources */,
+				C1D2E3F405162738495A6B7D /* PlaceholderDetailView.swift in Sources */,
 				FEDFD74548AFB0FE6A9D8936 /* KeychainTokenStore.swift in Sources */,
 				C96BE33A2C26FA1F3F0EF72F /* MealPlan.swift in Sources */,
 				6CDFCC0ED96A2A1903B5639F /* MealPlanStore.swift in Sources */,

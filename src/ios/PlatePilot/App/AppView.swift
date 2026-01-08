@@ -13,12 +13,12 @@ struct AppView: View {
                 .withAppRoutes()
         }
         .id(appState.selectedTab)
-        .environment(tabRouter.router(for: appState.selectedTab))
         .safeAreaInset(edge: .bottom) {
             GlassHubNavigationView()
         }
         .tint(PlatePilotTheme.accent)
         .environment(appState)
+        .environment(tabRouter.router(for: appState.selectedTab))
         .environment(recipeStore)
         .environment(mealPlanStore)
     }
@@ -30,6 +30,13 @@ extension View {
             switch route {
             case .recipeDetail(let id):
                 RecipeDetailView(recipeID: id)
+            case .hubDestination(let destination):
+                PlaceholderDetailView(
+                    title: destination.title,
+                    subtitle: destination.subtitle,
+                    icon: destination.icon,
+                    accent: destination.accent
+                )
             }
         }
     }

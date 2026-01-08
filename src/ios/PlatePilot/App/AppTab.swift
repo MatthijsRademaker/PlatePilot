@@ -3,8 +3,9 @@ import SwiftUI
 enum AppTab: String, CaseIterable, Identifiable, Hashable {
     case home
     case recipes
+    case calorieTracker
     case mealPlan
-    case search
+    case insights
 
     var id: String { rawValue }
 
@@ -15,10 +16,12 @@ enum AppTab: String, CaseIterable, Identifiable, Hashable {
             HomeView()
         case .recipes:
             RecipeListView()
+        case .calorieTracker:
+            CalorieTrackerView()
         case .mealPlan:
             MealPlanView()
-        case .search:
-            SearchView()
+        case .insights:
+            InsightsView()
         }
     }
 
@@ -29,10 +32,12 @@ enum AppTab: String, CaseIterable, Identifiable, Hashable {
             Label("Home", systemImage: "house")
         case .recipes:
             Label("Recipes", systemImage: "book")
+        case .calorieTracker:
+            Label("Calories", systemImage: "flame")
         case .mealPlan:
             Label("Plan", systemImage: "calendar")
-        case .search:
-            Label("Search", systemImage: "magnifyingglass")
+        case .insights:
+            Label("Insights", systemImage: "chart.bar.xaxis")
         }
     }
 }
