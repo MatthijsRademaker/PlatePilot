@@ -10,6 +10,7 @@
 		00B3D64AC419CEB7DE4049CE /* APIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F735357832B55CCE34FB791 /* APIConfig.swift */; };
 		02C42ED42663A73A740B8328 /* AuthTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5521888E10198B7FCC25DC5C /* AuthTokens.swift */; };
 		07DF95A05CF925A3106C4F40 /* DailyCalorieTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0C9B84A1B66F00C8997300 /* DailyCalorieTrackerView.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* GlassHubNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* GlassHubNavigationView.swift */; };
 		0BF2252431B81D33E319BC20 /* AppTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA13A448F59F7C75158B18C6 /* AppTab.swift */; };
 		11BBEF901E56C83F0E6D60D5 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA846221304E73474EDA713A /* AppState.swift */; };
 		1F6A5EE8DC748F9374103407 /* APIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB3F1BBC7E3C342385561307 /* APIModels.swift */; };
@@ -62,6 +63,7 @@
 		6F735357832B55CCE34FB791 /* APIConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConfig.swift; sourceTree = "<group>"; };
 		73A5E6DE1A4864D95EF7CA2F /* MealSlotCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealSlotCardView.swift; sourceTree = "<group>"; };
 		9F0C9B84A1B66F00C8997300 /* DailyCalorieTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCalorieTrackerView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5D /* GlassHubNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassHubNavigationView.swift; sourceTree = "<group>"; };
 		B122D02C4C38631608E8A602 /* Recipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recipe.swift; sourceTree = "<group>"; };
 		B1D3F6B155D483093EBF7BF2 /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
 		B5346F7322E551896CE2AACD /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
@@ -106,6 +108,7 @@
 		18DD8A958C359D038E76C412 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F60718293A4B5D /* GlassHubNavigationView.swift */,
 				C3677C73575B2512D7532B30 /* GlassEffectHelpers.swift */,
 				FE49BDAC6949A1D3B5771CF5 /* RemoteImageView.swift */,
 			);
@@ -338,6 +341,7 @@
 				7986C7BBC5BD47A957C07BE3 /* AuthStore.swift in Sources */,
 				02C42ED42663A73A740B8328 /* AuthTokens.swift in Sources */,
 				07DF95A05CF925A3106C4F40 /* DailyCalorieTrackerView.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* GlassHubNavigationView.swift in Sources */,
 				FA4089BBE53B4825F6A4230B /* GlassEffectHelpers.swift in Sources */,
 				EA66F34AB791983714617803 /* HomeView.swift in Sources */,
 				FEDFD74548AFB0FE6A9D8936 /* KeychainTokenStore.swift in Sources */,

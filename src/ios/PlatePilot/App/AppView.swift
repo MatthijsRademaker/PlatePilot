@@ -8,16 +8,14 @@ struct AppView: View {
     let mealPlanStore: MealPlanStore
 
     var body: some View {
-        TabView(selection: $appState.selectedTab) {
-            ForEach(AppTab.allCases) { tab in
-                NavigationStack(path: tabRouter.binding(for: tab)) {
-                    tab.makeContentView()
-                        .withAppRoutes()
-                }
-                .environment(tabRouter.router(for: tab))
-                .tabItem { tab.label }
-                .tag(tab)
-            }
+        NavigationStack(path: tabRouter.binding(for: appState.selectedTab)) {
+            appState.selectedTab.makeContentView()
+                .withAppRoutes()
+        }
+        .id(appState.selectedTab)
+        .environment(tabRouter.router(for: appState.selectedTab))
+        .safeAreaInset(edge: .bottom) {
+            GlassHubNavigationView()
         }
         .tint(PlatePilotTheme.accent)
         .environment(appState)
