@@ -1,0 +1,199 @@
+syntax = "proto3";
+
+package shoppinglist.v1;
+
+option go_package = "github.com/platepilot/backend/internal/shoppinglist/pb";
+
+// Service definition for shopping list management
+service ShoppingListService {
+  // Gets a shopping list by its ID
+  rpc GetShoppingListById (GetShoppingListByIdRequest) returns (ShoppingListResponse);
+
+  // Gets all shopping lists for a user
+  rpc GetAllShoppingLists (GetAllShoppingListsRequest) returns (GetAllShoppingListsResponse);
+
+  // Creates a new shopping list from recipe IDs
+  rpc CreateFromRecipes (CreateFromRecipesRequest) returns (ShoppingListResponse);
+
+  // Creates a new empty shopping list
+  rpc CreateShoppingList (CreateShoppingListRequest) returns (ShoppingListResponse);
+
+  // Updates a shopping list
+  rpc UpdateShoppingList (UpdateShoppingListRequest) returns (ShoppingListResponse);
+
+  // Deletes a shopping list
+  rpc DeleteShoppingList (DeleteShoppingListRequest) returns (DeleteShoppingListResponse);
+
+  // Adds a custom item to a shopping list
+  rpc AddItem (AddItemRequest) returns (ShoppingListItemResponse);
+
+  // Updates an item in a shopping list
+  rpc UpdateItem (UpdateItemRequest) returns (ShoppingListItemResponse);
+
+  // Toggles the checked state of an item
+  rpc ToggleItemChecked (ToggleItemCheckedRequest) returns (ShoppingListItemResponse);
+
+  // Removes an item from a shopping list
+  rpc RemoveItem (RemoveItemRequest) returns (RemoveItemResponse);
+}
+
+// Request for getting a shopping list by ID
+message GetShoppingListByIdRequest {
+  string shopping_list_id = 1; // UUID string
+  string user_id = 2; // UUID string
+}
+
+// Request for getting all shopping lists
+message GetAllShoppingListsRequest {
+  string user_id = 1; // UUID string
+  int32 page_index = 2;
+  int32 page_size = 3;
+}
+
+// Response containing multiple shopping lists
+message GetAllShoppingListsResponse {
+  repeated ShoppingListSummary shopping_lists = 1;
+  int32 page_index = 2;
+  int32 page_size = 3;
+  int32 total_count = 4;
+  int32 total_pages = 5;
+}
+
+// Summary of a shopping list (for list views)
+message ShoppingListSummary {
+  string id = 1; // UUID string
+  string name = 2;
+  int32 total_items = 3;
+  int32 checked_items = 4;
+  string created_at = 5; // ISO 8601 timestamp
+  string updated_at = 6; // ISO 8601 timestamp
+}
+
+// Request for creating a shopping list from recipes
+message CreateFromRecipesRequest {
+  string user_id = 1; // UUID string
+  string name = 2;
+  repeated string recipe_ids = 3; // UUID strings
+  optional string week_start_date = 4; // ISO 8601 date
+}
+
+// Request for creating an empty shopping list
+message CreateShoppingListRequest {
+  string user_id = 1; // UUID string
+  string name = 2;
+}
+
+// Request for updating a shopping list
+message UpdateShoppingListRequest {
+  string shopping_list_id = 1; // UUID string
+  string user_id = 2; // UUID string
+  string name = 3;
+}
+
+// Request for deleting a shopping list
+message DeleteShoppingListRequest {
+  string shopping_list_id = 1; // UUID string
+  string user_id = 2; // UUID string
+}
+
+// Response for delete operation
+message DeleteShoppingListResponse {
+  bool success = 1;
+}
+
+// Request for adding an item to a shopping list
+message AddItemRequest {
+  string shopping_list_id = 1; // UUID string
+  string user_id = 2; // UUID string
+  optional string ingredient_id = 3; // UUID string (for existing ingredient)
+  optional string custom_name = 4; // For custom items
+  optional double quantity = 5;
+  optional string unit = 6;
+  optional string notes = 7;
+}
+
+// Request for updating an item
+message UpdateItemRequest {
+  string item_id = 1; // UUID string
+  string user_id = 2; // UUID string
+  optional double quantity = 3;
+  optional string unit = 4;
+  optional string notes = 5;
+}
+
+// Request for toggling item checked state
+message ToggleItemCheckedRequest {
+  string item_id = 1; // UUID string
+  string user_id = 2; // UUID string
+}
+
+// Request for removing an item
+message RemoveItemRequest {
+  string item_id = 1; // UUID string
+  string user_id = 2; // UUID string
+}
+
+// Response for remove operation
+message RemoveItemResponse {
+  bool success = 1;
+}
+
+// Full shopping list response
+message ShoppingListResponse {
+  string id = 1; // UUID string
+  string name = 2;
+  string user_id = 3; // UUID string
+  optional string week_start_date = 4; // ISO 8601 date
+  repeated ShoppingListItem items = 5;
+  repeated RecipeReference recipes = 6;
+  string created_at = 7; // ISO 8601 timestamp
+  string updated_at = 8; // ISO 8601 timestamp
+  optional string completed_at = 9; // ISO 8601 timestamp
+}
+
+// Shopping list item
+message ShoppingListItem {
+  string id = 1; // UUID string
+  optional Ingredient ingredient = 2;
+  optional IngredientCategory category = 3;
+  optional string custom_name = 4;
+  optional double quantity = 5;
+  optional string unit = 6;
+  bool checked = 7;
+  optional string notes = 8;
+  bool is_custom = 9;
+  repeated ItemSource sources = 10;
+  string created_at = 11; // ISO 8601 timestamp
+}
+
+// Response for item operations
+message ShoppingListItemResponse {
+  ShoppingListItem item = 1;
+}
+
+// Source recipe for an item
+message ItemSource {
+  string recipe_id = 1; // UUID string
+  string recipe_name = 2;
+  optional double quantity = 3;
+  optional string unit = 4;
+}
+
+// Ingredient reference
+message Ingredient {
+  string id = 1; // UUID string
+  string name = 2;
+}
+
+// Ingredient category
+message IngredientCategory {
+  string id = 1; // UUID string
+  string name = 2;
+  int32 display_order = 3;
+}
+
+// Recipe reference
+message RecipeReference {
+  string id = 1; // UUID string
+  string name = 2;
+}

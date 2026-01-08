@@ -4,6 +4,7 @@ import { recipeRoutes } from '@features/recipe/routes';
 import { mealplanRoutes } from '@features/mealplan/routes';
 import { searchRoutes } from '@features/search/routes';
 import { authRoutes } from '@features/auth/routes';
+import { shoppinglistRoutes } from '@features/shoppinglist/routes';
 
 const routes: RouteRecordRaw[] = [
   // Auth routes (no layout, guest only)
@@ -19,6 +20,7 @@ const routes: RouteRecordRaw[] = [
       ...recipeRoutes,
       ...mealplanRoutes,
       ...searchRoutes,
+      ...shoppinglistRoutes,
     ],
   },
 

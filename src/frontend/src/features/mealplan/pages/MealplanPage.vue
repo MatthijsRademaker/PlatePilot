@@ -10,6 +10,16 @@
         </div>
         <div class="tw-flex tw-gap-2">
           <q-btn flat no-caps label="Today" class="header-btn" @click="goToCurrentWeek" />
+          <q-btn
+            flat
+            round
+            icon="shopping_cart"
+            class="header-btn-icon"
+            :loading="generatingShoppingList"
+            @click="generateShoppingList"
+          >
+            <q-tooltip>Generate Shopping List</q-tooltip>
+          </q-btn>
           <q-btn flat round icon="delete_sweep" class="header-btn-icon" @click="confirmClearWeek" />
         </div>
       </div>
@@ -123,15 +133,19 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import WeekView from '@features/mealplan/components/WeekView.vue';
 import { useMealplan } from '@features/mealplan/composables/useMealplan';
 import { useRecipeStore } from '@features/recipe/store/recipeStore';
+import { useCreateShoppingList } from '@features/shoppinglist/composables/useShoppinglist';
 import type { HandlerRecipeJSON } from '@/api/generated/models';
 import type { MealSlot } from '@features/mealplan/types/mealplan';
 
 const $q = useQuasar();
+const router = useRouter();
 const recipeStore = useRecipeStore();
+const { creating: generatingShoppingList, createFromRecipes } = useCreateShoppingList();
 const {
   currentWeek,
   setRecipeForSlot,
@@ -201,6 +215,42 @@ function confirmClearWeek() {
   }).onOk(() => {
     clearWeek();
   });
+}
+
+async function generateShoppingList() {
+  // Get unique recipe IDs from the current week's meal plan
+  const recipeIds = currentWeek.value.days
+    .flatMap((day) => day.slots)
+    .filter((slot) => slot.recipe?.id)
+    .map((slot) => slot.recipe!.id!)
+    .filter((id, index, self) => self.indexOf(id) === index); // unique
+
+  if (recipeIds.length === 0) {
+    $q.notify({
+      type: 'warning',
+      message: 'No recipes in your meal plan. Add some recipes first!',
+    });
+    return;
+  }
+
+  try {
+    const list = await createFromRecipes({
+      name: `Meal Plan - ${currentWeek.value.label}`,
+      recipeIds,
+    });
+    if (list) {
+      $q.notify({
+        type: 'positive',
+        message: `Shopping list created with ${list.totalItems} items`,
+      });
+      void router.push({ name: 'shoppinglist-detail', params: { id: list.id } });
+    }
+  } catch (e) {
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to generate shopping list',
+    });
+  }
 }
 </script>
 

@@ -32,6 +32,7 @@ import (
 	"github.com/platepilot/backend/internal/bff/handler"
 	bffmiddleware "github.com/platepilot/backend/internal/bff/middleware"
 	"github.com/platepilot/backend/internal/common/config"
+	"github.com/platepilot/backend/internal/recipe/repository"
 )
 
 func main() {
@@ -90,10 +91,14 @@ func main() {
 	tokenService := auth.NewTokenService(cfg.Auth.JWTSecret, cfg.Auth.Issuer, cfg.Auth.AccessTokenTTL)
 	authService := auth.NewService(authRepo, tokenService, cfg.Auth.RefreshTokenTTL)
 
+	// Create repositories
+	shoppingListRepo := repository.NewShoppingListRepository(dbPool)
+
 	// Create handlers
 	recipeHandler := handler.NewRecipeHandler(recipeClient, logger)
 	mealPlanHandler := handler.NewMealPlanHandler(mealPlannerClient, logger)
 	authHandler := handler.NewAuthHandler(authService, logger)
+	shoppingListHandler := handler.NewShoppingListHandler(shoppingListRepo, logger)
 
 	// Set up router
 	r := chi.NewRouter()
@@ -141,6 +146,18 @@ func main() {
 			})
 			r.Route("/mealplan", func(r chi.Router) {
 				r.Post("/suggest", mealPlanHandler.Suggest)
+			})
+			r.Route("/shoppinglist", func(r chi.Router) {
+				r.Get("/", shoppingListHandler.GetAll)
+				r.Post("/", shoppingListHandler.Create)
+				r.Post("/from-recipes", shoppingListHandler.CreateFromRecipes)
+				r.Get("/{id}", shoppingListHandler.GetByID)
+				r.Patch("/{id}", shoppingListHandler.Update)
+				r.Delete("/{id}", shoppingListHandler.Delete)
+				r.Post("/{id}/items", shoppingListHandler.AddItem)
+				r.Patch("/{id}/items/{itemId}", shoppingListHandler.UpdateItem)
+				r.Post("/{id}/items/{itemId}/toggle", shoppingListHandler.ToggleItem)
+				r.Delete("/{id}/items/{itemId}", shoppingListHandler.DeleteItem)
 			})
 		})
 	})
