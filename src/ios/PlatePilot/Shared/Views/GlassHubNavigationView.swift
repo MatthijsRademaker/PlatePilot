@@ -3,6 +3,7 @@ import SwiftUI
 struct GlassHubNavigationView: View {
     @Environment(AppState.self) private var appState
     @Environment(RouterPath.self) private var router
+    @State private var isStackExpanded = false
 
     private var currentSection: HubSection {
         HubSection(tab: appState.selectedTab) ?? .home
@@ -12,103 +13,78 @@ struct GlassHubNavigationView: View {
         [.recipes, .calorieTracker, .home, .mealPlan, .insights]
     }
 
+    private var stackAnchorSection: HubSection {
+        .mealPlan
+    }
+
     var body: some View {
         PlateGlassGroup(spacing: 12) {
-            VStack(spacing: -HubMetrics.sideActionOverlap) {
-                GlassSideActionBar(
-                    leftActions: currentSection.leftActions,
-                    rightActions: currentSection.rightActions,
-                    accent: currentSection.accent,
-                    onAction: handleAction
-                )
-
+            ZStack(alignment: .bottom) {
                 GlassPrimaryNavBar(
                     sections: primarySections,
                     activeSection: currentSection,
                     accent: currentSection.accent,
                     onSelect: selectPrimarySection
                 )
+
+                if !currentSection.stackActions.isEmpty {
+                    HStack(spacing: 0) {
+                        ForEach(primarySections) { section in
+                            if section == stackAnchorSection {
+                                GlassContextStackMenu(
+                                    actions: currentSection.stackActions,
+                                    accent: currentSection.accent,
+                                    isExpanded: $isStackExpanded,
+                                    onToggle: toggleStack,
+                                    onAction: handleAction
+                                )
+                                .frame(maxWidth: .infinity)
+                            } else {
+                                Color.clear
+                                    .frame(maxWidth: .infinity)
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, HubMetrics.barHorizontalPadding)
+                    .offset(x: HubMetrics.stackGap * 8, y: -HubMetrics.stackLift)
+                    .zIndex(2)
+                }
             }
             .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 12)
         .padding(.top, 6)
         .padding(.bottom, 4)
+        .onChange(of: appState.selectedTab) { _, _ in
+            closeStack()
+        }
     }
 
     private func selectPrimarySection(_ section: HubSection) {
         if let tab = section.tab {
             appState.selectedTab = tab
         }
+        closeStack()
     }
 
     private func handleAction(_ action: HubAction) {
         router.push(.hubDestination(action.destination))
-    }
-}
-
-private struct GlassSideActionBar: View {
-    let leftActions: [HubAction]
-    let rightActions: [HubAction]
-    let accent: Color
-    let onAction: (HubAction) -> Void
-
-    var body: some View {
-        HStack(spacing: 0) {
-            actionPanel(actions: leftActions, alignment: .leading)
-            actionPanel(actions: rightActions, alignment: .trailing)
-        }
-        .padding(.horizontal, 22)
-        .frame(height: HubMetrics.sideActionSize)
+        closeStack()
     }
 
-    @ViewBuilder
-    private func actionPanel(actions: [HubAction], alignment: Alignment) -> some View {
-        let items = Array(actions.prefix(2))
-        HStack(spacing: HubMetrics.sideActionSpacing) {
-            ForEach(items) { action in
-                SideActionButton(action: action, accent: accent) {
-                    onAction(action)
-                }
-            }
+    private func toggleStack() {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.75, blendDuration: 0.2)) {
+            isStackExpanded.toggle()
         }
-        .frame(maxWidth: .infinity, alignment: alignment)
     }
-}
 
-private struct SideActionButton: View {
-    let action: HubAction
-    let accent: Color
-    let onTap: () -> Void
-
-    var body: some View {
-        Button {
-            onTap()
-        } label: {
-            ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.18))
-
-                Image(systemName: action.icon)
-                    .font(.system(size: HubMetrics.sideActionIconSize, weight: .semibold))
-                    .foregroundStyle(accent)
-            }
-            .frame(width: HubMetrics.sideActionSize, height: HubMetrics.sideActionSize)
-            .contentShape(Circle())
-            .plateGlass(
-                cornerRadius: HubMetrics.sideActionSize / 2,
-                tint: accent.opacity(0.22),
-                interactive: true
-            )
-            .overlay(
-                Circle()
-                    .stroke(Color.white.opacity(0.2), lineWidth: 0.6)
-            )
-            .shadow(color: accent.opacity(0.12), radius: 6, x: 0, y: 4)
+    private func closeStack() {
+        guard isStackExpanded else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8, blendDuration: 0.2)) {
+            isStackExpanded = false
         }
-        .buttonStyle(.plain)
-        .hoverEffect(.lift)
-        .accessibilityLabel(action.title)
     }
 }
 
@@ -133,7 +109,7 @@ private struct GlassPrimaryNavBar: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, HubMetrics.barHorizontalPadding)
         .frame(height: HubMetrics.barHeight)
         .background(
             RoundedRectangle(cornerRadius: HubMetrics.barCornerRadius, style: .continuous)
@@ -157,6 +133,200 @@ private struct GlassPrimaryNavBar: View {
                 .stroke(Color.white.opacity(0.22), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 8)
+    }
+}
+
+private struct GlassContextStackMenu: View {
+    let actions: [HubAction]
+    let accent: Color
+    @Binding var isExpanded: Bool
+    let onToggle: () -> Void
+    let onAction: (HubAction) -> Void
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            if isExpanded {
+                ForEach(Array(actions.enumerated()), id: \.element.id) { index, action in
+                    let offset = fanOffset(index: index, total: actions.count)
+
+                    Button {
+                        onAction(action)
+                    } label: {
+                        StackActionBubble(
+                            action: action,
+                            accent: accent,
+                            fadeInDelay: Double(index) * 0.25
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .offset(offset)
+                    .transition(fanTransition(for: offset))
+                    .animation(
+                        .spring(response: 0.52, dampingFraction: 0.7, blendDuration: 0.2)
+                            .delay(Double(index) * 0.05),
+                        value: isExpanded
+                    )
+                    .zIndex(Double(actions.count - index))
+                }
+            }
+
+            stackButton
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        .allowsHitTesting(isExpanded || !actions.isEmpty)
+    }
+
+    private var stackButton: some View {
+        let iconName = isExpanded ? "xmark" : "square.stack.3d.up.fill"
+        let labelText = isExpanded ? "Close menu" : "Open menu"
+
+        return Button {
+            onToggle()
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(.white.opacity(0.12))
+
+                Image(systemName: iconName)
+                    .font(.system(size: HubMetrics.stackIconSize, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: HubMetrics.stackButtonSize, height: HubMetrics.stackButtonSize)
+            .contentShape(Circle())
+            .background(
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [accent.opacity(0.6), accent.opacity(0.2)],
+                            center: .topLeading,
+                            startRadius: 4,
+                            endRadius: HubMetrics.stackButtonSize
+                        )
+                    )
+            )
+            .overlay(
+                Circle()
+                    .stroke(Color.white.opacity(0.25), lineWidth: 0.8)
+            )
+            .plateGlass(
+                cornerRadius: HubMetrics.stackButtonSize / 2, tint: accent.opacity(0.35),
+                interactive: true
+            )
+            .shadow(color: accent.opacity(0.35), radius: 14, x: 0, y: 8)
+        }
+        .buttonStyle(.plain)
+        .hoverEffect(.lift)
+        .accessibilityLabel(labelText)
+    }
+
+    private func fanOffset(index: Int, total: Int) -> CGSize {
+        let angles = arcAngles(for: total)
+        let startAngle = angles.start
+        let endAngle = angles.end
+        let targetAngle: Double
+
+        if total <= 1 {
+            targetAngle = (startAngle + endAngle) / 2
+        } else {
+            let step = (endAngle - startAngle) / Double(total - 1)
+            targetAngle = startAngle + step * Double(index)
+        }
+
+        let radians = targetAngle * Double.pi / 180
+        return CGSize(
+            width: cos(radians) * HubMetrics.stackRadius,
+            height: sin(radians) * HubMetrics.stackRadius
+        )
+    }
+
+    private func fanTransition(for offset: CGSize) -> AnyTransition {
+        AnyTransition.modifier(
+            active: FanTransitionModifier(
+                extraOffset: CGSize(width: -offset.width, height: -offset.height),
+                scale: 0.35,
+                opacity: 0,
+                rotation: -18,
+                blur: 6
+            ),
+            identity: FanTransitionModifier(
+                extraOffset: .zero,
+                scale: 1,
+                opacity: 1,
+                rotation: 0,
+                blur: 0
+            )
+        )
+    }
+
+    private struct FanTransitionModifier: ViewModifier {
+        let extraOffset: CGSize
+        let scale: CGFloat
+        let opacity: Double
+        let rotation: Double
+        let blur: CGFloat
+
+        func body(content: Content) -> some View {
+            content
+                .offset(extraOffset)
+                .scaleEffect(scale)
+                .opacity(opacity)
+                .rotationEffect(.degrees(rotation))
+                .blur(radius: blur)
+        }
+    }
+
+    private func arcAngles(for total: Int) -> (start: Double, end: Double) {
+        switch total {
+        case 1:
+            return (-120, -120)
+        case 2:
+            return (-160, -100)
+        case 3:
+            return (-150, -90)
+        default:
+            return (-150, -90)
+        }
+    }
+}
+
+private struct StackActionBubble: View {
+    let action: HubAction
+    let accent: Color
+    let fadeInDelay: Double
+    @State private var isVisible = false
+
+    var body: some View {
+        VStack(spacing: 4) {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.1))
+
+                Image(systemName: action.icon)
+                    .font(.system(size: HubMetrics.stackIconSize, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: HubMetrics.stackItemSize, height: HubMetrics.stackItemSize)
+            .contentShape(Circle())
+            .plateGlass(
+                cornerRadius: HubMetrics.stackItemSize / 2,
+                tint: accent.opacity(0.25),
+                interactive: true
+            )
+            .overlay(
+                Circle()
+                    .stroke(Color.white.opacity(0.25), lineWidth: 0.7)
+            )
+            .shadow(color: accent.opacity(0.3), radius: 10, x: 0, y: 6)
+        }
+        .opacity(isVisible ? 1 : 0)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.5).delay(fadeInDelay)) {
+                isVisible = true
+            }
+        }
+        .onDisappear {
+            isVisible = false
+        }
     }
 }
 
@@ -278,62 +448,48 @@ private enum HubSection: String, CaseIterable, Identifiable {
         }
     }
 
-    var leftActions: [HubAction] {
+    var stackActions: [HubAction] {
         switch self {
         case .home:
             return []
         case .recipes:
             return [
-                HubAction(destination: .recipesSearch, title: "Search", icon: "magnifyingglass")
+                HubAction(destination: .recipesCreate, title: "Create", icon: "plus"),
+                HubAction(destination: .recipesSearch, title: "Search", icon: "magnifyingglass"),
             ]
         case .calorieTracker:
             return [
-                HubAction(destination: .calorieAddExercise, title: "Add Exercise", icon: "figure.run")
+                HubAction(
+                    destination: .calorieAddExercise, title: "Add Exercise", icon: "figure.run"),
+                HubAction(destination: .calorieGoals, title: "Goals", icon: "target"),
             ]
         case .mealPlan:
             return [
-                HubAction(destination: .mealPlanSuggest, title: "Suggest", icon: "sparkles")
+                HubAction(destination: .mealPlanSuggest, title: "Suggest", icon: "sparkles"),
+                HubAction(destination: .mealPlanScan, title: "Scan", icon: "camera.viewfinder"),
             ]
         case .insights:
             return [
                 HubAction(destination: .insightsRecipes, title: "Recipes", icon: "book.fill"),
-                HubAction(destination: .insightsMealPlan, title: "Meal Plan", icon: "calendar")
-            ]
-        }
-    }
-
-    var rightActions: [HubAction] {
-        switch self {
-        case .home:
-            return []
-        case .recipes:
-            return [
-                HubAction(destination: .recipesCreate, title: "Create", icon: "plus")
-            ]
-        case .calorieTracker:
-            return [
-                HubAction(destination: .calorieGoals, title: "Goals", icon: "target")
-            ]
-        case .mealPlan:
-            return [
-                HubAction(destination: .mealPlanScan, title: "Scan", icon: "camera.viewfinder")
-            ]
-        case .insights:
-            return [
-                HubAction(destination: .insightsCalories, title: "Calories", icon: "flame.fill")
+                HubAction(destination: .insightsMealPlan, title: "Meal Plan", icon: "calendar"),
+                HubAction(destination: .insightsCalories, title: "Calories", icon: "flame.fill"),
             ]
         }
     }
 }
 
 private enum HubMetrics {
-    static let primaryButtonSize: CGFloat = 44
-    static let primaryIconSize: CGFloat = 20
-    static let primarySpacing: CGFloat = 14
-    static let sideActionSize: CGFloat = 40
-    static let sideActionIconSize: CGFloat = 18
-    static let sideActionSpacing: CGFloat = 12
-    static let sideActionOverlap: CGFloat = 14
+    static let primaryButtonSize: CGFloat = 54
+    static let primaryIconSize: CGFloat = 24
     static let barHeight: CGFloat = 76
+    static let barHorizontalPadding: CGFloat = 12
     static let barCornerRadius: CGFloat = 30
+    static let stackButtonSize: CGFloat = 54
+    static let stackItemSize: CGFloat = 54
+    static let stackIconSize: CGFloat = 24
+    static let stackLabelSize: CGFloat = 10
+    static let stackLabelWidth: CGFloat = 72
+    static let stackRadius: CGFloat = 72
+    static let stackGap: CGFloat = 8
+    static let stackLift: CGFloat = barHeight + stackGap * 2
 }
