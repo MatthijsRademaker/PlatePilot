@@ -4,12 +4,15 @@ import "errors"
 
 // Domain errors
 var (
-	ErrRecipeNotFound     = errors.New("recipe not found")
-	ErrIngredientNotFound = errors.New("ingredient not found")
-	ErrCuisineNotFound    = errors.New("cuisine not found")
-	ErrAllergyNotFound    = errors.New("allergy not found")
-	ErrInvalidInput       = errors.New("invalid input")
-	ErrDuplicateEntry     = errors.New("duplicate entry")
+	ErrRecipeNotFound           = errors.New("recipe not found")
+	ErrIngredientNotFound       = errors.New("ingredient not found")
+	ErrCuisineNotFound          = errors.New("cuisine not found")
+	ErrAllergyNotFound          = errors.New("allergy not found")
+	ErrInvalidInput             = errors.New("invalid input")
+	ErrDuplicateEntry           = errors.New("duplicate entry")
+	ErrShoppingListNotFound     = errors.New("shopping list not found")
+	ErrShoppingListItemNotFound = errors.New("shopping list item not found")
+	ErrEmptyMealPlan            = errors.New("meal plan has no recipes")
 )
 
 // DomainError wraps domain-specific errors with additional context
