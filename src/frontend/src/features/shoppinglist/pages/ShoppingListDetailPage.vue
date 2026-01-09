@@ -234,7 +234,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useShoppinglistDetail } from '../composables/useShoppinglist';
@@ -242,7 +242,7 @@ import { useShoppinglistStore } from '../store/shoppinglistStore';
 import ShoppingListItem from '../components/ShoppingListItem.vue';
 import ShoppingListGroup from '../components/ShoppingListGroup.vue';
 import AddItemDialog from '../components/AddItemDialog.vue';
-import type { ShoppingListItemJSON, AddItemRequest } from '../types/shoppinglist';
+import type { ShoppingListItemJSON } from '../types/shoppinglist';
 
 const route = useRoute();
 const router = useRouter();
@@ -272,7 +272,7 @@ watch(showRenameDialog, (open) => {
 async function handleToggle(itemId: string) {
   try {
     await toggleItem(itemId);
-  } catch (e) {
+  } catch {
     $q.notify({
       type: 'negative',
       message: 'Failed to update item',
@@ -294,7 +294,7 @@ async function handleAddItem(item: { customName: string; quantity?: number; unit
       type: 'positive',
       message: 'Item added',
     });
-  } catch (e) {
+  } catch {
     $q.notify({
       type: 'negative',
       message: 'Failed to add item',
@@ -304,25 +304,26 @@ async function handleAddItem(item: { customName: string; quantity?: number; unit
   }
 }
 
-async function handleDeleteItem(itemId: string) {
+function handleDeleteItem(itemId: string) {
   $q.dialog({
     title: 'Delete Item',
     message: 'Are you sure you want to remove this item?',
     cancel: true,
     persistent: true,
-  }).onOk(async () => {
-    try {
-      await deleteItem(itemId);
-      $q.notify({
-        type: 'positive',
-        message: 'Item removed',
+  }).onOk(() => {
+    deleteItem(itemId)
+      .then(() => {
+        $q.notify({
+          type: 'positive',
+          message: 'Item removed',
+        });
+      })
+      .catch(() => {
+        $q.notify({
+          type: 'negative',
+          message: 'Failed to remove item',
+        });
       });
-    } catch (e) {
-      $q.notify({
-        type: 'negative',
-        message: 'Failed to remove item',
-      });
-    }
   });
 }
 
@@ -332,7 +333,7 @@ async function handleRename() {
   try {
     await updateList(newName.value.trim());
     showRenameDialog.value = false;
-  } catch (e) {
+  } catch {
     $q.notify({
       type: 'negative',
       message: 'Failed to rename list',
@@ -348,20 +349,22 @@ function confirmDelete() {
     message: 'Are you sure you want to delete this shopping list? This cannot be undone.',
     cancel: true,
     persistent: true,
-  }).onOk(async () => {
-    try {
-      await store.deleteList(listId());
-      $q.notify({
-        type: 'positive',
-        message: 'Shopping list deleted',
+  }).onOk(() => {
+    store
+      .deleteList(listId())
+      .then(() => {
+        $q.notify({
+          type: 'positive',
+          message: 'Shopping list deleted',
+        });
+        void router.push({ name: 'shopping-lists' });
+      })
+      .catch(() => {
+        $q.notify({
+          type: 'negative',
+          message: 'Failed to delete list',
+        });
       });
-      router.push({ name: 'shopping-lists' });
-    } catch (e) {
-      $q.notify({
-        type: 'negative',
-        message: 'Failed to delete list',
-      });
-    }
   });
 }
 

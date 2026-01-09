@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useShoppinglistStore } from '../store/shoppinglistStore';
 import type { CreateFromRecipesRequest, AddItemRequest } from '../types/shoppinglist';
@@ -12,16 +12,16 @@ export function useShoppinglistList() {
 
   onMounted(() => {
     if (lists.value.length === 0) {
-      store.fetchLists();
+      void store.fetchLists();
     }
   });
 
   function loadPage(page: number) {
-    store.fetchLists(page);
+    void store.fetchLists(page);
   }
 
   function refresh() {
-    store.fetchLists(1);
+    void store.fetchLists(1);
   }
 
   return {
@@ -55,7 +55,7 @@ export function useShoppinglistDetail(listId: () => string) {
     const id = listId();
     if (id && id !== loadedId.value) {
       loadedId.value = id;
-      store.fetchListById(id);
+      void store.fetchListById(id);
     }
   }
 

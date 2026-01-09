@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -132,11 +133,9 @@ func (i *ShoppingListItem) DisplayQuantity() string {
 // formatQuantity formats a float quantity for display
 func formatQuantity(q float64) string {
 	if q == float64(int(q)) {
-		return string(rune(int(q) + '0'))
+		return strconv.Itoa(int(q))
 	}
-	// For non-integer, we'll just use a simple format
-	// In production, you might want strconv.FormatFloat
-	return ""
+	return strconv.FormatFloat(q, 'f', -1, 64)
 }
 
 // RecipeIngredientWithQuantity extends Ingredient with quantity info from a recipe

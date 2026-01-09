@@ -3,14 +3,12 @@ import { ref, computed } from 'vue';
 import type {
   ShoppingListJSON,
   ShoppingListSummaryJSON,
-  ShoppingListItemJSON,
   CreateFromRecipesRequest,
   AddItemRequest,
   UpdateItemRequest,
   GroupedItems,
-  groupItemsByCategory,
 } from '../types/shoppinglist';
-import { groupItemsByCategory as groupItems } from '../types/shoppinglist';
+import { groupItemsByCategory } from '../types/shoppinglist';
 import * as api from '../api/shoppinglistApi';
 
 export const useShoppinglistStore = defineStore('shoppinglist', () => {
@@ -37,7 +35,7 @@ export const useShoppinglistStore = defineStore('shoppinglist', () => {
 
   const groupedItems = computed<GroupedItems[]>(() => {
     if (!currentList.value) return [];
-    return groupItems(currentList.value.items);
+    return groupItemsByCategory(currentList.value.items);
   });
 
   const progress = computed(() => {

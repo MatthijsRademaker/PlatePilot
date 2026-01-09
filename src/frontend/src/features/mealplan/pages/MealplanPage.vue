@@ -245,7 +245,7 @@ async function generateShoppingList() {
       });
       void router.push({ name: 'shoppinglist-detail', params: { id: list.id } });
     }
-  } catch (e) {
+  } catch {
     $q.notify({
       type: 'negative',
       message: 'Failed to generate shopping list',

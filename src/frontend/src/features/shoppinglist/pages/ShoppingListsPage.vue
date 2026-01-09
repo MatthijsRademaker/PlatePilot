@@ -142,7 +142,7 @@ async function handleCreate() {
     if (newList) {
       void router.push({ name: 'shoppinglist-detail', params: { id: newList.id } });
     }
-  } catch (e) {
+  } catch {
     // Error handled in store
   } finally {
     creating.value = false;
