@@ -51,6 +51,11 @@ const navLinks: NavLink[] = [
     label: 'Plan',
   },
   {
+    to: 'shopping-lists',
+    icon: 'mdi-cart-outline',
+    label: 'Shop',
+  },
+  {
     to: 'search',
     icon: 'mdi-magnify',
     label: 'Search',
@@ -58,7 +63,13 @@ const navLinks: NavLink[] = [
 ];
 
 function isActive(routeName: string): boolean {
-  return route.name === routeName;
+  const currentName = route.name as string;
+  if (currentName === routeName) return true;
+  // Handle child routes (e.g., 'shoppinglist-detail' should highlight 'shopping-lists')
+  if (routeName === 'shopping-lists' && currentName?.startsWith('shoppinglist')) return true;
+  if (routeName === 'recipes' && currentName?.startsWith('recipe')) return true;
+  if (routeName === 'mealplan' && currentName?.startsWith('mealplan')) return true;
+  return false;
 }
 </script>
 
