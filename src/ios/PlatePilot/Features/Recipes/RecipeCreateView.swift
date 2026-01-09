@@ -10,8 +10,10 @@ struct RecipeCreateView: View {
     @State private var draft = RecipeDraft()
     @State private var isSaving = false
     @State private var errorMessage: String?
-    @State private var showIngredientSheet = false
-    @State private var showInstructionSheet = false
+    @State private var isAddingIngredient = false
+    @State private var isAddingInstruction = false
+    @State private var newIngredientName = ""
+    @State private var newInstructionText = ""
     @State private var timePickerTarget: TimePickerTarget?
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var photoImage: Image?
@@ -60,6 +62,7 @@ struct RecipeCreateView: View {
         }
         .safeAreaInset(edge: .bottom) {
             saveBar
+                .padding(.bottom, RecipeCreationMetrics.hubBarHeight + 8)
         }
         .onAppear {
             withAnimation(.easeOut(duration: 0.4)) {
@@ -78,24 +81,6 @@ struct RecipeCreateView: View {
                         photoImage = Image(uiImage: uiImage)
                     }
                 }
-            }
-        }
-        .sheet(isPresented: $showIngredientSheet) {
-            IngredientEntrySheet { name in
-                guard !name.trimmed().isEmpty else { return }
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    draft.ingredients.append(IngredientDraft(name: name))
-                }
-                Haptics.light()
-            }
-        }
-        .sheet(isPresented: $showInstructionSheet) {
-            InstructionEntrySheet { step in
-                guard !step.trimmed().isEmpty else { return }
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    draft.instructions.append(InstructionDraft(text: step))
-                }
-                Haptics.light()
             }
         }
         .sheet(item: $timePickerTarget) { target in
@@ -161,20 +146,20 @@ struct RecipeCreateView: View {
     private var ingredientSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "Ingredients", actionLabel: "Add ingredient") {
-                showIngredientSheet = true
+                beginIngredientEntry()
             }
 
-            PlateGlassGroup(spacing: 12) {
-                VStack(spacing: 10) {
-                    ForEach(draft.ingredients) { ingredient in
-                        IngredientRow(name: ingredient.name, onDelete: {
-                            removeIngredient(ingredient)
-                        })
-                    }
+            VStack(spacing: 10) {
+                ForEach(draft.ingredients) { ingredient in
+                    IngredientRow(name: ingredient.name, onDelete: {
+                        removeIngredient(ingredient)
+                    })
+                }
 
-                    if draft.ingredients.isEmpty {
-                        EmptyRow(text: "Add your ingredients")
-                    }
+                if isAddingIngredient {
+                    ingredientInputRow
+                } else if draft.ingredients.isEmpty {
+                    EmptyRow(text: "Add your ingredients")
                 }
             }
         }
@@ -183,21 +168,97 @@ struct RecipeCreateView: View {
     private var instructionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "Instructions", actionLabel: "Add step") {
-                showInstructionSheet = true
+                beginInstructionEntry()
             }
 
-            PlateGlassGroup(spacing: 12) {
-                VStack(spacing: 10) {
-                    ForEach(Array(draft.instructions.enumerated()), id: \.element.id) { index, step in
-                        InstructionRow(index: index + 1, text: step.text, onDelete: {
-                            removeInstruction(step)
-                        })
-                    }
-
-                    if draft.instructions.isEmpty {
-                        EmptyRow(text: "Add your first step")
-                    }
+            VStack(spacing: 10) {
+                ForEach(Array(draft.instructions.enumerated()), id: \.element.id) { index, step in
+                    InstructionRow(index: index + 1, text: step.text, onDelete: {
+                        removeInstruction(step)
+                    })
                 }
+
+                if isAddingInstruction {
+                    instructionInputRow
+                } else if draft.instructions.isEmpty {
+                    EmptyRow(text: "Add your first step")
+                }
+            }
+        }
+    }
+
+    private var ingredientInputRow: some View {
+        GlassRow {
+            HStack(spacing: 10) {
+                TextField("Add ingredient", text: $newIngredientName)
+                    .font(PlatePilotTheme.bodyFont(size: 14, weight: .medium))
+                    .foregroundStyle(RecipeCreationColors.textPrimary)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .focused($focusedField, equals: .newIngredient)
+                    .submitLabel(.done)
+                    .onSubmit { addIngredient() }
+
+                Spacer(minLength: 8)
+
+                Button(action: addIngredient) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(RecipeCreationColors.saveGradient, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(newIngredientName.trimmed().isEmpty)
+                .accessibilityLabel("Add ingredient")
+
+                Button(action: cancelIngredientEntry) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(RecipeCreationColors.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .background(Color.white.opacity(0.2), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Cancel ingredient")
+            }
+        }
+    }
+
+    private var instructionInputRow: some View {
+        GlassRow {
+            HStack(alignment: .top, spacing: 10) {
+                TextField("Add step", text: $newInstructionText, axis: .vertical)
+                    .font(PlatePilotTheme.bodyFont(size: 14, weight: .medium))
+                    .foregroundStyle(RecipeCreationColors.textPrimary)
+                    .textInputAutocapitalization(.sentences)
+                    .lineLimit(1...3)
+                    .focused($focusedField, equals: .newInstruction)
+                    .submitLabel(.done)
+                    .onSubmit { addInstruction() }
+
+                Spacer(minLength: 8)
+
+                Button(action: addInstruction) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(RecipeCreationColors.saveGradient, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(newInstructionText.trimmed().isEmpty)
+                .accessibilityLabel("Add instruction")
+
+                Button(action: cancelInstructionEntry) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(RecipeCreationColors.textSecondary)
+                        .frame(width: 28, height: 28)
+                        .background(Color.white.opacity(0.2), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Cancel instruction")
             }
         }
     }
@@ -300,6 +361,50 @@ struct RecipeCreateView: View {
         Haptics.light()
     }
 
+    private func beginIngredientEntry() {
+        isAddingIngredient = true
+        isAddingInstruction = false
+        focusedField = .newIngredient
+    }
+
+    private func beginInstructionEntry() {
+        isAddingInstruction = true
+        isAddingIngredient = false
+        focusedField = .newInstruction
+    }
+
+    private func addIngredient() {
+        let cleaned = newIngredientName.trimmed()
+        guard !cleaned.isEmpty else { return }
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            draft.ingredients.append(IngredientDraft(name: cleaned))
+        }
+        newIngredientName = ""
+        Haptics.light()
+    }
+
+    private func addInstruction() {
+        let cleaned = newInstructionText.trimmed()
+        guard !cleaned.isEmpty else { return }
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            draft.instructions.append(InstructionDraft(text: cleaned))
+        }
+        newInstructionText = ""
+        Haptics.light()
+    }
+
+    private func cancelIngredientEntry() {
+        newIngredientName = ""
+        isAddingIngredient = false
+        focusedField = nil
+    }
+
+    private func cancelInstructionEntry() {
+        newInstructionText = ""
+        isAddingInstruction = false
+        focusedField = nil
+    }
+
     private func removeIngredient(_ ingredient: IngredientDraft) {
         if let index = draft.ingredients.firstIndex(of: ingredient) {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
@@ -362,6 +467,8 @@ struct RecipeCreateView: View {
 private enum FocusField: Hashable {
     case title
     case description
+    case newIngredient
+    case newInstruction
 }
 
 private enum TimePickerTarget: Identifiable {
@@ -436,6 +543,7 @@ private enum RecipeCreationMetrics {
     static let cardRadius: CGFloat = 20
     static let cardPadding: CGFloat = 16
     static let rowRadius: CGFloat = 16
+    static let hubBarHeight: CGFloat = 76
 }
 
 private enum RecipeCreationColors {
@@ -490,6 +598,7 @@ private struct GlassCard<Content: View>: View {
             .animation(.easeOut(duration: 0.2), value: isFocused)
     }
 
+    @ViewBuilder
     private var glassBackground: some View {
         let shape = RoundedRectangle(cornerRadius: RecipeCreationMetrics.cardRadius, style: .continuous)
 
@@ -530,22 +639,19 @@ private struct GlassRow<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(glassBackground)
     }
-
+    
+    @ViewBuilder
     private var glassBackground: some View {
         let shape = RoundedRectangle(cornerRadius: RecipeCreationMetrics.rowRadius, style: .continuous)
-
-        let base = ZStack {
+        if reduceTransparency {
             shape
-                .fill(Color.white.opacity(reduceTransparency ? 0.88 : 0.1))
-
+                .fill(Color.white.opacity(0.9))
+                .overlay(shape.stroke(Color.white.opacity(0.2), lineWidth: 1))
+        } else {
             shape
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                .fill(.ultraThinMaterial)
+                .overlay(shape.stroke(Color.white.opacity(0.2), lineWidth: 1))
         }
-        return base.applyGlassIfNeeded(
-            reduceTransparency: reduceTransparency,
-            cornerRadius: RecipeCreationMetrics.rowRadius,
-            tint: .white.opacity(0.14)
-        )
     }
 }
 
@@ -805,82 +911,6 @@ private struct RecipeCreationEntranceModifier: ViewModifier {
             .opacity(didAppear ? 1 : 0)
             .offset(y: didAppear ? 0 : 14)
             .animation(.easeOut(duration: 0.5).delay(delay), value: didAppear)
-    }
-}
-
-private struct IngredientEntrySheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var name: String = ""
-
-    let onSave: (String) -> Void
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 20) {
-                TextField("Ingredient", text: $name)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled()
-                    .font(PlatePilotTheme.bodyFont(size: 16))
-                    .padding(16)
-                    .background(Color.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                Text("Tip: add quantities like \"1 cup oats\".")
-                    .font(PlatePilotTheme.bodyFont(size: 12))
-                    .foregroundStyle(RecipeCreationColors.textSecondary)
-
-                Button("Add Ingredient") {
-                    onSave(name)
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(name.trimmed().isEmpty)
-
-                Spacer()
-            }
-            .padding(24)
-            .navigationTitle("Add Ingredient")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-    }
-}
-
-private struct InstructionEntrySheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var text: String = ""
-
-    let onSave: (String) -> Void
-
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 20) {
-                TextEditor(text: $text)
-                    .font(PlatePilotTheme.bodyFont(size: 16))
-                    .frame(minHeight: 120)
-                    .padding(12)
-                    .background(Color.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .scrollContentBackground(.hidden)
-
-                Button("Add Step") {
-                    onSave(text)
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(text.trimmed().isEmpty)
-
-                Spacer()
-            }
-            .padding(24)
-            .navigationTitle("Add Step")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
     }
 }
 
