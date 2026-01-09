@@ -285,19 +285,125 @@ func (h *GRPCHandler) GetRecipesByAllergy(ctx context.Context, req *pb.GetRecipe
 	return toRecipesResponse(recipes), nil
 }
 
+// GetUnits retrieves available ingredient units.
+func (h *GRPCHandler) GetUnits(ctx context.Context, req *pb.GetUnitsRequest) (*pb.GetUnitsResponse, error) {
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
+
+	units, err := h.repo.GetUnits(ctx, userID)
+	if err != nil {
+		h.logger.Error("failed to get units", "error", err)
+		return nil, status.Errorf(codes.Internal, "failed to get units")
+	}
+
+	resp := &pb.GetUnitsResponse{Units: make([]*pb.Unit, len(units))}
+	for i, unit := range units {
+		resp.Units[i] = &pb.Unit{
+			Id:   unit.ID.String(),
+			Name: unit.Name,
+		}
+	}
+
+	return resp, nil
+}
+
+// CreateUnit creates a new ingredient unit.
+func (h *GRPCHandler) CreateUnit(ctx context.Context, req *pb.CreateUnitRequest) (*pb.Unit, error) {
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
+
+	name := strings.TrimSpace(req.GetName())
+	if name == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "name is required")
+	}
+
+	existing, err := h.repo.GetUnitByName(ctx, userID, name)
+	if err == nil {
+		return &pb.Unit{
+			Id:   existing.ID.String(),
+			Name: existing.Name,
+		}, nil
+	}
+	if err != nil && !errors.Is(err, repository.ErrUnitNotFound) {
+		h.logger.Error("failed to get unit", "error", err)
+		return nil, status.Errorf(codes.Internal, "failed to get unit")
+	}
+
+	unit := &domain.Unit{
+		ID:     uuid.New(),
+		UserID: userID,
+		Name:   name,
+	}
+	if err := h.repo.CreateUnit(ctx, unit); err != nil {
+		h.logger.Error("failed to create unit", "error", err)
+		return nil, status.Errorf(codes.Internal, "failed to create unit")
+	}
+
+	return &pb.Unit{
+		Id:   unit.ID.String(),
+		Name: unit.Name,
+	}, nil
+}
+
 func (h *GRPCHandler) resolveIngredients(ctx context.Context, req *pb.CreateRecipeRequest) ([]domain.Ingredient, error) {
 	var ingredients []domain.Ingredient
-	seen := make(map[uuid.UUID]struct{})
+	indexByID := make(map[uuid.UUID]int)
 
-	appendIngredient := func(ingredient *domain.Ingredient) {
+	appendIngredient := func(ingredient *domain.Ingredient, quantity string, unit string) {
 		if ingredient == nil {
 			return
 		}
-		if _, ok := seen[ingredient.ID]; ok {
+		if index, ok := indexByID[ingredient.ID]; ok {
+			if quantity != "" {
+				ingredients[index].Quantity = quantity
+			}
+			if unit != "" {
+				ingredients[index].Unit = unit
+			}
 			return
 		}
-		seen[ingredient.ID] = struct{}{}
+		ingredient.Quantity = quantity
+		ingredient.Unit = unit
+		indexByID[ingredient.ID] = len(ingredients)
 		ingredients = append(ingredients, *ingredient)
+	}
+
+	for _, input := range req.GetIngredients() {
+		idStr := strings.TrimSpace(input.GetId())
+		name := strings.TrimSpace(input.GetName())
+		quantity := strings.TrimSpace(input.GetQuantity())
+		unit := strings.TrimSpace(input.GetUnit())
+
+		if idStr != "" {
+			ingredientID, err := uuid.Parse(idStr)
+			if err != nil {
+				return nil, status.Errorf(codes.InvalidArgument, "invalid ingredient ID: %v", err)
+			}
+			ingredient, err := h.repo.GetIngredientByID(ctx, ingredientID)
+			if err != nil {
+				if errors.Is(err, repository.ErrIngredientNotFound) {
+					return nil, status.Errorf(codes.NotFound, "ingredient not found: %s", idStr)
+				}
+				h.logger.Error("failed to get ingredient", "error", err, "ingredientId", idStr)
+				return nil, status.Errorf(codes.Internal, "failed to get ingredient")
+			}
+			appendIngredient(ingredient, quantity, unit)
+			continue
+		}
+
+		if name == "" {
+			continue
+		}
+		ingredient, err := h.repo.GetOrCreateIngredient(ctx, name, quantity)
+		if err != nil {
+			h.logger.Error("failed to get or create ingredient", "error", err, "ingredientName", name)
+			return nil, status.Errorf(codes.Internal, "failed to create ingredient")
+		}
+		appendIngredient(ingredient, quantity, unit)
 	}
 
 	for _, idStr := range req.GetIngredientIds() {
@@ -317,7 +423,7 @@ func (h *GRPCHandler) resolveIngredients(ctx context.Context, req *pb.CreateReci
 			h.logger.Error("failed to get ingredient", "error", err, "ingredientId", idStr)
 			return nil, status.Errorf(codes.Internal, "failed to get ingredient")
 		}
-		appendIngredient(ingredient)
+		appendIngredient(ingredient, "", "")
 	}
 
 	for _, name := range req.GetIngredientNames() {
@@ -330,7 +436,7 @@ func (h *GRPCHandler) resolveIngredients(ctx context.Context, req *pb.CreateReci
 			h.logger.Error("failed to get or create ingredient", "error", err, "ingredientName", cleaned)
 			return nil, status.Errorf(codes.Internal, "failed to create ingredient")
 		}
-		appendIngredient(ingredient)
+		appendIngredient(ingredient, "", "")
 	}
 
 	return ingredients, nil
@@ -412,6 +518,8 @@ func ensureMainIngredientIncluded(ingredients []domain.Ingredient, mainIngredien
 
 	for _, ingredient := range ingredients {
 		if ingredient.ID == mainIngredient.ID {
+			mainIngredient.Quantity = ingredient.Quantity
+			mainIngredient.Unit = ingredient.Unit
 			return ingredients
 		}
 	}
@@ -467,8 +575,10 @@ func toRecipeResponse(r *domain.Recipe) *pb.RecipeResponse {
 
 	if r.MainIngredient != nil {
 		resp.MainIngredient = &pb.Ingredient{
-			Id:   r.MainIngredient.ID.String(),
-			Name: r.MainIngredient.Name,
+			Id:       r.MainIngredient.ID.String(),
+			Name:     r.MainIngredient.Name,
+			Quantity: r.MainIngredient.Quantity,
+			Unit:     r.MainIngredient.Unit,
 		}
 	}
 
@@ -482,8 +592,10 @@ func toRecipeResponse(r *domain.Recipe) *pb.RecipeResponse {
 	resp.Ingredients = make([]*pb.Ingredient, len(r.Ingredients))
 	for i, ing := range r.Ingredients {
 		resp.Ingredients[i] = &pb.Ingredient{
-			Id:   ing.ID.String(),
-			Name: ing.Name,
+			Id:       ing.ID.String(),
+			Name:     ing.Name,
+			Quantity: ing.Quantity,
+			Unit:     ing.Unit,
 		}
 	}
 

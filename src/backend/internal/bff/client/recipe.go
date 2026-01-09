@@ -157,3 +157,32 @@ func (c *RecipeClient) GetByAllergy(ctx context.Context, userID, allergyID strin
 
 	return resp.GetRecipes(), nil
 }
+
+// GetUnits retrieves available ingredient units.
+func (c *RecipeClient) GetUnits(ctx context.Context, userID string) ([]*recipepb.Unit, error) {
+	c.logger.Debug("getting units", "userId", userID)
+
+	resp, err := c.client.GetUnits(ctx, &recipepb.GetUnitsRequest{
+		UserId: userID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get units: %w", err)
+	}
+
+	return resp.GetUnits(), nil
+}
+
+// CreateUnit creates a new ingredient unit.
+func (c *RecipeClient) CreateUnit(ctx context.Context, userID, name string) (*recipepb.Unit, error) {
+	c.logger.Debug("creating unit", "name", name, "userId", userID)
+
+	resp, err := c.client.CreateUnit(ctx, &recipepb.CreateUnitRequest{
+		UserId: userID,
+		Name:   name,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create unit: %w", err)
+	}
+
+	return resp, nil
+}

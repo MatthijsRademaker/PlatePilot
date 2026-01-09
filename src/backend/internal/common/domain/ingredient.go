@@ -11,6 +11,7 @@ type Ingredient struct {
 	ID        uuid.UUID
 	Name      string
 	Quantity  string
+	Unit      string
 	Allergies []Allergy
 	CreatedAt time.Time
 }

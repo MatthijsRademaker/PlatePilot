@@ -86,6 +86,9 @@ struct RecipeCreateView: View {
                 didAppear = true
             }
         }
+        .task {
+            await loadUnits()
+        }
         .onChange(of: selectedPhoto) { _, newValue in
             guard let newValue else {
                 photoImage = nil
@@ -170,7 +173,6 @@ struct RecipeCreateView: View {
                 ForEach($draft.ingredients) { $ingredient in
                     IngredientRow(
                         ingredient: $ingredient,
-                        quantityOptions: RecipeCreationMetrics.quantityOptions,
                         unitOptions: availableUnits,
                         onAddUnit: { showUnitOverlay(target: .ingredient(ingredient.id)) },
                         onDelete: { removeIngredient(id: ingredient.id) }
@@ -246,11 +248,7 @@ struct RecipeCreateView: View {
                 }
 
                 HStack(spacing: 10) {
-                    SelectBox(
-                        title: "Quantity",
-                        selection: $newIngredientQuantity,
-                        options: RecipeCreationMetrics.quantityOptions
-                    )
+                    QuantityField(title: "Quantity", value: $newIngredientQuantity)
 
                     HStack(spacing: 6) {
                         SelectBox(
@@ -433,20 +431,9 @@ struct RecipeCreateView: View {
     private func saveUnit() {
         let cleaned = newUnitName.trimmed()
         guard !cleaned.isEmpty else { return }
-
-        let existing = availableUnits.first { $0.caseInsensitiveCompare(cleaned) == .orderedSame }
-        let resolvedUnit = existing ?? cleaned
-        if existing == nil {
-            availableUnits.append(cleaned)
+        Task {
+            await persistUnit(cleaned)
         }
-
-        if let target = unitOverlayTarget {
-            applyUnit(resolvedUnit, to: target)
-        }
-
-        // TODO: Persist custom units and load available units from the backend.
-        Haptics.light()
-        hideUnitOverlay()
     }
 
     private func applyUnit(_ unit: String, to target: UnitPickerTarget) {
@@ -526,14 +513,21 @@ struct RecipeCreateView: View {
         defer { isSaving = false }
 
         do {
-            let ingredientNames = draft.ingredients.map { $0.name.trimmed() }.filter { !$0.isEmpty }
-            // TODO: Send ingredient quantity/unit to the backend once the API supports it.
+            let ingredients = draft.ingredients
+                .map { ingredient in
+                    RecipeIngredientInput(
+                        name: ingredient.name.trimmed(),
+                        quantity: ingredient.quantity.trimmed(),
+                        unit: ingredient.unit.trimmed()
+                    )
+                }
+                .filter { !$0.name.isEmpty }
             _ = try await recipeStore.createRecipe(
                 name: draft.title.trimmed(),
                 description: draft.description.trimmed(),
                 prepMinutes: draft.prepMinutes,
                 cookMinutes: draft.cookMinutes,
-                ingredients: ingredientNames,
+                ingredients: ingredients,
                 instructions: draft.instructions.map { $0.text.trimmed() }.filter { !$0.isEmpty },
                 tags: draft.tags.map { $0.apiValue },
                 guidedMode: draft.guidedMode
@@ -559,6 +553,44 @@ struct RecipeCreateView: View {
                     .stroke(Color.white.opacity(0.3), lineWidth: 1)
             )
             .frame(maxWidth: .infinity)
+    }
+
+    private func loadUnits() async {
+        do {
+            let units = try await recipeStore.loadUnits()
+            let combined = (RecipeCreationMetrics.defaultUnits + units)
+                .map { $0.trimmed() }
+                .filter { !$0.isEmpty }
+            let unique = Array(Set(combined)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+            await MainActor.run {
+                availableUnits = unique
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = (error as? APIError)?.errorDescription ?? "Unable to load units."
+            }
+        }
+    }
+
+    private func persistUnit(_ cleaned: String) async {
+        do {
+            let savedUnit = try await recipeStore.createUnit(name: cleaned)
+            await MainActor.run {
+                let resolvedUnit = availableUnits.first { $0.caseInsensitiveCompare(savedUnit) == .orderedSame } ?? savedUnit
+                if !availableUnits.contains(where: { $0.caseInsensitiveCompare(resolvedUnit) == .orderedSame }) {
+                    availableUnits.append(resolvedUnit)
+                }
+                if let target = unitOverlayTarget {
+                    applyUnit(resolvedUnit, to: target)
+                }
+                Haptics.light()
+                hideUnitOverlay()
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = (error as? APIError)?.errorDescription ?? "Unable to save unit."
+            }
+        }
     }
 }
 
@@ -660,7 +692,6 @@ private enum RecipeCreationMetrics {
     static let hubBarHeight: CGFloat = 76
     static let defaultQuantity = "1"
     static let defaultUnit = "unit"
-    static let quantityOptions = ["1/4", "1/2", "3/4", "1", "1 1/2", "2", "3", "4", "5"]
     static let defaultUnits = ["unit", "g", "kg", "ml", "l", "tsp", "tbsp", "cup", "pinch", "slice"]
 }
 
@@ -860,6 +891,31 @@ private struct SelectBox: View {
     }
 }
 
+private struct QuantityField: View {
+    let title: String
+    @Binding var value: String
+
+    var body: some View {
+        TextField(title, text: $value)
+            .font(PlatePilotTheme.bodyFont(size: 13, weight: .semibold))
+            .foregroundStyle(RecipeCreationColors.textSecondary)
+            .keyboardType(.numbersAndPunctuation)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white.opacity(0.2))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+    }
+}
+
 private struct UnitAddButton: View {
     let action: () -> Void
 
@@ -878,7 +934,6 @@ private struct UnitAddButton: View {
 
 private struct IngredientRow: View {
     @Binding var ingredient: IngredientDraft
-    let quantityOptions: [String]
     let unitOptions: [String]
     let onAddUnit: () -> Void
     let onDelete: () -> Void
@@ -909,7 +964,7 @@ private struct IngredientRow: View {
                 }
 
                 HStack(spacing: 10) {
-                    SelectBox(title: "Quantity", selection: $ingredient.quantity, options: quantityOptions)
+                    QuantityField(title: "Quantity", value: $ingredient.quantity)
 
                     HStack(spacing: 6) {
                         SelectBox(title: "Unit", selection: $ingredient.unit, options: unitOptions)

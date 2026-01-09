@@ -292,21 +292,101 @@ func (h *RecipeHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, toRecipeJSON(recipe))
 }
 
+// GetUnits handles GET /v1/recipe/units
+// @Summary      Get available ingredient units
+// @Description  Retrieves the list of available units
+// @Tags         recipes
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  UnitsResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /recipe/units [get]
+func (h *RecipeHandler) GetUnits(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	units, err := h.client.GetUnits(r.Context(), userID.String())
+	if err != nil {
+		h.logger.Error("failed to get units", "error", err)
+		writeError(w, http.StatusInternalServerError, "failed to fetch units")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, UnitsResponse{Items: toUnitsJSON(units)})
+}
+
+// CreateUnit handles POST /v1/recipe/units
+// @Summary      Create a new ingredient unit
+// @Description  Creates a new ingredient unit
+// @Tags         recipes
+// @Accept       json
+// @Produce      json
+// @Param        unit  body      CreateUnitRequest  true  "Unit to create"
+// @Success      201   {object}  UnitJSON
+// @Failure      400   {object}  ErrorResponse
+// @Failure      500   {object}  ErrorResponse
+// @Router       /recipe/units [post]
+func (h *RecipeHandler) CreateUnit(w http.ResponseWriter, r *http.Request) {
+	userID, ok := requireUserID(r)
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var req CreateUnitRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		writeError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+
+	unit, err := h.client.CreateUnit(r.Context(), userID.String(), name)
+	if err != nil {
+		h.logger.Error("failed to create unit", "name", name, "error", err)
+		writeError(w, http.StatusInternalServerError, "failed to create unit")
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, UnitJSON{ID: unit.GetId(), Name: unit.GetName()})
+}
+
 // CreateRecipeRequest is the request body for creating a recipe
 type CreateRecipeRequest struct {
-	Name               string   `json:"name"`
-	Description        string   `json:"description"`
-	PrepTime           string   `json:"prepTime"`
-	CookTime           string   `json:"cookTime"`
-	MainIngredientID   string   `json:"mainIngredientId"`
-	MainIngredientName string   `json:"mainIngredientName"`
-	CuisineID          string   `json:"cuisineId"`
-	CuisineName        string   `json:"cuisineName"`
-	IngredientIDs      []string `json:"ingredientIds"`
-	IngredientNames    []string `json:"ingredientNames"`
-	Directions         []string `json:"directions"`
-	Tags               []string `json:"tags"`
-	GuidedMode         bool     `json:"guidedMode"`
+	Name               string                   `json:"name"`
+	Description        string                   `json:"description"`
+	PrepTime           string                   `json:"prepTime"`
+	CookTime           string                   `json:"cookTime"`
+	MainIngredientID   string                   `json:"mainIngredientId"`
+	MainIngredientName string                   `json:"mainIngredientName"`
+	CuisineID          string                   `json:"cuisineId"`
+	CuisineName        string                   `json:"cuisineName"`
+	IngredientIDs      []string                 `json:"ingredientIds"`
+	IngredientNames    []string                 `json:"ingredientNames"`
+	Ingredients        []CreateRecipeIngredient `json:"ingredients"`
+	Directions         []string                 `json:"directions"`
+	Tags               []string                 `json:"tags"`
+	GuidedMode         bool                     `json:"guidedMode"`
+}
+
+// CreateUnitRequest is the request body for creating a unit.
+type CreateUnitRequest struct {
+	Name string `json:"name"`
+}
+
+// CreateRecipeIngredient represents an ingredient with quantity/unit.
+type CreateRecipeIngredient struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Quantity string `json:"quantity"`
+	Unit     string `json:"unit"`
 }
 
 // Validate validates the create recipe request
@@ -315,7 +395,7 @@ func (r *CreateRecipeRequest) Validate() error {
 		return &ValidationError{Field: "name", Message: "name is required"}
 	}
 	hasMainIngredient := strings.TrimSpace(r.MainIngredientID) != "" || strings.TrimSpace(r.MainIngredientName) != ""
-	hasIngredients := len(r.IngredientIDs) > 0 || hasNonEmpty(r.IngredientNames)
+	hasIngredients := len(r.IngredientIDs) > 0 || hasNonEmpty(r.IngredientNames) || hasIngredientInputs(r.Ingredients)
 	if !hasMainIngredient && !hasIngredients {
 		return &ValidationError{Field: "ingredients", Message: "at least one ingredient is required"}
 	}
@@ -327,6 +407,21 @@ func (r *CreateRecipeRequest) Validate() error {
 
 // ToProto converts the request to a protobuf message
 func (r *CreateRecipeRequest) ToProto(userID string) *recipepb.CreateRecipeRequest {
+	ingredients := make([]*recipepb.IngredientInput, 0, len(r.Ingredients))
+	for _, ingredient := range r.Ingredients {
+		id := strings.TrimSpace(ingredient.ID)
+		name := strings.TrimSpace(ingredient.Name)
+		if id == "" && name == "" {
+			continue
+		}
+		ingredients = append(ingredients, &recipepb.IngredientInput{
+			Id:       id,
+			Name:     name,
+			Quantity: strings.TrimSpace(ingredient.Quantity),
+			Unit:     strings.TrimSpace(ingredient.Unit),
+		})
+	}
+
 	return &recipepb.CreateRecipeRequest{
 		UserId:             userID,
 		Name:               r.Name,
@@ -342,12 +437,22 @@ func (r *CreateRecipeRequest) ToProto(userID string) *recipepb.CreateRecipeReque
 		Directions:         sanitizeStrings(r.Directions),
 		Tags:               sanitizeStrings(r.Tags),
 		GuidedMode:         r.GuidedMode,
+		Ingredients:        ingredients,
 	}
 }
 
 func hasNonEmpty(values []string) bool {
 	for _, value := range values {
 		if strings.TrimSpace(value) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func hasIngredientInputs(values []CreateRecipeIngredient) bool {
+	for _, ingredient := range values {
+		if strings.TrimSpace(ingredient.ID) != "" || strings.TrimSpace(ingredient.Name) != "" {
 			return true
 		}
 	}
@@ -379,8 +484,21 @@ type RecipeJSON struct {
 	Directions     []string         `json:"directions"`
 }
 
+// UnitsResponse is the response for unit listing.
+type UnitsResponse struct {
+	Items []UnitJSON `json:"items"`
+}
+
 // IngredientJSON is the JSON response for an ingredient
 type IngredientJSON struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Quantity string `json:"quantity,omitempty"`
+	Unit     string `json:"unit,omitempty"`
+}
+
+// UnitJSON is the JSON response for a unit.
+type UnitJSON struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
@@ -395,16 +513,20 @@ func toRecipeJSON(r *recipepb.RecipeResponse) RecipeJSON {
 	ingredients := make([]IngredientJSON, len(r.GetIngredients()))
 	for i, ing := range r.GetIngredients() {
 		ingredients[i] = IngredientJSON{
-			ID:   ing.GetId(),
-			Name: ing.GetName(),
+			ID:       ing.GetId(),
+			Name:     ing.GetName(),
+			Quantity: ing.GetQuantity(),
+			Unit:     ing.GetUnit(),
 		}
 	}
 
 	var mainIngredient *IngredientJSON
 	if r.GetMainIngredient() != nil {
 		mainIngredient = &IngredientJSON{
-			ID:   r.GetMainIngredient().GetId(),
-			Name: r.GetMainIngredient().GetName(),
+			ID:       r.GetMainIngredient().GetId(),
+			Name:     r.GetMainIngredient().GetName(),
+			Quantity: r.GetMainIngredient().GetQuantity(),
+			Unit:     r.GetMainIngredient().GetUnit(),
 		}
 	}
 
@@ -435,6 +557,17 @@ func toRecipesJSON(recipes []*recipepb.RecipeResponse) []RecipeJSON {
 		result[i] = toRecipeJSON(r)
 	}
 	return result
+}
+
+func toUnitsJSON(units []*recipepb.Unit) []UnitJSON {
+	items := make([]UnitJSON, len(units))
+	for i, unit := range units {
+		items[i] = UnitJSON{
+			ID:   unit.GetId(),
+			Name: unit.GetName(),
+		}
+	}
+	return items
 }
 
 func parseIntParam(r *http.Request, name string, defaultValue int) int {

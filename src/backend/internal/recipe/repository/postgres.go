@@ -18,6 +18,7 @@ var (
 	ErrIngredientNotFound = errors.New("ingredient not found")
 	ErrCuisineNotFound    = errors.New("cuisine not found")
 	ErrAllergyNotFound    = errors.New("allergy not found")
+	ErrUnitNotFound       = errors.New("unit not found")
 	ErrUserNotFound       = errors.New("user not found")
 )
 
@@ -179,8 +180,11 @@ func (r *Repository) Create(ctx context.Context, recipe *domain.Recipe) error {
 	// Insert recipe-ingredient relationships
 	for _, ingredient := range recipe.Ingredients {
 		_, err = tx.Exec(ctx,
-			`INSERT INTO recipe_ingredients (recipe_id, ingredient_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-			recipe.ID, ingredient.ID,
+			`INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit)
+			 VALUES ($1, $2, $3, $4)
+			 ON CONFLICT (recipe_id, ingredient_id)
+			 DO UPDATE SET quantity = EXCLUDED.quantity, unit = EXCLUDED.unit`,
+			recipe.ID, ingredient.ID, ingredient.Quantity, ingredient.Unit,
 		)
 		if err != nil {
 			return fmt.Errorf("insert recipe ingredient: %w", err)
@@ -240,8 +244,9 @@ func (r *Repository) Update(ctx context.Context, recipe *domain.Recipe) error {
 
 	for _, ingredient := range recipe.Ingredients {
 		_, err = tx.Exec(ctx,
-			`INSERT INTO recipe_ingredients (recipe_id, ingredient_id) VALUES ($1, $2)`,
-			recipe.ID, ingredient.ID,
+			`INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit)
+			 VALUES ($1, $2, $3, $4)`,
+			recipe.ID, ingredient.ID, ingredient.Quantity, ingredient.Unit,
 		)
 		if err != nil {
 			return fmt.Errorf("insert recipe ingredient: %w", err)
@@ -578,6 +583,9 @@ func (r *Repository) CreateIngredient(ctx context.Context, ingredient *domain.In
 func (r *Repository) GetOrCreateIngredient(ctx context.Context, name string, quantity string) (*domain.Ingredient, error) {
 	ingredient, err := r.GetIngredientByName(ctx, name)
 	if err == nil {
+		if quantity != "" {
+			ingredient.Quantity = quantity
+		}
 		return ingredient, nil
 	}
 	if !errors.Is(err, ErrIngredientNotFound) {
@@ -590,7 +598,9 @@ func (r *Repository) GetOrCreateIngredient(ctx context.Context, name string, qua
 		Name:     name,
 		Quantity: quantity,
 	}
-	if err := r.CreateIngredient(ctx, ingredient); err != nil {
+	ingredientPersist := *ingredient
+	ingredientPersist.Quantity = ""
+	if err := r.CreateIngredient(ctx, &ingredientPersist); err != nil {
 		return nil, err
 	}
 
@@ -641,6 +651,65 @@ func (r *Repository) CreateCuisine(ctx context.Context, cuisine *domain.Cuisine)
 	_, err := r.pool.Exec(ctx, query, cuisine.ID, cuisine.Name)
 	if err != nil {
 		return fmt.Errorf("insert cuisine: %w", err)
+	}
+
+	return nil
+}
+
+// Unit operations
+
+// GetUnits retrieves all units for a user.
+func (r *Repository) GetUnits(ctx context.Context, userID uuid.UUID) ([]domain.Unit, error) {
+	query := `SELECT id, user_id, name, created_at FROM units WHERE user_id = $1 ORDER BY name ASC`
+
+	rows, err := r.pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("query units: %w", err)
+	}
+	defer rows.Close()
+
+	var units []domain.Unit
+	for rows.Next() {
+		var unit domain.Unit
+		if err := rows.Scan(&unit.ID, &unit.UserID, &unit.Name, &unit.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan unit: %w", err)
+		}
+		units = append(units, unit)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate units: %w", err)
+	}
+
+	return units, nil
+}
+
+// GetUnitByName retrieves a unit by name for a user.
+func (r *Repository) GetUnitByName(ctx context.Context, userID uuid.UUID, name string) (*domain.Unit, error) {
+	query := `SELECT id, user_id, name, created_at FROM units WHERE user_id = $1 AND name = $2`
+
+	var unit domain.Unit
+	err := r.pool.QueryRow(ctx, query, userID, name).Scan(&unit.ID, &unit.UserID, &unit.Name, &unit.CreatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUnitNotFound
+		}
+		return nil, fmt.Errorf("query unit: %w", err)
+	}
+
+	return &unit, nil
+}
+
+// CreateUnit creates a new unit.
+func (r *Repository) CreateUnit(ctx context.Context, unit *domain.Unit) error {
+	if unit.ID == uuid.Nil {
+		unit.ID = uuid.New()
+	}
+
+	query := `INSERT INTO units (id, user_id, name) VALUES ($1, $2, $3)`
+	_, err := r.pool.Exec(ctx, query, unit.ID, unit.UserID, unit.Name)
+	if err != nil {
+		return fmt.Errorf("insert unit: %w", err)
 	}
 
 	return nil
@@ -775,7 +844,7 @@ func (r *Repository) AddIngredientAllergy(ctx context.Context, ingredientID, all
 
 func (r *Repository) getRecipeIngredients(ctx context.Context, recipeID uuid.UUID) ([]domain.Ingredient, error) {
 	query := `
-		SELECT i.id, i.name, i.quantity, i.created_at
+		SELECT i.id, i.name, ri.quantity, ri.unit, i.created_at
 		FROM ingredients i
 		JOIN recipe_ingredients ri ON i.id = ri.ingredient_id
 		WHERE ri.recipe_id = $1
@@ -790,7 +859,7 @@ func (r *Repository) getRecipeIngredients(ctx context.Context, recipeID uuid.UUI
 	var ingredients []domain.Ingredient
 	for rows.Next() {
 		var ingredient domain.Ingredient
-		if err := rows.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Quantity, &ingredient.CreatedAt); err != nil {
+		if err := rows.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Quantity, &ingredient.Unit, &ingredient.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan ingredient: %w", err)
 		}
 		ingredients = append(ingredients, ingredient)

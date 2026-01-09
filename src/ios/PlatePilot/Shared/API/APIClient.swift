@@ -33,6 +33,16 @@ struct APIClient: @unchecked Sendable {
         try await request(path: "recipe/create", method: "POST", body: payload)
     }
 
+    func fetchUnits() async throws -> [UnitDTO] {
+        let response: UnitsResponseDTO = try await request(path: "recipe/units")
+        return response.items ?? []
+    }
+
+    func createUnit(name: String) async throws -> UnitDTO {
+        let payload = CreateUnitRequestDTO(name: name)
+        return try await request(path: "recipe/units", method: "POST", body: payload)
+    }
+
     func register(email: String, password: String, displayName: String) async throws -> TokenResponseDTO {
         let payload = RegisterRequestDTO(email: email, password: password, displayName: displayName)
         return try await request(path: "auth/register", method: "POST", body: payload)

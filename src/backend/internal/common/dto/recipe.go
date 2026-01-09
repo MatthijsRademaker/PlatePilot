@@ -30,6 +30,7 @@ type IngredientDTO struct {
 	ID        uuid.UUID    `json:"id"`
 	Name      string       `json:"name"`
 	Quantity  string       `json:"quantity"`
+	Unit      string       `json:"unit"`
 	Allergies []AllergyDTO `json:"allergies,omitempty"`
 }
 
@@ -134,6 +135,7 @@ func FromIngredient(i *domain.Ingredient) IngredientDTO {
 		ID:        i.ID,
 		Name:      i.Name,
 		Quantity:  i.Quantity,
+		Unit:      i.Unit,
 		Allergies: allergies,
 	}
 }
@@ -148,6 +150,7 @@ func (d *IngredientDTO) ToIngredient() *domain.Ingredient {
 		ID:        d.ID,
 		Name:      d.Name,
 		Quantity:  d.Quantity,
+		Unit:      d.Unit,
 		Allergies: allergies,
 	}
 }

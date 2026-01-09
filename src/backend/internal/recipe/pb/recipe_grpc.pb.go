@@ -26,6 +26,8 @@ const (
 	RecipeService_GetRecipesByCuisine_FullMethodName    = "/recipe.v1.RecipeService/GetRecipesByCuisine"
 	RecipeService_GetRecipesByIngredient_FullMethodName = "/recipe.v1.RecipeService/GetRecipesByIngredient"
 	RecipeService_GetRecipesByAllergy_FullMethodName    = "/recipe.v1.RecipeService/GetRecipesByAllergy"
+	RecipeService_GetUnits_FullMethodName               = "/recipe.v1.RecipeService/GetUnits"
+	RecipeService_CreateUnit_FullMethodName             = "/recipe.v1.RecipeService/CreateUnit"
 )
 
 // RecipeServiceClient is the client API for RecipeService service.
@@ -48,6 +50,10 @@ type RecipeServiceClient interface {
 	GetRecipesByIngredient(ctx context.Context, in *GetRecipesByIngredientRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error)
 	// Gets recipes avoiding an allergy
 	GetRecipesByAllergy(ctx context.Context, in *GetRecipesByAllergyRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error)
+	// Gets available ingredient units
+	GetUnits(ctx context.Context, in *GetUnitsRequest, opts ...grpc.CallOption) (*GetUnitsResponse, error)
+	// Creates a new ingredient unit
+	CreateUnit(ctx context.Context, in *CreateUnitRequest, opts ...grpc.CallOption) (*Unit, error)
 }
 
 type recipeServiceClient struct {
@@ -128,6 +134,26 @@ func (c *recipeServiceClient) GetRecipesByAllergy(ctx context.Context, in *GetRe
 	return out, nil
 }
 
+func (c *recipeServiceClient) GetUnits(ctx context.Context, in *GetUnitsRequest, opts ...grpc.CallOption) (*GetUnitsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUnitsResponse)
+	err := c.cc.Invoke(ctx, RecipeService_GetUnits_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recipeServiceClient) CreateUnit(ctx context.Context, in *CreateUnitRequest, opts ...grpc.CallOption) (*Unit, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Unit)
+	err := c.cc.Invoke(ctx, RecipeService_CreateUnit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RecipeServiceServer is the server API for RecipeService service.
 // All implementations must embed UnimplementedRecipeServiceServer
 // for forward compatibility.
@@ -148,6 +174,10 @@ type RecipeServiceServer interface {
 	GetRecipesByIngredient(context.Context, *GetRecipesByIngredientRequest) (*GetAllRecipesResponse, error)
 	// Gets recipes avoiding an allergy
 	GetRecipesByAllergy(context.Context, *GetRecipesByAllergyRequest) (*GetAllRecipesResponse, error)
+	// Gets available ingredient units
+	GetUnits(context.Context, *GetUnitsRequest) (*GetUnitsResponse, error)
+	// Creates a new ingredient unit
+	CreateUnit(context.Context, *CreateUnitRequest) (*Unit, error)
 	mustEmbedUnimplementedRecipeServiceServer()
 }
 
@@ -178,6 +208,12 @@ func (UnimplementedRecipeServiceServer) GetRecipesByIngredient(context.Context, 
 }
 func (UnimplementedRecipeServiceServer) GetRecipesByAllergy(context.Context, *GetRecipesByAllergyRequest) (*GetAllRecipesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRecipesByAllergy not implemented")
+}
+func (UnimplementedRecipeServiceServer) GetUnits(context.Context, *GetUnitsRequest) (*GetUnitsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUnits not implemented")
+}
+func (UnimplementedRecipeServiceServer) CreateUnit(context.Context, *CreateUnitRequest) (*Unit, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateUnit not implemented")
 }
 func (UnimplementedRecipeServiceServer) mustEmbedUnimplementedRecipeServiceServer() {}
 func (UnimplementedRecipeServiceServer) testEmbeddedByValue()                       {}
@@ -326,6 +362,42 @@ func _RecipeService_GetRecipesByAllergy_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RecipeService_GetUnits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUnitsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecipeServiceServer).GetUnits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RecipeService_GetUnits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecipeServiceServer).GetUnits(ctx, req.(*GetUnitsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RecipeService_CreateUnit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateUnitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecipeServiceServer).CreateUnit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RecipeService_CreateUnit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecipeServiceServer).CreateUnit(ctx, req.(*CreateUnitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RecipeService_ServiceDesc is the grpc.ServiceDesc for RecipeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -360,6 +432,14 @@ var RecipeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRecipesByAllergy",
 			Handler:    _RecipeService_GetRecipesByAllergy_Handler,
+		},
+		{
+			MethodName: "GetUnits",
+			Handler:    _RecipeService_GetUnits_Handler,
+		},
+		{
+			MethodName: "CreateUnit",
+			Handler:    _RecipeService_CreateUnit_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

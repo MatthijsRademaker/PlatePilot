@@ -31,6 +31,8 @@ struct CuisineDTO: Decodable {
 struct IngredientDTO: Decodable {
     let id: String?
     let name: String?
+    let quantity: String?
+    let unit: String?
 }
 
 struct CreateRecipeRequestDTO: Encodable {
@@ -41,9 +43,30 @@ struct CreateRecipeRequestDTO: Encodable {
     let mainIngredientName: String?
     let cuisineName: String?
     let ingredientNames: [String]
+    let ingredients: [CreateRecipeIngredientDTO]
     let directions: [String]
     let tags: [String]
     let guidedMode: Bool
+}
+
+struct CreateRecipeIngredientDTO: Encodable {
+    let id: String?
+    let name: String
+    let quantity: String
+    let unit: String
+}
+
+struct UnitDTO: Decodable {
+    let id: String?
+    let name: String?
+}
+
+struct UnitsResponseDTO: Decodable {
+    let items: [UnitDTO]?
+}
+
+struct CreateUnitRequestDTO: Encodable {
+    let name: String
 }
 
 struct RegisterRequestDTO: Encodable {

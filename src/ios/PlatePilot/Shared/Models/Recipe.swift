@@ -42,8 +42,14 @@ extension Recipe {
         let name = dto.name?.trimmingCharacters(in: .whitespacesAndNewlines)
         let safeName = (name?.isEmpty == false) ? name! : "Untitled Recipe"
         let ingredients = dto.ingredients?
-            .compactMap { $0.name?.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty } ?? []
+            .compactMap { ingredient -> String? in
+                let name = ingredient.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                let quantity = ingredient.quantity?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                let unit = ingredient.unit?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                let parts = [quantity, unit, name].filter { !$0.isEmpty }
+                guard !parts.isEmpty else { return nil }
+                return parts.joined(separator: " ")
+            } ?? []
         let directions = dto.directions?.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } ?? []
 
         self.init(

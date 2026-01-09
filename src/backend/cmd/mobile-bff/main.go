@@ -137,6 +137,8 @@ func main() {
 				r.Get("/cuisine/{id}", recipeHandler.GetByCuisine)
 				r.Get("/ingredient/{id}", recipeHandler.GetByIngredient)
 				r.Get("/allergy/{id}", recipeHandler.GetByAllergy)
+				r.Get("/units", recipeHandler.GetUnits)
+				r.Post("/units", recipeHandler.CreateUnit)
 				r.Post("/create", recipeHandler.Create)
 			})
 			r.Route("/mealplan", func(r chi.Router) {

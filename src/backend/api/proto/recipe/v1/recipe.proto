@@ -26,6 +26,12 @@ service RecipeService {
 
   // Gets recipes avoiding an allergy
   rpc GetRecipesByAllergy (GetRecipesByAllergyRequest) returns (GetAllRecipesResponse);
+
+  // Gets available ingredient units
+  rpc GetUnits (GetUnitsRequest) returns (GetUnitsResponse);
+
+  // Creates a new ingredient unit
+  rpc CreateUnit (CreateUnitRequest) returns (Unit);
 }
 
 // Request for getting a recipe by ID
@@ -66,6 +72,7 @@ message CreateRecipeRequest {
   repeated string ingredient_names = 12;
   repeated string tags = 13;
   bool guided_mode = 14;
+  repeated IngredientInput ingredients = 15;
 }
 
 // Request for getting similar recipes
@@ -110,10 +117,42 @@ message RecipeResponse {
 message Ingredient {
   string id = 1; // UUID string
   string name = 2;
+  string quantity = 3;
+  string unit = 4;
+}
+
+// Ingredient input for recipe creation
+message IngredientInput {
+  string id = 1; // UUID string
+  string name = 2;
+  string quantity = 3;
+  string unit = 4;
 }
 
 // Cuisine entity
 message Cuisine {
   string id = 1; // UUID string
   string name = 2;
+}
+
+// Unit entity
+message Unit {
+  string id = 1; // UUID string
+  string name = 2;
+}
+
+// Request for getting available units
+message GetUnitsRequest {
+  string user_id = 1; // UUID string
+}
+
+// Response containing units
+message GetUnitsResponse {
+  repeated Unit units = 1;
+}
+
+// Request for creating a unit
+message CreateUnitRequest {
+  string name = 1;
+  string user_id = 2; // UUID string
 }

@@ -61,19 +61,28 @@ final class RecipeStore {
         description: String,
         prepMinutes: Int,
         cookMinutes: Int,
-        ingredients: [String],
+        ingredients: [RecipeIngredientInput],
         instructions: [String],
         tags: [String],
         guidedMode: Bool
     ) async throws -> Recipe {
+        let ingredientNames = ingredients.map { $0.name }
         let payload = CreateRecipeRequestDTO(
             name: name,
             description: description,
             prepTime: formattedTime(prepMinutes),
             cookTime: formattedTime(cookMinutes),
-            mainIngredientName: ingredients.first,
+            mainIngredientName: ingredientNames.first,
             cuisineName: nil,
-            ingredientNames: ingredients,
+            ingredientNames: ingredientNames,
+            ingredients: ingredients.map {
+                CreateRecipeIngredientDTO(
+                    id: nil,
+                    name: $0.name,
+                    quantity: $0.quantity,
+                    unit: $0.unit
+                )
+            },
             directions: instructions,
             tags: tags,
             guidedMode: guidedMode
@@ -99,4 +108,22 @@ final class RecipeStore {
         guard minutes > 0 else { return "" }
         return "\(minutes) min"
     }
+
+    func loadUnits() async throws -> [String] {
+        let units = try await apiClient.fetchUnits()
+        return units
+            .compactMap { $0.name?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    func createUnit(name: String) async throws -> String {
+        let unit = try await apiClient.createUnit(name: name)
+        return unit.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? name
+    }
+}
+
+struct RecipeIngredientInput: Hashable {
+    let name: String
+    let quantity: String
+    let unit: String
 }

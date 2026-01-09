@@ -109,6 +109,8 @@ func (s *Seeder) seedRecipe(
 	if err != nil {
 		return fmt.Errorf("get or create main ingredient: %w", err)
 	}
+	mainIngredientForRecipe := *mainIngredient
+	mainIngredientForRecipe.Quantity = data.MainIngredient.Quantity
 
 	// Get or create recipe ingredients
 	var ingredients []domain.Ingredient
@@ -117,7 +119,9 @@ func (s *Seeder) seedRecipe(
 		if err != nil {
 			return fmt.Errorf("get or create ingredient %s: %w", ingData.Name, err)
 		}
-		ingredients = append(ingredients, *ingredient)
+		ingredientForRecipe := *ingredient
+		ingredientForRecipe.Quantity = ingData.Quantity
+		ingredients = append(ingredients, ingredientForRecipe)
 	}
 
 	// Build recipe
@@ -133,7 +137,7 @@ func (s *Seeder) seedRecipe(
 		Description:    data.Description,
 		PrepTime:       data.PrepTime,
 		CookTime:       data.CookTime,
-		MainIngredient: mainIngredient,
+		MainIngredient: &mainIngredientForRecipe,
 		Cuisine:        cuisine,
 		Ingredients:    ingredients,
 		Directions:     data.Directions,
@@ -281,7 +285,9 @@ func (s *Seeder) getOrCreateIngredient(
 		Quantity: data.Quantity,
 	}
 
-	if err := s.repo.CreateIngredient(ctx, ingredient); err != nil {
+	ingredientPersist := *ingredient
+	ingredientPersist.Quantity = ""
+	if err := s.repo.CreateIngredient(ctx, &ingredientPersist); err != nil {
 		return nil, err
 	}
 

@@ -229,6 +229,7 @@ type CreateRecipeRequest struct {
 	IngredientNames    []string               `protobuf:"bytes,12,rep,name=ingredient_names,json=ingredientNames,proto3" json:"ingredient_names,omitempty"`
 	Tags               []string               `protobuf:"bytes,13,rep,name=tags,proto3" json:"tags,omitempty"`
 	GuidedMode         bool                   `protobuf:"varint,14,opt,name=guided_mode,json=guidedMode,proto3" json:"guided_mode,omitempty"`
+	Ingredients        []*IngredientInput     `protobuf:"bytes,15,rep,name=ingredients,proto3" json:"ingredients,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -359,6 +360,13 @@ func (x *CreateRecipeRequest) GetGuidedMode() bool {
 		return x.GuidedMode
 	}
 	return false
+}
+
+func (x *CreateRecipeRequest) GetIngredients() []*IngredientInput {
+	if x != nil {
+		return x.Ingredients
+	}
+	return nil
 }
 
 // Request for getting similar recipes
@@ -695,6 +703,8 @@ type Ingredient struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // UUID string
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Quantity      string                 `protobuf:"bytes,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	Unit          string                 `protobuf:"bytes,4,opt,name=unit,proto3" json:"unit,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -743,6 +753,89 @@ func (x *Ingredient) GetName() string {
 	return ""
 }
 
+func (x *Ingredient) GetQuantity() string {
+	if x != nil {
+		return x.Quantity
+	}
+	return ""
+}
+
+func (x *Ingredient) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
+// Ingredient input for recipe creation
+type IngredientInput struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // UUID string
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Quantity      string                 `protobuf:"bytes,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	Unit          string                 `protobuf:"bytes,4,opt,name=unit,proto3" json:"unit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IngredientInput) Reset() {
+	*x = IngredientInput{}
+	mi := &file_recipe_v1_recipe_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IngredientInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IngredientInput) ProtoMessage() {}
+
+func (x *IngredientInput) ProtoReflect() protoreflect.Message {
+	mi := &file_recipe_v1_recipe_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IngredientInput.ProtoReflect.Descriptor instead.
+func (*IngredientInput) Descriptor() ([]byte, []int) {
+	return file_recipe_v1_recipe_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *IngredientInput) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *IngredientInput) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *IngredientInput) GetQuantity() string {
+	if x != nil {
+		return x.Quantity
+	}
+	return ""
+}
+
+func (x *IngredientInput) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
 // Cuisine entity
 type Cuisine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -754,7 +847,7 @@ type Cuisine struct {
 
 func (x *Cuisine) Reset() {
 	*x = Cuisine{}
-	mi := &file_recipe_v1_recipe_proto_msgTypes[10]
+	mi := &file_recipe_v1_recipe_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -766,7 +859,7 @@ func (x *Cuisine) String() string {
 func (*Cuisine) ProtoMessage() {}
 
 func (x *Cuisine) ProtoReflect() protoreflect.Message {
-	mi := &file_recipe_v1_recipe_proto_msgTypes[10]
+	mi := &file_recipe_v1_recipe_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -779,7 +872,7 @@ func (x *Cuisine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Cuisine.ProtoReflect.Descriptor instead.
 func (*Cuisine) Descriptor() ([]byte, []int) {
-	return file_recipe_v1_recipe_proto_rawDescGZIP(), []int{10}
+	return file_recipe_v1_recipe_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *Cuisine) GetId() string {
@@ -792,6 +885,202 @@ func (x *Cuisine) GetId() string {
 func (x *Cuisine) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+// Unit entity
+type Unit struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // UUID string
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Unit) Reset() {
+	*x = Unit{}
+	mi := &file_recipe_v1_recipe_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Unit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Unit) ProtoMessage() {}
+
+func (x *Unit) ProtoReflect() protoreflect.Message {
+	mi := &file_recipe_v1_recipe_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Unit.ProtoReflect.Descriptor instead.
+func (*Unit) Descriptor() ([]byte, []int) {
+	return file_recipe_v1_recipe_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *Unit) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Unit) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+// Request for getting available units
+type GetUnitsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID string
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUnitsRequest) Reset() {
+	*x = GetUnitsRequest{}
+	mi := &file_recipe_v1_recipe_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUnitsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUnitsRequest) ProtoMessage() {}
+
+func (x *GetUnitsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_recipe_v1_recipe_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUnitsRequest.ProtoReflect.Descriptor instead.
+func (*GetUnitsRequest) Descriptor() ([]byte, []int) {
+	return file_recipe_v1_recipe_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetUnitsRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+// Response containing units
+type GetUnitsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Units         []*Unit                `protobuf:"bytes,1,rep,name=units,proto3" json:"units,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUnitsResponse) Reset() {
+	*x = GetUnitsResponse{}
+	mi := &file_recipe_v1_recipe_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUnitsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUnitsResponse) ProtoMessage() {}
+
+func (x *GetUnitsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_recipe_v1_recipe_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUnitsResponse.ProtoReflect.Descriptor instead.
+func (*GetUnitsResponse) Descriptor() ([]byte, []int) {
+	return file_recipe_v1_recipe_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetUnitsResponse) GetUnits() []*Unit {
+	if x != nil {
+		return x.Units
+	}
+	return nil
+}
+
+// Request for creating a unit
+type CreateUnitRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID string
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateUnitRequest) Reset() {
+	*x = CreateUnitRequest{}
+	mi := &file_recipe_v1_recipe_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateUnitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateUnitRequest) ProtoMessage() {}
+
+func (x *CreateUnitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_recipe_v1_recipe_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateUnitRequest.ProtoReflect.Descriptor instead.
+func (*CreateUnitRequest) Descriptor() ([]byte, []int) {
+	return file_recipe_v1_recipe_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CreateUnitRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateUnitRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
 	}
 	return ""
 }
@@ -817,7 +1106,7 @@ const file_recipe_v1_recipe_proto_rawDesc = "" +
 	"\vtotal_count\x18\x04 \x01(\x05R\n" +
 	"totalCount\x12\x1f\n" +
 	"\vtotal_pages\x18\x05 \x01(\x05R\n" +
-	"totalPages\"\xe7\x03\n" +
+	"totalPages\"\xa5\x04\n" +
 	"\x13CreateRecipeRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1b\n" +
@@ -837,7 +1126,8 @@ const file_recipe_v1_recipe_proto_rawDesc = "" +
 	"\x10ingredient_names\x18\f \x03(\tR\x0fingredientNames\x12\x12\n" +
 	"\x04tags\x18\r \x03(\tR\x04tags\x12\x1f\n" +
 	"\vguided_mode\x18\x0e \x01(\bR\n" +
-	"guidedMode\"h\n" +
+	"guidedMode\x12<\n" +
+	"\vingredients\x18\x0f \x03(\v2\x1a.recipe.v1.IngredientInputR\vingredients\"h\n" +
 	"\x18GetSimilarRecipesRequest\x12\x1b\n" +
 	"\trecipe_id\x18\x01 \x01(\tR\brecipeId\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x05R\x06amount\x12\x17\n" +
@@ -864,14 +1154,31 @@ const file_recipe_v1_recipe_proto_rawDesc = "" +
 	"\vingredients\x18\b \x03(\v2\x15.recipe.v1.IngredientR\vingredients\x12\x1e\n" +
 	"\n" +
 	"directions\x18\t \x03(\tR\n" +
-	"directions\"0\n" +
+	"directions\"`\n" +
 	"\n" +
 	"Ingredient\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"-\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
+	"\bquantity\x18\x03 \x01(\tR\bquantity\x12\x12\n" +
+	"\x04unit\x18\x04 \x01(\tR\x04unit\"e\n" +
+	"\x0fIngredientInput\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
+	"\bquantity\x18\x03 \x01(\tR\bquantity\x12\x12\n" +
+	"\x04unit\x18\x04 \x01(\tR\x04unit\"-\n" +
 	"\aCuisine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name2\xfd\x04\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"*\n" +
+	"\x04Unit\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"*\n" +
+	"\x0fGetUnitsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"9\n" +
+	"\x10GetUnitsResponse\x12%\n" +
+	"\x05units\x18\x01 \x03(\v2\x0f.recipe.v1.UnitR\x05units\"@\n" +
+	"\x11CreateUnitRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId2\xff\x05\n" +
 	"\rRecipeService\x12K\n" +
 	"\rGetRecipeById\x12\x1f.recipe.v1.GetRecipeByIdRequest\x1a\x19.recipe.v1.RecipeResponse\x12R\n" +
 	"\rGetAllRecipes\x12\x1f.recipe.v1.GetAllRecipesRequest\x1a .recipe.v1.GetAllRecipesResponse\x12I\n" +
@@ -879,7 +1186,10 @@ const file_recipe_v1_recipe_proto_rawDesc = "" +
 	"\x11GetSimilarRecipes\x12#.recipe.v1.GetSimilarRecipesRequest\x1a .recipe.v1.GetAllRecipesResponse\x12^\n" +
 	"\x13GetRecipesByCuisine\x12%.recipe.v1.GetRecipesByCuisineRequest\x1a .recipe.v1.GetAllRecipesResponse\x12d\n" +
 	"\x16GetRecipesByIngredient\x12(.recipe.v1.GetRecipesByIngredientRequest\x1a .recipe.v1.GetAllRecipesResponse\x12^\n" +
-	"\x13GetRecipesByAllergy\x12%.recipe.v1.GetRecipesByAllergyRequest\x1a .recipe.v1.GetAllRecipesResponseB2Z0github.com/platepilot/backend/internal/recipe/pbb\x06proto3"
+	"\x13GetRecipesByAllergy\x12%.recipe.v1.GetRecipesByAllergyRequest\x1a .recipe.v1.GetAllRecipesResponse\x12C\n" +
+	"\bGetUnits\x12\x1a.recipe.v1.GetUnitsRequest\x1a\x1b.recipe.v1.GetUnitsResponse\x12;\n" +
+	"\n" +
+	"CreateUnit\x12\x1c.recipe.v1.CreateUnitRequest\x1a\x0f.recipe.v1.UnitB2Z0github.com/platepilot/backend/internal/recipe/pbb\x06proto3"
 
 var (
 	file_recipe_v1_recipe_proto_rawDescOnce sync.Once
@@ -893,7 +1203,7 @@ func file_recipe_v1_recipe_proto_rawDescGZIP() []byte {
 	return file_recipe_v1_recipe_proto_rawDescData
 }
 
-var file_recipe_v1_recipe_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_recipe_v1_recipe_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_recipe_v1_recipe_proto_goTypes = []any{
 	(*GetRecipeByIdRequest)(nil),          // 0: recipe.v1.GetRecipeByIdRequest
 	(*GetAllRecipesRequest)(nil),          // 1: recipe.v1.GetAllRecipesRequest
@@ -905,32 +1215,43 @@ var file_recipe_v1_recipe_proto_goTypes = []any{
 	(*GetRecipesByAllergyRequest)(nil),    // 7: recipe.v1.GetRecipesByAllergyRequest
 	(*RecipeResponse)(nil),                // 8: recipe.v1.RecipeResponse
 	(*Ingredient)(nil),                    // 9: recipe.v1.Ingredient
-	(*Cuisine)(nil),                       // 10: recipe.v1.Cuisine
+	(*IngredientInput)(nil),               // 10: recipe.v1.IngredientInput
+	(*Cuisine)(nil),                       // 11: recipe.v1.Cuisine
+	(*Unit)(nil),                          // 12: recipe.v1.Unit
+	(*GetUnitsRequest)(nil),               // 13: recipe.v1.GetUnitsRequest
+	(*GetUnitsResponse)(nil),              // 14: recipe.v1.GetUnitsResponse
+	(*CreateUnitRequest)(nil),             // 15: recipe.v1.CreateUnitRequest
 }
 var file_recipe_v1_recipe_proto_depIdxs = []int32{
 	8,  // 0: recipe.v1.GetAllRecipesResponse.recipes:type_name -> recipe.v1.RecipeResponse
-	9,  // 1: recipe.v1.RecipeResponse.main_ingredient:type_name -> recipe.v1.Ingredient
-	10, // 2: recipe.v1.RecipeResponse.cuisine:type_name -> recipe.v1.Cuisine
-	9,  // 3: recipe.v1.RecipeResponse.ingredients:type_name -> recipe.v1.Ingredient
-	0,  // 4: recipe.v1.RecipeService.GetRecipeById:input_type -> recipe.v1.GetRecipeByIdRequest
-	1,  // 5: recipe.v1.RecipeService.GetAllRecipes:input_type -> recipe.v1.GetAllRecipesRequest
-	3,  // 6: recipe.v1.RecipeService.CreateRecipe:input_type -> recipe.v1.CreateRecipeRequest
-	4,  // 7: recipe.v1.RecipeService.GetSimilarRecipes:input_type -> recipe.v1.GetSimilarRecipesRequest
-	5,  // 8: recipe.v1.RecipeService.GetRecipesByCuisine:input_type -> recipe.v1.GetRecipesByCuisineRequest
-	6,  // 9: recipe.v1.RecipeService.GetRecipesByIngredient:input_type -> recipe.v1.GetRecipesByIngredientRequest
-	7,  // 10: recipe.v1.RecipeService.GetRecipesByAllergy:input_type -> recipe.v1.GetRecipesByAllergyRequest
-	8,  // 11: recipe.v1.RecipeService.GetRecipeById:output_type -> recipe.v1.RecipeResponse
-	2,  // 12: recipe.v1.RecipeService.GetAllRecipes:output_type -> recipe.v1.GetAllRecipesResponse
-	8,  // 13: recipe.v1.RecipeService.CreateRecipe:output_type -> recipe.v1.RecipeResponse
-	2,  // 14: recipe.v1.RecipeService.GetSimilarRecipes:output_type -> recipe.v1.GetAllRecipesResponse
-	2,  // 15: recipe.v1.RecipeService.GetRecipesByCuisine:output_type -> recipe.v1.GetAllRecipesResponse
-	2,  // 16: recipe.v1.RecipeService.GetRecipesByIngredient:output_type -> recipe.v1.GetAllRecipesResponse
-	2,  // 17: recipe.v1.RecipeService.GetRecipesByAllergy:output_type -> recipe.v1.GetAllRecipesResponse
-	11, // [11:18] is the sub-list for method output_type
-	4,  // [4:11] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	10, // 1: recipe.v1.CreateRecipeRequest.ingredients:type_name -> recipe.v1.IngredientInput
+	9,  // 2: recipe.v1.RecipeResponse.main_ingredient:type_name -> recipe.v1.Ingredient
+	11, // 3: recipe.v1.RecipeResponse.cuisine:type_name -> recipe.v1.Cuisine
+	9,  // 4: recipe.v1.RecipeResponse.ingredients:type_name -> recipe.v1.Ingredient
+	12, // 5: recipe.v1.GetUnitsResponse.units:type_name -> recipe.v1.Unit
+	0,  // 6: recipe.v1.RecipeService.GetRecipeById:input_type -> recipe.v1.GetRecipeByIdRequest
+	1,  // 7: recipe.v1.RecipeService.GetAllRecipes:input_type -> recipe.v1.GetAllRecipesRequest
+	3,  // 8: recipe.v1.RecipeService.CreateRecipe:input_type -> recipe.v1.CreateRecipeRequest
+	4,  // 9: recipe.v1.RecipeService.GetSimilarRecipes:input_type -> recipe.v1.GetSimilarRecipesRequest
+	5,  // 10: recipe.v1.RecipeService.GetRecipesByCuisine:input_type -> recipe.v1.GetRecipesByCuisineRequest
+	6,  // 11: recipe.v1.RecipeService.GetRecipesByIngredient:input_type -> recipe.v1.GetRecipesByIngredientRequest
+	7,  // 12: recipe.v1.RecipeService.GetRecipesByAllergy:input_type -> recipe.v1.GetRecipesByAllergyRequest
+	13, // 13: recipe.v1.RecipeService.GetUnits:input_type -> recipe.v1.GetUnitsRequest
+	15, // 14: recipe.v1.RecipeService.CreateUnit:input_type -> recipe.v1.CreateUnitRequest
+	8,  // 15: recipe.v1.RecipeService.GetRecipeById:output_type -> recipe.v1.RecipeResponse
+	2,  // 16: recipe.v1.RecipeService.GetAllRecipes:output_type -> recipe.v1.GetAllRecipesResponse
+	8,  // 17: recipe.v1.RecipeService.CreateRecipe:output_type -> recipe.v1.RecipeResponse
+	2,  // 18: recipe.v1.RecipeService.GetSimilarRecipes:output_type -> recipe.v1.GetAllRecipesResponse
+	2,  // 19: recipe.v1.RecipeService.GetRecipesByCuisine:output_type -> recipe.v1.GetAllRecipesResponse
+	2,  // 20: recipe.v1.RecipeService.GetRecipesByIngredient:output_type -> recipe.v1.GetAllRecipesResponse
+	2,  // 21: recipe.v1.RecipeService.GetRecipesByAllergy:output_type -> recipe.v1.GetAllRecipesResponse
+	14, // 22: recipe.v1.RecipeService.GetUnits:output_type -> recipe.v1.GetUnitsResponse
+	12, // 23: recipe.v1.RecipeService.CreateUnit:output_type -> recipe.v1.Unit
+	15, // [15:24] is the sub-list for method output_type
+	6,  // [6:15] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_recipe_v1_recipe_proto_init() }
@@ -944,7 +1265,7 @@ func file_recipe_v1_recipe_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_recipe_v1_recipe_proto_rawDesc), len(file_recipe_v1_recipe_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

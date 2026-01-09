@@ -16,6 +16,7 @@ type FakeRecipeRepository struct {
 	Recipes     map[uuid.UUID]*domain.Recipe
 	Ingredients map[uuid.UUID]*domain.Ingredient
 	Cuisines    map[uuid.UUID]*domain.Cuisine
+	Units       map[uuid.UUID]*domain.Unit
 
 	// Failure modes for testing error paths
 	FailOnGetByID               bool
@@ -29,6 +30,9 @@ type FakeRecipeRepository struct {
 	FailOnGetCuisineByID        bool
 	FailOnGetOrCreateIngredient bool
 	FailOnGetOrCreateCuisine    bool
+	FailOnGetUnits              bool
+	FailOnGetUnitByName         bool
+	FailOnCreateUnit            bool
 
 	// Call tracking for assertions
 	CreateCalls  []CreateCall
@@ -46,6 +50,7 @@ func NewFakeRecipeRepository() *FakeRecipeRepository {
 		Recipes:      make(map[uuid.UUID]*domain.Recipe),
 		Ingredients:  make(map[uuid.UUID]*domain.Ingredient),
 		Cuisines:     make(map[uuid.UUID]*domain.Cuisine),
+		Units:        make(map[uuid.UUID]*domain.Unit),
 		CreateCalls:  []CreateCall{},
 		GetByIDCalls: []uuid.UUID{},
 	}
@@ -270,6 +275,47 @@ func (r *FakeRecipeRepository) GetOrCreateCuisine(ctx context.Context, name stri
 	return cuisine, nil
 }
 
+// GetUnits retrieves all units for a user.
+func (r *FakeRecipeRepository) GetUnits(ctx context.Context, userID uuid.UUID) ([]domain.Unit, error) {
+	if r.FailOnGetUnits {
+		return nil, errors.New("fake repository error")
+	}
+
+	units := make([]domain.Unit, 0, len(r.Units))
+	for _, unit := range r.Units {
+		if unit.UserID == userID {
+			units = append(units, *unit)
+		}
+	}
+	return units, nil
+}
+
+// GetUnitByName retrieves a unit by name for a user.
+func (r *FakeRecipeRepository) GetUnitByName(ctx context.Context, userID uuid.UUID, name string) (*domain.Unit, error) {
+	if r.FailOnGetUnitByName {
+		return nil, errors.New("fake repository error")
+	}
+
+	for _, unit := range r.Units {
+		if unit.UserID == userID && unit.Name == name {
+			return unit, nil
+		}
+	}
+	return nil, repository.ErrUnitNotFound
+}
+
+// CreateUnit creates a new unit.
+func (r *FakeRecipeRepository) CreateUnit(ctx context.Context, unit *domain.Unit) error {
+	if r.FailOnCreateUnit {
+		return errors.New("fake repository error")
+	}
+	if unit.ID == uuid.Nil {
+		unit.ID = uuid.New()
+	}
+	r.Units[unit.ID] = unit
+	return nil
+}
+
 // AddRecipe adds a recipe to the fake repository for test setup
 func (r *FakeRecipeRepository) AddRecipe(recipe *domain.Recipe) {
 	r.Recipes[recipe.ID] = recipe
@@ -283,6 +329,11 @@ func (r *FakeRecipeRepository) AddIngredient(ingredient *domain.Ingredient) {
 // AddCuisine adds a cuisine to the fake repository for test setup
 func (r *FakeRecipeRepository) AddCuisine(cuisine *domain.Cuisine) {
 	r.Cuisines[cuisine.ID] = cuisine
+}
+
+// AddUnit adds a unit to the fake repository for test setup
+func (r *FakeRecipeRepository) AddUnit(unit *domain.Unit) {
+	r.Units[unit.ID] = unit
 }
 
 // FakeEventPublisher is an in-memory implementation of EventPublisher for testing
