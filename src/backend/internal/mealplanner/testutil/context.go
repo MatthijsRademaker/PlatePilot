@@ -13,11 +13,12 @@ import (
 
 // HandlerTestContext contains all test dependencies for handler tests
 type HandlerTestContext struct {
-	Ctx     context.Context
-	UserID  uuid.UUID
-	Planner *FakeMealPlanner
-	Handler *handler.GRPCHandler
-	Logger  *slog.Logger
+	Ctx       context.Context
+	UserID    uuid.UUID
+	Planner   *FakeMealPlanner
+	PlanStore *FakeMealPlanStore
+	Handler   *handler.GRPCHandler
+	Logger    *slog.Logger
 }
 
 // NewHandlerTestContext creates a new test context for handler testing
@@ -25,18 +26,20 @@ func NewHandlerTestContext() *HandlerTestContext {
 	ctx := context.Background()
 	userID := uuid.New()
 	planner := NewFakeMealPlanner()
+	planStore := NewFakeMealPlanStore()
 
 	// Create a silent logger for tests (writes to io.Discard)
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
-	h := handler.NewGRPCHandler(planner, logger)
+	h := handler.NewGRPCHandler(planner, planStore, logger)
 
 	return &HandlerTestContext{
-		Ctx:     ctx,
-		UserID:  userID,
-		Planner: planner,
-		Handler: h,
-		Logger:  logger,
+		Ctx:       ctx,
+		UserID:    userID,
+		Planner:   planner,
+		PlanStore: planStore,
+		Handler:   h,
+		Logger:    logger,
 	}
 }
 

@@ -6,6 +6,7 @@ export function useMealplan() {
   const {
     currentWeek,
     loading,
+    saving,
     error,
     totalMealsPlanned,
     suggestedRecipeIds,
@@ -16,6 +17,7 @@ export function useMealplan() {
   return {
     currentWeek,
     loading,
+    saving,
     error,
     totalMealsPlanned,
     suggestedRecipeIds,
@@ -26,6 +28,8 @@ export function useMealplan() {
     navigateWeek: store.navigateWeek,
     goToCurrentWeek: store.goToCurrentWeek,
     clearWeek: store.clearWeek,
+    loadWeek: store.loadWeek,
+    saveWeek: store.saveWeek,
     fetchSuggestions: store.fetchSuggestions,
     clearSuggestions: store.clearSuggestions,
   };

@@ -5,11 +5,12 @@ import (
 	"errors"
 	"log/slog"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/platepilot/backend/internal/common/domain"
 	"github.com/platepilot/backend/internal/common/vector"
@@ -17,7 +18,7 @@ import (
 	"github.com/platepilot/backend/internal/recipe/repository"
 )
 
-// GRPCHandler implements the RecipeService gRPC interface
+// GRPCHandler implements the RecipeService gRPC interface.
 type GRPCHandler struct {
 	pb.UnimplementedRecipeServiceServer
 	repo      RecipeRepository
@@ -28,10 +29,9 @@ type GRPCHandler struct {
 
 const (
 	defaultCuisineName = "General"
-	guidedModeTag      = "guided-mode"
 )
 
-// NewGRPCHandler creates a new gRPC handler
+// NewGRPCHandler creates a new gRPC handler.
 func NewGRPCHandler(repo RecipeRepository, vectorGen vector.Generator, publisher EventPublisher, logger *slog.Logger) *GRPCHandler {
 	return &GRPCHandler{
 		repo:      repo,
@@ -41,9 +41,9 @@ func NewGRPCHandler(repo RecipeRepository, vectorGen vector.Generator, publisher
 	}
 }
 
-// GetRecipeById retrieves a recipe by ID
-func (h *GRPCHandler) GetRecipeById(ctx context.Context, req *pb.GetRecipeByIdRequest) (*pb.RecipeResponse, error) {
-	h.logger.Debug("get recipe by id", "recipeId", req.GetRecipeId(), "userId", req.GetUserId())
+// GetRecipe retrieves a recipe by ID.
+func (h *GRPCHandler) GetRecipe(ctx context.Context, req *pb.GetRecipeRequest) (*pb.Recipe, error) {
+	h.logger.Debug("get recipe", "recipeId", req.GetRecipeId(), "userId", req.GetUserId())
 
 	userID, err := uuid.Parse(req.GetUserId())
 	if err != nil {
@@ -67,8 +67,8 @@ func (h *GRPCHandler) GetRecipeById(ctx context.Context, req *pb.GetRecipeByIdRe
 	return toRecipeResponse(recipe), nil
 }
 
-// GetAllRecipes retrieves all recipes with pagination
-func (h *GRPCHandler) GetAllRecipes(ctx context.Context, req *pb.GetAllRecipesRequest) (*pb.GetAllRecipesResponse, error) {
+// ListRecipes retrieves recipes with pagination and optional filters.
+func (h *GRPCHandler) ListRecipes(ctx context.Context, req *pb.ListRecipesRequest) (*pb.ListRecipesResponse, error) {
 	userID, err := uuid.Parse(req.GetUserId())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
@@ -76,7 +76,6 @@ func (h *GRPCHandler) GetAllRecipes(ctx context.Context, req *pb.GetAllRecipesRe
 
 	pageIndex := int(req.GetPageIndex())
 	pageSize := int(req.GetPageSize())
-
 	if pageIndex < 1 {
 		pageIndex = 1
 	}
@@ -86,78 +85,42 @@ func (h *GRPCHandler) GetAllRecipes(ctx context.Context, req *pb.GetAllRecipesRe
 
 	offset := (pageIndex - 1) * pageSize
 
-	h.logger.Debug("get all recipes", "pageIndex", pageIndex, "pageSize", pageSize, "offset", offset)
-
-	recipes, err := h.repo.GetAll(ctx, userID, pageSize, offset)
+	filter, err := buildRecipeFilter(req)
 	if err != nil {
-		h.logger.Error("failed to get recipes", "error", err)
-		return nil, status.Errorf(codes.Internal, "failed to get recipes")
+		return nil, err
 	}
 
-	totalCount, err := h.repo.Count(ctx, userID)
+	recipes, err := h.repo.List(ctx, userID, filter, pageSize, offset)
+	if err != nil {
+		h.logger.Error("failed to list recipes", "error", err)
+		return nil, status.Errorf(codes.Internal, "failed to list recipes")
+	}
+
+	totalCount, err := h.repo.Count(ctx, userID, filter)
 	if err != nil {
 		h.logger.Error("failed to count recipes", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to count recipes")
 	}
 
 	totalPages := int32((totalCount + int64(pageSize) - 1) / int64(pageSize))
-
 	return toRecipesResponseWithPagination(recipes, int32(pageIndex), int32(pageSize), int32(totalCount), totalPages), nil
 }
 
-// CreateRecipe creates a new recipe
-func (h *GRPCHandler) CreateRecipe(ctx context.Context, req *pb.CreateRecipeRequest) (*pb.RecipeResponse, error) {
-	h.logger.Debug("create recipe", "name", req.GetName(), "userId", req.GetUserId())
-
+// CreateRecipe creates a new recipe.
+func (h *GRPCHandler) CreateRecipe(ctx context.Context, req *pb.CreateRecipeRequest) (*pb.Recipe, error) {
 	userID, err := uuid.Parse(req.GetUserId())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
 	}
 
-	// Validate required fields
-	if req.GetName() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "name is required")
-	}
-
-	ingredients, err := h.resolveIngredients(ctx, req)
+	recipe, err := h.buildRecipeFromInput(ctx, userID, req.GetRecipe())
 	if err != nil {
 		return nil, err
 	}
 
-	mainIngredient, err := h.resolveMainIngredient(ctx, req, ingredients)
-	if err != nil {
-		return nil, err
-	}
+	recipe.ID = uuid.New()
+	recipe.SearchVector = h.vectorGen.GenerateForRecipe(recipe)
 
-	cuisine, err := h.resolveCuisine(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	ingredients = ensureMainIngredientIncluded(ingredients, mainIngredient)
-
-	// Build the recipe
-	recipe := &domain.Recipe{
-		ID:             uuid.New(),
-		UserID:         userID,
-		Name:           req.GetName(),
-		Description:    req.GetDescription(),
-		PrepTime:       req.GetPrepTime(),
-		CookTime:       req.GetCookTime(),
-		MainIngredient: mainIngredient,
-		Cuisine:        cuisine,
-		Ingredients:    ingredients,
-		Directions:     req.GetDirections(),
-		Metadata: domain.Metadata{
-			PublishedDate: time.Now().UTC(),
-			Tags:          normalizeTags(req.GetTags(), req.GetGuidedMode()),
-		},
-	}
-
-	// Generate vector embedding
-	recipe.Metadata.SearchVector = h.vectorGen.GenerateForRecipe(recipe)
-
-	// Save recipe
 	if err := h.repo.Create(ctx, recipe); err != nil {
 		h.logger.Error("failed to create recipe", "error", err)
 		return nil, status.Errorf(codes.Internal, "failed to create recipe")
@@ -165,22 +128,92 @@ func (h *GRPCHandler) CreateRecipe(ctx context.Context, req *pb.CreateRecipeRequ
 
 	h.logger.Info("recipe created", "recipeId", recipe.ID, "name", recipe.Name)
 
-	// Publish event (non-blocking - don't fail the request if publishing fails)
 	if h.publisher != nil {
-		if err := h.publisher.PublishRecipeCreated(ctx, recipe); err != nil {
-			h.logger.Error("failed to publish recipe created event",
+		if err := h.publisher.PublishRecipeUpserted(ctx, recipe); err != nil {
+			h.logger.Error("failed to publish recipe upserted event",
 				"error", err,
 				"recipeId", recipe.ID,
 			)
-			// Don't return error - the recipe was created successfully
 		}
 	}
 
 	return toRecipeResponse(recipe), nil
 }
 
-// GetSimilarRecipes retrieves similar recipes using vector similarity
-func (h *GRPCHandler) GetSimilarRecipes(ctx context.Context, req *pb.GetSimilarRecipesRequest) (*pb.GetAllRecipesResponse, error) {
+// UpdateRecipe updates an existing recipe.
+func (h *GRPCHandler) UpdateRecipe(ctx context.Context, req *pb.UpdateRecipeRequest) (*pb.Recipe, error) {
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
+
+	recipeID, err := uuid.Parse(req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid recipe ID: %v", err)
+	}
+
+	recipe, err := h.buildRecipeFromInput(ctx, userID, req.GetRecipe())
+	if err != nil {
+		return nil, err
+	}
+	recipe.ID = recipeID
+	recipe.UserID = userID
+	recipe.SearchVector = h.vectorGen.GenerateForRecipe(recipe)
+
+	if err := h.repo.Update(ctx, recipe); err != nil {
+		if errors.Is(err, repository.ErrRecipeNotFound) {
+			return nil, status.Errorf(codes.NotFound, "recipe not found")
+		}
+		h.logger.Error("failed to update recipe", "error", err, "recipeId", recipeID)
+		return nil, status.Errorf(codes.Internal, "failed to update recipe")
+	}
+
+	if h.publisher != nil {
+		if err := h.publisher.PublishRecipeUpserted(ctx, recipe); err != nil {
+			h.logger.Error("failed to publish recipe upserted event",
+				"error", err,
+				"recipeId", recipe.ID,
+			)
+		}
+	}
+
+	return toRecipeResponse(recipe), nil
+}
+
+// DeleteRecipe deletes a recipe.
+func (h *GRPCHandler) DeleteRecipe(ctx context.Context, req *pb.DeleteRecipeRequest) (*emptypb.Empty, error) {
+	userID, err := uuid.Parse(req.GetUserId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
+	}
+
+	recipeID, err := uuid.Parse(req.GetRecipeId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid recipe ID: %v", err)
+	}
+
+	if err := h.repo.Delete(ctx, userID, recipeID); err != nil {
+		if errors.Is(err, repository.ErrRecipeNotFound) {
+			return nil, status.Errorf(codes.NotFound, "recipe not found")
+		}
+		h.logger.Error("failed to delete recipe", "error", err, "recipeId", recipeID)
+		return nil, status.Errorf(codes.Internal, "failed to delete recipe")
+	}
+
+	if h.publisher != nil {
+		if err := h.publisher.PublishRecipeDeleted(ctx, recipeID, userID); err != nil {
+			h.logger.Error("failed to publish recipe deleted event",
+				"error", err,
+				"recipeId", recipeID,
+			)
+		}
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+// GetSimilarRecipes retrieves similar recipes using vector similarity.
+func (h *GRPCHandler) GetSimilarRecipes(ctx context.Context, req *pb.GetSimilarRecipesRequest) (*pb.ListRecipesResponse, error) {
 	h.logger.Debug("get similar recipes", "recipeId", req.GetRecipeId(), "amount", req.GetAmount(), "userId", req.GetUserId())
 
 	userID, err := uuid.Parse(req.GetUserId())
@@ -213,104 +246,32 @@ func (h *GRPCHandler) GetSimilarRecipes(ctx context.Context, req *pb.GetSimilarR
 	return toRecipesResponse(recipes), nil
 }
 
-// GetRecipesByCuisine retrieves recipes by cuisine
-func (h *GRPCHandler) GetRecipesByCuisine(ctx context.Context, req *pb.GetRecipesByCuisineRequest) (*pb.GetAllRecipesResponse, error) {
-	h.logger.Debug("get recipes by cuisine", "cuisineId", req.GetCuisineId(), "userId", req.GetUserId())
-
+// GetCuisines retrieves available cuisines.
+func (h *GRPCHandler) GetCuisines(ctx context.Context, req *pb.GetCuisinesRequest) (*pb.GetCuisinesResponse, error) {
 	userID, err := uuid.Parse(req.GetUserId())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
 	}
 
-	cuisineID, err := uuid.Parse(req.GetCuisineId())
+	cuisines, err := h.repo.GetCuisines(ctx, userID)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid cuisine ID: %v", err)
+		h.logger.Error("failed to get cuisines", "error", err)
+		return nil, status.Errorf(codes.Internal, "failed to get cuisines")
 	}
 
-	// Using default pagination for now
-	recipes, err := h.repo.GetByCuisine(ctx, userID, cuisineID, 100, 0)
-	if err != nil {
-		h.logger.Error("failed to get recipes by cuisine", "error", err)
-		return nil, status.Errorf(codes.Internal, "failed to get recipes by cuisine")
-	}
-
-	return toRecipesResponse(recipes), nil
-}
-
-// GetRecipesByIngredient retrieves recipes containing a specific ingredient
-func (h *GRPCHandler) GetRecipesByIngredient(ctx context.Context, req *pb.GetRecipesByIngredientRequest) (*pb.GetAllRecipesResponse, error) {
-	h.logger.Debug("get recipes by ingredient", "ingredientId", req.GetIngredientId(), "userId", req.GetUserId())
-
-	userID, err := uuid.Parse(req.GetUserId())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
-	}
-
-	ingredientID, err := uuid.Parse(req.GetIngredientId())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid ingredient ID: %v", err)
-	}
-
-	// Using default pagination for now
-	recipes, err := h.repo.GetByIngredient(ctx, userID, ingredientID, 100, 0)
-	if err != nil {
-		h.logger.Error("failed to get recipes by ingredient", "error", err)
-		return nil, status.Errorf(codes.Internal, "failed to get recipes by ingredient")
-	}
-
-	return toRecipesResponse(recipes), nil
-}
-
-// GetRecipesByAllergy retrieves recipes excluding a specific allergy
-func (h *GRPCHandler) GetRecipesByAllergy(ctx context.Context, req *pb.GetRecipesByAllergyRequest) (*pb.GetAllRecipesResponse, error) {
-	h.logger.Debug("get recipes excluding allergy", "allergyId", req.GetAllergyId(), "userId", req.GetUserId())
-
-	userID, err := uuid.Parse(req.GetUserId())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
-	}
-
-	allergyID, err := uuid.Parse(req.GetAllergyId())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid allergy ID: %v", err)
-	}
-
-	// Using default pagination for now - returns recipes WITHOUT this allergy
-	recipes, err := h.repo.GetExcludingAllergy(ctx, userID, allergyID, 100, 0)
-	if err != nil {
-		h.logger.Error("failed to get recipes excluding allergy", "error", err)
-		return nil, status.Errorf(codes.Internal, "failed to get recipes excluding allergy")
-	}
-
-	return toRecipesResponse(recipes), nil
-}
-
-// GetUnits retrieves available ingredient units.
-func (h *GRPCHandler) GetUnits(ctx context.Context, req *pb.GetUnitsRequest) (*pb.GetUnitsResponse, error) {
-	userID, err := uuid.Parse(req.GetUserId())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
-	}
-
-	units, err := h.repo.GetUnits(ctx, userID)
-	if err != nil {
-		h.logger.Error("failed to get units", "error", err)
-		return nil, status.Errorf(codes.Internal, "failed to get units")
-	}
-
-	resp := &pb.GetUnitsResponse{Units: make([]*pb.Unit, len(units))}
-	for i, unit := range units {
-		resp.Units[i] = &pb.Unit{
-			Id:   unit.ID.String(),
-			Name: unit.Name,
+	resp := &pb.GetCuisinesResponse{Cuisines: make([]*pb.Cuisine, len(cuisines))}
+	for i, cuisine := range cuisines {
+		resp.Cuisines[i] = &pb.Cuisine{
+			Id:   cuisine.ID.String(),
+			Name: cuisine.Name,
 		}
 	}
 
 	return resp, nil
 }
 
-// CreateUnit creates a new ingredient unit.
-func (h *GRPCHandler) CreateUnit(ctx context.Context, req *pb.CreateUnitRequest) (*pb.Unit, error) {
+// CreateCuisine creates a new cuisine.
+func (h *GRPCHandler) CreateCuisine(ctx context.Context, req *pb.CreateCuisineRequest) (*pb.Cuisine, error) {
 	userID, err := uuid.Parse(req.GetUserId())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid user ID: %v", err)
@@ -321,69 +282,106 @@ func (h *GRPCHandler) CreateUnit(ctx context.Context, req *pb.CreateUnitRequest)
 		return nil, status.Errorf(codes.InvalidArgument, "name is required")
 	}
 
-	existing, err := h.repo.GetUnitByName(ctx, userID, name)
-	if err == nil {
-		return &pb.Unit{
-			Id:   existing.ID.String(),
-			Name: existing.Name,
-		}, nil
-	}
-	if err != nil && !errors.Is(err, repository.ErrUnitNotFound) {
-		h.logger.Error("failed to get unit", "error", err)
-		return nil, status.Errorf(codes.Internal, "failed to get unit")
+	cuisine, err := h.repo.GetOrCreateCuisine(ctx, userID, name)
+	if err != nil {
+		h.logger.Error("failed to create cuisine", "error", err, "cuisineName", name)
+		return nil, status.Errorf(codes.Internal, "failed to create cuisine")
 	}
 
-	unit := &domain.Unit{
-		ID:     uuid.New(),
-		UserID: userID,
-		Name:   name,
-	}
-	if err := h.repo.CreateUnit(ctx, unit); err != nil {
-		h.logger.Error("failed to create unit", "error", err)
-		return nil, status.Errorf(codes.Internal, "failed to create unit")
-	}
-
-	return &pb.Unit{
-		Id:   unit.ID.String(),
-		Name: unit.Name,
+	return &pb.Cuisine{
+		Id:   cuisine.ID.String(),
+		Name: cuisine.Name,
 	}, nil
 }
 
-func (h *GRPCHandler) resolveIngredients(ctx context.Context, req *pb.CreateRecipeRequest) ([]domain.Ingredient, error) {
-	var ingredients []domain.Ingredient
-	indexByID := make(map[uuid.UUID]int)
-
-	appendIngredient := func(ingredient *domain.Ingredient, quantity string, unit string) {
-		if ingredient == nil {
-			return
-		}
-		if index, ok := indexByID[ingredient.ID]; ok {
-			if quantity != "" {
-				ingredients[index].Quantity = quantity
-			}
-			if unit != "" {
-				ingredients[index].Unit = unit
-			}
-			return
-		}
-		ingredient.Quantity = quantity
-		ingredient.Unit = unit
-		indexByID[ingredient.ID] = len(ingredients)
-		ingredients = append(ingredients, *ingredient)
+func (h *GRPCHandler) buildRecipeFromInput(ctx context.Context, userID uuid.UUID, input *pb.RecipeInput) (*domain.Recipe, error) {
+	if input == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "recipe is required")
 	}
 
-	for _, input := range req.GetIngredients() {
-		idStr := strings.TrimSpace(input.GetId())
-		name := strings.TrimSpace(input.GetName())
-		quantity := strings.TrimSpace(input.GetQuantity())
-		unit := strings.TrimSpace(input.GetUnit())
+	name := strings.TrimSpace(input.GetName())
+	if name == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "name is required")
+	}
 
-		if idStr != "" {
+	ingredientLines, err := h.resolveIngredientLines(ctx, userID, input.GetIngredientLines())
+	if err != nil {
+		return nil, err
+	}
+
+	mainIngredient, err := h.resolveMainIngredient(ctx, userID, input, ingredientLines)
+	if err != nil {
+		return nil, err
+	}
+
+	cuisine, err := h.resolveCuisine(ctx, userID, input)
+	if err != nil {
+		return nil, err
+	}
+
+	steps, err := h.resolveSteps(input.GetSteps())
+	if err != nil {
+		return nil, err
+	}
+
+	servings := int(input.GetServings())
+	if servings < 1 {
+		servings = 1
+	}
+
+	prepMinutes := int(input.GetPrepTimeMinutes())
+	if prepMinutes < 0 {
+		prepMinutes = 0
+	}
+
+	cookMinutes := int(input.GetCookTimeMinutes())
+	if cookMinutes < 0 {
+		cookMinutes = 0
+	}
+
+	var yieldQuantity *float64
+	if input.GetYieldQuantity() != nil {
+		value := input.GetYieldQuantity().GetValue()
+		yieldQuantity = &value
+	}
+
+	recipe := &domain.Recipe{
+		UserID:           userID,
+		Name:             name,
+		Description:      strings.TrimSpace(input.GetDescription()),
+		PrepTimeMinutes:  prepMinutes,
+		CookTimeMinutes:  cookMinutes,
+		TotalTimeMinutes: prepMinutes + cookMinutes,
+		Servings:         servings,
+		YieldQuantity:    yieldQuantity,
+		YieldUnit:        strings.TrimSpace(input.GetYieldUnit()),
+		MainIngredient:   mainIngredient,
+		Cuisine:          cuisine,
+		IngredientLines:  ingredientLines,
+		Steps:            steps,
+		Tags:             normalizeTags(input.GetTags()),
+		ImageURL:         strings.TrimSpace(input.GetImageUrl()),
+		Nutrition:        nutritionFromProto(input.GetNutrition()),
+	}
+
+	return recipe, nil
+}
+
+func (h *GRPCHandler) resolveIngredientLines(ctx context.Context, userID uuid.UUID, inputs []*pb.IngredientLineInput) ([]domain.RecipeIngredientLine, error) {
+	lines := make([]domain.RecipeIngredientLine, 0, len(inputs))
+
+	for index, input := range inputs {
+		if input == nil {
+			continue
+		}
+
+		var ingredient *domain.Ingredient
+		if idStr := strings.TrimSpace(input.GetIngredientId()); idStr != "" {
 			ingredientID, err := uuid.Parse(idStr)
 			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "invalid ingredient ID: %v", err)
 			}
-			ingredient, err := h.repo.GetIngredientByID(ctx, ingredientID)
+			ingredient, err = h.repo.GetIngredientByID(ctx, userID, ingredientID)
 			if err != nil {
 				if errors.Is(err, repository.ErrIngredientNotFound) {
 					return nil, status.Errorf(codes.NotFound, "ingredient not found: %s", idStr)
@@ -391,69 +389,54 @@ func (h *GRPCHandler) resolveIngredients(ctx context.Context, req *pb.CreateReci
 				h.logger.Error("failed to get ingredient", "error", err, "ingredientId", idStr)
 				return nil, status.Errorf(codes.Internal, "failed to get ingredient")
 			}
-			appendIngredient(ingredient, quantity, unit)
-			continue
-		}
-
-		if name == "" {
-			continue
-		}
-		ingredient, err := h.repo.GetOrCreateIngredient(ctx, name, quantity)
-		if err != nil {
-			h.logger.Error("failed to get or create ingredient", "error", err, "ingredientName", name)
-			return nil, status.Errorf(codes.Internal, "failed to create ingredient")
-		}
-		appendIngredient(ingredient, quantity, unit)
-	}
-
-	for _, idStr := range req.GetIngredientIds() {
-		idStr = strings.TrimSpace(idStr)
-		if idStr == "" {
-			continue
-		}
-		ingredientID, err := uuid.Parse(idStr)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "invalid ingredient ID: %v", err)
-		}
-		ingredient, err := h.repo.GetIngredientByID(ctx, ingredientID)
-		if err != nil {
-			if errors.Is(err, repository.ErrIngredientNotFound) {
-				return nil, status.Errorf(codes.NotFound, "ingredient not found: %s", idStr)
+		} else if name := strings.TrimSpace(input.GetIngredientName()); name != "" {
+			var err error
+			ingredient, err = h.repo.GetOrCreateIngredient(ctx, userID, name)
+			if err != nil {
+				h.logger.Error("failed to get or create ingredient", "error", err, "ingredientName", name)
+				return nil, status.Errorf(codes.Internal, "failed to create ingredient")
 			}
-			h.logger.Error("failed to get ingredient", "error", err, "ingredientId", idStr)
-			return nil, status.Errorf(codes.Internal, "failed to get ingredient")
+		} else {
+			return nil, status.Errorf(codes.InvalidArgument, "ingredient line is missing id or name")
 		}
-		appendIngredient(ingredient, "", "")
+
+		var quantityValue *float64
+		if input.GetQuantityValue() != nil {
+			value := input.GetQuantityValue().GetValue()
+			quantityValue = &value
+		}
+
+		sortOrder := int(input.GetSortOrder())
+		if sortOrder == 0 {
+			sortOrder = index + 1
+		}
+
+		lines = append(lines, domain.RecipeIngredientLine{
+			Ingredient:    *ingredient,
+			QuantityValue: quantityValue,
+			QuantityText:  strings.TrimSpace(input.GetQuantityText()),
+			Unit:          strings.TrimSpace(input.GetUnit()),
+			IsOptional:    input.GetIsOptional(),
+			Note:          strings.TrimSpace(input.GetNote()),
+			SortOrder:     sortOrder,
+		})
 	}
 
-	for _, name := range req.GetIngredientNames() {
-		cleaned := strings.TrimSpace(name)
-		if cleaned == "" {
-			continue
-		}
-		ingredient, err := h.repo.GetOrCreateIngredient(ctx, cleaned, "")
-		if err != nil {
-			h.logger.Error("failed to get or create ingredient", "error", err, "ingredientName", cleaned)
-			return nil, status.Errorf(codes.Internal, "failed to create ingredient")
-		}
-		appendIngredient(ingredient, "", "")
-	}
-
-	return ingredients, nil
+	return lines, nil
 }
 
 func (h *GRPCHandler) resolveMainIngredient(
 	ctx context.Context,
-	req *pb.CreateRecipeRequest,
-	ingredients []domain.Ingredient,
+	userID uuid.UUID,
+	input *pb.RecipeInput,
+	lines []domain.RecipeIngredientLine,
 ) (*domain.Ingredient, error) {
-	mainIngredientID := strings.TrimSpace(req.GetMainIngredientId())
-	if mainIngredientID != "" {
-		parsedID, err := uuid.Parse(mainIngredientID)
+	if idStr := strings.TrimSpace(input.GetMainIngredientId()); idStr != "" {
+		ingredientID, err := uuid.Parse(idStr)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid main ingredient ID: %v", err)
 		}
-		ingredient, err := h.repo.GetIngredientByID(ctx, parsedID)
+		ingredient, err := h.repo.GetIngredientByID(ctx, userID, ingredientID)
 		if err != nil {
 			if errors.Is(err, repository.ErrIngredientNotFound) {
 				return nil, status.Errorf(codes.NotFound, "main ingredient not found")
@@ -464,31 +447,30 @@ func (h *GRPCHandler) resolveMainIngredient(
 		return ingredient, nil
 	}
 
-	mainIngredientName := strings.TrimSpace(req.GetMainIngredientName())
-	if mainIngredientName != "" {
-		ingredient, err := h.repo.GetOrCreateIngredient(ctx, mainIngredientName, "")
+	if name := strings.TrimSpace(input.GetMainIngredientName()); name != "" {
+		ingredient, err := h.repo.GetOrCreateIngredient(ctx, userID, name)
 		if err != nil {
-			h.logger.Error("failed to get or create main ingredient", "error", err, "ingredientName", mainIngredientName)
+			h.logger.Error("failed to get or create main ingredient", "error", err, "ingredientName", name)
 			return nil, status.Errorf(codes.Internal, "failed to create main ingredient")
 		}
 		return ingredient, nil
 	}
 
-	if len(ingredients) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "at least one ingredient is required")
+	if len(lines) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "main ingredient is required")
 	}
 
-	return &ingredients[0], nil
+	return &lines[0].Ingredient, nil
 }
 
-func (h *GRPCHandler) resolveCuisine(ctx context.Context, req *pb.CreateRecipeRequest) (*domain.Cuisine, error) {
-	cuisineID := strings.TrimSpace(req.GetCuisineId())
+func (h *GRPCHandler) resolveCuisine(ctx context.Context, userID uuid.UUID, input *pb.RecipeInput) (*domain.Cuisine, error) {
+	cuisineID := strings.TrimSpace(input.GetCuisineId())
 	if cuisineID != "" {
 		parsedID, err := uuid.Parse(cuisineID)
 		if err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "invalid cuisine ID: %v", err)
 		}
-		cuisine, err := h.repo.GetCuisineByID(ctx, parsedID)
+		cuisine, err := h.repo.GetCuisineByID(ctx, userID, parsedID)
 		if err != nil {
 			if errors.Is(err, repository.ErrCuisineNotFound) {
 				return nil, status.Errorf(codes.NotFound, "cuisine not found")
@@ -499,11 +481,11 @@ func (h *GRPCHandler) resolveCuisine(ctx context.Context, req *pb.CreateRecipeRe
 		return cuisine, nil
 	}
 
-	cuisineName := strings.TrimSpace(req.GetCuisineName())
+	cuisineName := strings.TrimSpace(input.GetCuisineName())
 	if cuisineName == "" {
 		cuisineName = defaultCuisineName
 	}
-	cuisine, err := h.repo.GetOrCreateCuisine(ctx, cuisineName)
+	cuisine, err := h.repo.GetOrCreateCuisine(ctx, userID, cuisineName)
 	if err != nil {
 		h.logger.Error("failed to get or create cuisine", "error", err, "cuisineName", cuisineName)
 		return nil, status.Errorf(codes.Internal, "failed to create cuisine")
@@ -511,24 +493,94 @@ func (h *GRPCHandler) resolveCuisine(ctx context.Context, req *pb.CreateRecipeRe
 	return cuisine, nil
 }
 
-func ensureMainIngredientIncluded(ingredients []domain.Ingredient, mainIngredient *domain.Ingredient) []domain.Ingredient {
-	if mainIngredient == nil {
-		return ingredients
-	}
+func (h *GRPCHandler) resolveSteps(inputs []*pb.RecipeStepInput) ([]domain.RecipeStep, error) {
+	steps := make([]domain.RecipeStep, 0, len(inputs))
 
-	for _, ingredient := range ingredients {
-		if ingredient.ID == mainIngredient.ID {
-			mainIngredient.Quantity = ingredient.Quantity
-			mainIngredient.Unit = ingredient.Unit
-			return ingredients
+	for index, input := range inputs {
+		if input == nil {
+			continue
 		}
+
+		stepIndex := int(input.GetStepIndex())
+		if stepIndex == 0 {
+			stepIndex = index + 1
+		}
+
+		var duration *int
+		if input.GetDurationSeconds() != nil {
+			value := int(input.GetDurationSeconds().GetValue())
+			duration = &value
+		}
+
+		var temperature *float64
+		if input.GetTemperatureValue() != nil {
+			value := input.GetTemperatureValue().GetValue()
+			temperature = &value
+		}
+
+		steps = append(steps, domain.RecipeStep{
+			StepIndex:        stepIndex,
+			Instruction:      strings.TrimSpace(input.GetInstruction()),
+			DurationSeconds:  duration,
+			TemperatureValue: temperature,
+			TemperatureUnit:  strings.TrimSpace(input.GetTemperatureUnit()),
+			MediaURL:         strings.TrimSpace(input.GetMediaUrl()),
+		})
 	}
 
-	return append([]domain.Ingredient{*mainIngredient}, ingredients...)
+	return steps, nil
 }
 
-func normalizeTags(tags []string, guidedMode bool) []string {
-	if len(tags) == 0 && !guidedMode {
+func buildRecipeFilter(req *pb.ListRecipesRequest) (domain.RecipeFilter, error) {
+	filter := domain.RecipeFilter{
+		Tags: normalizeTags(req.GetTags()),
+	}
+
+	if value := strings.TrimSpace(req.GetCuisineId()); value != "" {
+		id, err := uuid.Parse(value)
+		if err != nil {
+			return filter, status.Errorf(codes.InvalidArgument, "invalid cuisine ID: %v", err)
+		}
+		filter.CuisineID = &id
+	}
+
+	if value := strings.TrimSpace(req.GetIngredientId()); value != "" {
+		id, err := uuid.Parse(value)
+		if err != nil {
+			return filter, status.Errorf(codes.InvalidArgument, "invalid ingredient ID: %v", err)
+		}
+		filter.IngredientID = &id
+	}
+
+	if value := strings.TrimSpace(req.GetAllergyId()); value != "" {
+		id, err := uuid.Parse(value)
+		if err != nil {
+			return filter, status.Errorf(codes.InvalidArgument, "invalid allergy ID: %v", err)
+		}
+		filter.AllergyID = &id
+	}
+
+	return filter, nil
+}
+
+func nutritionFromProto(input *pb.RecipeNutrition) domain.RecipeNutrition {
+	if input == nil {
+		return domain.RecipeNutrition{}
+	}
+	return domain.RecipeNutrition{
+		CaloriesTotal:      int(input.GetCaloriesTotal()),
+		CaloriesPerServing: int(input.GetCaloriesPerServing()),
+		ProteinG:           input.GetProteinG(),
+		CarbsG:             input.GetCarbsG(),
+		FatG:               input.GetFatG(),
+		FiberG:             input.GetFiberG(),
+		SugarG:             input.GetSugarG(),
+		SodiumMg:           input.GetSodiumMg(),
+	}
+}
+
+func normalizeTags(tags []string) []string {
+	if len(tags) == 0 {
 		return nil
 	}
 
@@ -548,12 +600,6 @@ func normalizeTags(tags []string, guidedMode bool) []string {
 		normalized = append(normalized, cleaned)
 	}
 
-	if guidedMode {
-		if _, ok := seen[guidedModeTag]; !ok {
-			normalized = append(normalized, guidedModeTag)
-		}
-	}
-
 	if len(normalized) == 0 {
 		return nil
 	}
@@ -563,22 +609,43 @@ func normalizeTags(tags []string, guidedMode bool) []string {
 
 // Conversion helpers
 
-func toRecipeResponse(r *domain.Recipe) *pb.RecipeResponse {
-	resp := &pb.RecipeResponse{
-		Id:          r.ID.String(),
-		Name:        r.Name,
-		Description: r.Description,
-		PrepTime:    r.PrepTime,
-		CookTime:    r.CookTime,
-		Directions:  r.Directions,
+func toRecipeResponse(r *domain.Recipe) *pb.Recipe {
+	if r == nil {
+		return nil
+	}
+
+	resp := &pb.Recipe{
+		Id:               r.ID.String(),
+		UserId:           r.UserID.String(),
+		Name:             r.Name,
+		Description:      r.Description,
+		PrepTimeMinutes:  int32(r.PrepTimeMinutes),
+		CookTimeMinutes:  int32(r.CookTimeMinutes),
+		TotalTimeMinutes: int32(r.TotalTimeMinutes),
+		Servings:         int32(r.Servings),
+		YieldUnit:        r.YieldUnit,
+		Tags:             r.Tags,
+		ImageUrl:         r.ImageURL,
+		Nutrition: &pb.RecipeNutrition{
+			CaloriesTotal:      int32(r.Nutrition.CaloriesTotal),
+			CaloriesPerServing: int32(r.Nutrition.CaloriesPerServing),
+			ProteinG:           r.Nutrition.ProteinG,
+			CarbsG:             r.Nutrition.CarbsG,
+			FatG:               r.Nutrition.FatG,
+			FiberG:             r.Nutrition.FiberG,
+			SugarG:             r.Nutrition.SugarG,
+			SodiumMg:           r.Nutrition.SodiumMg,
+		},
+	}
+
+	if r.YieldQuantity != nil {
+		resp.YieldQuantity = wrapperspb.Double(*r.YieldQuantity)
 	}
 
 	if r.MainIngredient != nil {
-		resp.MainIngredient = &pb.Ingredient{
-			Id:       r.MainIngredient.ID.String(),
-			Name:     r.MainIngredient.Name,
-			Quantity: r.MainIngredient.Quantity,
-			Unit:     r.MainIngredient.Unit,
+		resp.MainIngredient = &pb.IngredientRef{
+			Id:   r.MainIngredient.ID.String(),
+			Name: r.MainIngredient.Name,
 		}
 	}
 
@@ -589,22 +656,50 @@ func toRecipeResponse(r *domain.Recipe) *pb.RecipeResponse {
 		}
 	}
 
-	resp.Ingredients = make([]*pb.Ingredient, len(r.Ingredients))
-	for i, ing := range r.Ingredients {
-		resp.Ingredients[i] = &pb.Ingredient{
-			Id:       ing.ID.String(),
-			Name:     ing.Name,
-			Quantity: ing.Quantity,
-			Unit:     ing.Unit,
+	lines := make([]*pb.IngredientLine, len(r.IngredientLines))
+	for i, line := range r.IngredientLines {
+		lineResp := &pb.IngredientLine{
+			Ingredient: &pb.IngredientRef{
+				Id:   line.Ingredient.ID.String(),
+				Name: line.Ingredient.Name,
+			},
+			QuantityText: line.QuantityText,
+			Unit:         line.Unit,
+			IsOptional:   line.IsOptional,
+			Note:         line.Note,
+			SortOrder:    int32(line.SortOrder),
 		}
+		if line.QuantityValue != nil {
+			lineResp.QuantityValue = wrapperspb.Double(*line.QuantityValue)
+		}
+		lines[i] = lineResp
 	}
+	resp.IngredientLines = lines
+
+	steps := make([]*pb.RecipeStep, len(r.Steps))
+	for i, step := range r.Steps {
+		stepResp := &pb.RecipeStep{
+			StepIndex:       int32(step.StepIndex),
+			Instruction:     step.Instruction,
+			TemperatureUnit: step.TemperatureUnit,
+			MediaUrl:        step.MediaURL,
+		}
+		if step.DurationSeconds != nil {
+			stepResp.DurationSeconds = wrapperspb.Int32(int32(*step.DurationSeconds))
+		}
+		if step.TemperatureValue != nil {
+			stepResp.TemperatureValue = wrapperspb.Double(*step.TemperatureValue)
+		}
+		steps[i] = stepResp
+	}
+	resp.Steps = steps
 
 	return resp
 }
 
-func toRecipesResponse(recipes []domain.Recipe) *pb.GetAllRecipesResponse {
-	resp := &pb.GetAllRecipesResponse{
-		Recipes: make([]*pb.RecipeResponse, len(recipes)),
+func toRecipesResponse(recipes []domain.Recipe) *pb.ListRecipesResponse {
+	resp := &pb.ListRecipesResponse{
+		Recipes: make([]*pb.Recipe, len(recipes)),
 	}
 
 	for i := range recipes {
@@ -614,7 +709,7 @@ func toRecipesResponse(recipes []domain.Recipe) *pb.GetAllRecipesResponse {
 	return resp
 }
 
-func toRecipesResponseWithPagination(recipes []domain.Recipe, pageIndex, pageSize, totalCount, totalPages int32) *pb.GetAllRecipesResponse {
+func toRecipesResponseWithPagination(recipes []domain.Recipe, pageIndex, pageSize, totalCount, totalPages int32) *pb.ListRecipesResponse {
 	resp := toRecipesResponse(recipes)
 	resp.PageIndex = pageIndex
 	resp.PageSize = pageSize

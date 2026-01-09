@@ -21,20 +21,22 @@ func NewRecipeBuilder() *RecipeBuilder {
 
 	return &RecipeBuilder{
 		recipe: domain.Recipe{
-			ID:          uuid.New(),
-			UserID:      uuid.New(),
-			Name:        "Test Recipe",
-			Description: "A test recipe description",
-			PrepTime:    "15 mins",
-			CookTime:    "30 mins",
-			Directions:  []string{"Step 1", "Step 2"},
-			Metadata: domain.Metadata{
-				SearchVector:  pgvector.NewVector(dims),
-				Tags:          []string{},
-				PublishedDate: time.Now().UTC(),
+			ID:               uuid.New(),
+			UserID:           uuid.New(),
+			Name:             "Test Recipe",
+			Description:      "A test recipe description",
+			PrepTimeMinutes:  15,
+			CookTimeMinutes:  30,
+			TotalTimeMinutes: 45,
+			Servings:         2,
+			Steps: []domain.RecipeStep{
+				{StepIndex: 1, Instruction: "Step 1"},
+				{StepIndex: 2, Instruction: "Step 2"},
 			},
-			CreatedAt: time.Now().UTC(),
-			UpdatedAt: time.Now().UTC(),
+			Tags:         []string{},
+			SearchVector: pgvector.NewVector(dims),
+			CreatedAt:    time.Now().UTC(),
+			UpdatedAt:    time.Now().UTC(),
 		},
 	}
 }
@@ -63,15 +65,15 @@ func (b *RecipeBuilder) WithDescription(desc string) *RecipeBuilder {
 	return b
 }
 
-// WithPrepTime sets the prep time
-func (b *RecipeBuilder) WithPrepTime(prepTime string) *RecipeBuilder {
-	b.recipe.PrepTime = prepTime
+// WithPrepTimeMinutes sets the prep time in minutes.
+func (b *RecipeBuilder) WithPrepTimeMinutes(prepMinutes int) *RecipeBuilder {
+	b.recipe.PrepTimeMinutes = prepMinutes
 	return b
 }
 
-// WithCookTime sets the cook time
-func (b *RecipeBuilder) WithCookTime(cookTime string) *RecipeBuilder {
-	b.recipe.CookTime = cookTime
+// WithCookTimeMinutes sets the cook time in minutes.
+func (b *RecipeBuilder) WithCookTimeMinutes(cookMinutes int) *RecipeBuilder {
+	b.recipe.CookTimeMinutes = cookMinutes
 	return b
 }
 
@@ -87,15 +89,15 @@ func (b *RecipeBuilder) WithCuisine(cuisine *domain.Cuisine) *RecipeBuilder {
 	return b
 }
 
-// WithIngredients sets the ingredients list
-func (b *RecipeBuilder) WithIngredients(ingredients []domain.Ingredient) *RecipeBuilder {
-	b.recipe.Ingredients = ingredients
+// WithIngredientLines sets the ingredient lines.
+func (b *RecipeBuilder) WithIngredientLines(lines []domain.RecipeIngredientLine) *RecipeBuilder {
+	b.recipe.IngredientLines = lines
 	return b
 }
 
-// WithDirections sets the directions
-func (b *RecipeBuilder) WithDirections(directions []string) *RecipeBuilder {
-	b.recipe.Directions = directions
+// WithSteps sets the recipe steps.
+func (b *RecipeBuilder) WithSteps(steps []domain.RecipeStep) *RecipeBuilder {
+	b.recipe.Steps = steps
 	return b
 }
 
@@ -114,10 +116,11 @@ func NewIngredientBuilder() *IngredientBuilder {
 	return &IngredientBuilder{
 		ingredient: domain.Ingredient{
 			ID:        uuid.New(),
+			UserID:    uuid.New(),
 			Name:      "Test Ingredient",
-			Quantity:  "1 cup",
 			Allergies: []domain.Allergy{},
 			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
 		},
 	}
 }
@@ -131,12 +134,6 @@ func (b *IngredientBuilder) WithID(id uuid.UUID) *IngredientBuilder {
 // WithName sets the ingredient name
 func (b *IngredientBuilder) WithName(name string) *IngredientBuilder {
 	b.ingredient.Name = name
-	return b
-}
-
-// WithQuantity sets the ingredient quantity
-func (b *IngredientBuilder) WithQuantity(quantity string) *IngredientBuilder {
-	b.ingredient.Quantity = quantity
 	return b
 }
 

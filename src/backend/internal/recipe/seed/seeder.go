@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"time"
+	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/google/uuid"
 
@@ -44,7 +46,7 @@ func (s *Seeder) SeedFromFile(ctx context.Context, filePath string) error {
 	}
 
 	// Check if already seeded
-	count, err := s.repo.Count(ctx, seedUser.ID)
+	count, err := s.repo.Count(ctx, seedUser.ID, domain.RecipeFilter{})
 	if err != nil {
 		return fmt.Errorf("check recipe count: %w", err)
 	}
@@ -99,29 +101,41 @@ func (s *Seeder) seedRecipe(
 	createdCuisines map[string]*domain.Cuisine,
 ) error {
 	// Get or create cuisine
-	cuisine, err := s.getOrCreateCuisine(ctx, data.Cuisine, createdCuisines)
+	cuisine, err := s.getOrCreateCuisine(ctx, userID, data.Cuisine, createdCuisines)
 	if err != nil {
 		return fmt.Errorf("get or create cuisine: %w", err)
 	}
 
 	// Get or create main ingredient
-	mainIngredient, err := s.getOrCreateIngredient(ctx, data.MainIngredient, createdIngredients)
+	mainIngredient, err := s.getOrCreateIngredient(ctx, userID, data.MainIngredient, createdIngredients)
 	if err != nil {
 		return fmt.Errorf("get or create main ingredient: %w", err)
 	}
-	mainIngredientForRecipe := *mainIngredient
-	mainIngredientForRecipe.Quantity = data.MainIngredient.Quantity
 
-	// Get or create recipe ingredients
-	var ingredients []domain.Ingredient
+	// Get or create recipe ingredient lines
+	var ingredientLines []domain.RecipeIngredientLine
+	sortOrder := 1
+	lineIngredientIDs := make(map[uuid.UUID]struct{})
 	for _, ingData := range data.Ingredients {
-		ingredient, err := s.getOrCreateIngredient(ctx, ingData, createdIngredients)
+		ingredient, err := s.getOrCreateIngredient(ctx, userID, ingData, createdIngredients)
 		if err != nil {
 			return fmt.Errorf("get or create ingredient %s: %w", ingData.Name, err)
 		}
-		ingredientForRecipe := *ingredient
-		ingredientForRecipe.Quantity = ingData.Quantity
-		ingredients = append(ingredients, ingredientForRecipe)
+		ingredientLines = append(ingredientLines, domain.RecipeIngredientLine{
+			Ingredient:   *ingredient,
+			QuantityText: ingData.Quantity,
+			SortOrder:    sortOrder,
+		})
+		lineIngredientIDs[ingredient.ID] = struct{}{}
+		sortOrder++
+	}
+
+	if _, exists := lineIngredientIDs[mainIngredient.ID]; !exists && mainIngredient != nil {
+		ingredientLines = append(ingredientLines, domain.RecipeIngredientLine{
+			Ingredient:   *mainIngredient,
+			QuantityText: data.MainIngredient.Quantity,
+			SortOrder:    sortOrder,
+		})
 	}
 
 	// Build recipe
@@ -135,22 +149,23 @@ func (s *Seeder) seedRecipe(
 		UserID:         userID,
 		Name:           data.Name,
 		Description:    data.Description,
-		PrepTime:       data.PrepTime,
-		CookTime:       data.CookTime,
-		MainIngredient: &mainIngredientForRecipe,
+		PrepTimeMinutes:  parseMinutes(data.PrepTime),
+		CookTimeMinutes:  parseMinutes(data.CookTime),
+		TotalTimeMinutes: parseMinutes(data.PrepTime) + parseMinutes(data.CookTime),
+		Servings:         1,
+		MainIngredient:   mainIngredient,
 		Cuisine:        cuisine,
-		Ingredients:    ingredients,
-		Directions:     data.Directions,
-		NutritionalInfo: domain.NutritionalInfo{
-			Calories: data.NutritionalInfo.Calories,
-		},
-		Metadata: domain.Metadata{
-			PublishedDate: time.Now().UTC(),
+		IngredientLines: ingredientLines,
+		Steps:           buildSteps(data.Directions),
+		Tags:            data.Metadata.Tags,
+		ImageURL:        data.Metadata.ImageURL,
+		Nutrition: domain.RecipeNutrition{
+			CaloriesTotal: data.NutritionalInfo.Calories,
 		},
 	}
 
 	// Generate vector embedding
-	recipe.Metadata.SearchVector = s.vectorGen.GenerateForRecipe(recipe)
+	recipe.SearchVector = s.vectorGen.GenerateForRecipe(recipe)
 
 	// Create recipe
 	if err := s.repo.Create(ctx, recipe); err != nil {
@@ -161,7 +176,7 @@ func (s *Seeder) seedRecipe(
 
 	// Optionally publish event
 	if s.publisher != nil {
-		if err := s.publisher.PublishRecipeCreated(ctx, recipe); err != nil {
+		if err := s.publisher.PublishRecipeUpserted(ctx, recipe); err != nil {
 			s.logger.Warn("failed to publish recipe created event during seeding",
 				"error", err,
 				"recipeId", recipe.ID,
@@ -218,8 +233,43 @@ func (s *Seeder) ensureSeedUser(ctx context.Context) (*domain.User, error) {
 	return user, nil
 }
 
+func buildSteps(directions []string) []domain.RecipeStep {
+	steps := make([]domain.RecipeStep, 0, len(directions))
+	for i, instruction := range directions {
+		cleaned := strings.TrimSpace(instruction)
+		if cleaned == "" {
+			continue
+		}
+		steps = append(steps, domain.RecipeStep{
+			StepIndex:   i + 1,
+			Instruction: cleaned,
+		})
+	}
+	return steps
+}
+
+func parseMinutes(input string) int {
+	var digits []rune
+	for _, r := range input {
+		if unicode.IsDigit(r) {
+			digits = append(digits, r)
+		} else if len(digits) > 0 {
+			break
+		}
+	}
+	if len(digits) == 0 {
+		return 0
+	}
+	value, err := strconv.Atoi(string(digits))
+	if err != nil {
+		return 0
+	}
+	return value
+}
+
 func (s *Seeder) getOrCreateCuisine(
 	ctx context.Context,
+	userID uuid.UUID,
 	data CuisineData,
 	cache map[string]*domain.Cuisine,
 ) (*domain.Cuisine, error) {
@@ -229,7 +279,7 @@ func (s *Seeder) getOrCreateCuisine(
 	}
 
 	// Try to get from database
-	cuisine, err := s.repo.GetCuisineByName(ctx, data.Name)
+	cuisine, err := s.repo.GetCuisineByName(ctx, userID, data.Name)
 	if err == nil {
 		cache[data.Name] = cuisine
 		return cuisine, nil
@@ -242,8 +292,9 @@ func (s *Seeder) getOrCreateCuisine(
 	}
 
 	cuisine = &domain.Cuisine{
-		ID:   cuisineID,
-		Name: data.Name,
+		ID:     cuisineID,
+		UserID: userID,
+		Name:   data.Name,
 	}
 
 	if err := s.repo.CreateCuisine(ctx, cuisine); err != nil {
@@ -258,6 +309,7 @@ func (s *Seeder) getOrCreateCuisine(
 
 func (s *Seeder) getOrCreateIngredient(
 	ctx context.Context,
+	userID uuid.UUID,
 	data IngredientData,
 	cache map[string]*domain.Ingredient,
 ) (*domain.Ingredient, error) {
@@ -267,7 +319,7 @@ func (s *Seeder) getOrCreateIngredient(
 	}
 
 	// Try to get from database
-	ingredient, err := s.repo.GetIngredientByName(ctx, data.Name)
+	ingredient, err := s.repo.GetIngredientByName(ctx, userID, data.Name)
 	if err == nil {
 		cache[data.Name] = ingredient
 		return ingredient, nil
@@ -280,14 +332,13 @@ func (s *Seeder) getOrCreateIngredient(
 	}
 
 	ingredient = &domain.Ingredient{
-		ID:       ingredientID,
-		Name:     data.Name,
-		Quantity: data.Quantity,
+		ID:          ingredientID,
+		UserID:      userID,
+		Name:        data.Name,
+		Description: "",
 	}
 
-	ingredientPersist := *ingredient
-	ingredientPersist.Quantity = ""
-	if err := s.repo.CreateIngredient(ctx, &ingredientPersist); err != nil {
+	if err := s.repo.CreateIngredient(ctx, ingredient); err != nil {
 		return nil, err
 	}
 

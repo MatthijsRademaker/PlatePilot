@@ -72,7 +72,7 @@ func main() {
 	planner := domain.NewPlanner(repo)
 
 	// Initialize gRPC handler
-	grpcHandler := handler.NewGRPCHandler(planner, logger)
+	grpcHandler := handler.NewGRPCHandler(planner, repo, logger)
 
 	// Initialize event consumer (optional - only if RabbitMQ is configured)
 	var consumer *events.Consumer

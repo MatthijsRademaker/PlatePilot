@@ -2,157 +2,177 @@ syntax = "proto3";
 
 package recipe.v1;
 
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
 option go_package = "github.com/platepilot/backend/internal/recipe/pb";
 
 // Service definition for recipe management
 service RecipeService {
-  // Gets a recipe by its ID
-  rpc GetRecipeById (GetRecipeByIdRequest) returns (RecipeResponse);
+  rpc GetRecipe (GetRecipeRequest) returns (Recipe);
+  rpc ListRecipes (ListRecipesRequest) returns (ListRecipesResponse);
+  rpc CreateRecipe (CreateRecipeRequest) returns (Recipe);
+  rpc UpdateRecipe (UpdateRecipeRequest) returns (Recipe);
+  rpc DeleteRecipe (DeleteRecipeRequest) returns (google.protobuf.Empty);
+  rpc GetSimilarRecipes (GetSimilarRecipesRequest) returns (ListRecipesResponse);
 
-  // Gets a paginated list of all recipes
-  rpc GetAllRecipes (GetAllRecipesRequest) returns (GetAllRecipesResponse);
-
-  // Creates a new recipe
-  rpc CreateRecipe (CreateRecipeRequest) returns (RecipeResponse);
-
-  // Gets recipes similar to a given recipe
-  rpc GetSimilarRecipes (GetSimilarRecipesRequest) returns (GetAllRecipesResponse);
-
-  // Gets recipes by cuisine
-  rpc GetRecipesByCuisine (GetRecipesByCuisineRequest) returns (GetAllRecipesResponse);
-
-  // Gets recipes by ingredient
-  rpc GetRecipesByIngredient (GetRecipesByIngredientRequest) returns (GetAllRecipesResponse);
-
-  // Gets recipes avoiding an allergy
-  rpc GetRecipesByAllergy (GetRecipesByAllergyRequest) returns (GetAllRecipesResponse);
-
-  // Gets available ingredient units
-  rpc GetUnits (GetUnitsRequest) returns (GetUnitsResponse);
-
-  // Creates a new ingredient unit
-  rpc CreateUnit (CreateUnitRequest) returns (Unit);
+  rpc GetCuisines (GetCuisinesRequest) returns (GetCuisinesResponse);
+  rpc CreateCuisine (CreateCuisineRequest) returns (Cuisine);
 }
 
-// Request for getting a recipe by ID
-message GetRecipeByIdRequest {
+message GetRecipeRequest {
   string recipe_id = 1; // UUID string
   string user_id = 2; // UUID string
 }
 
-// Request for getting all recipes with pagination
-message GetAllRecipesRequest {
+message ListRecipesRequest {
   int32 page_index = 1;
   int32 page_size = 2;
   string user_id = 3; // UUID string
+  string cuisine_id = 4; // UUID string
+  string ingredient_id = 5; // UUID string
+  string allergy_id = 6; // UUID string
+  repeated string tags = 7;
 }
 
-// Response containing multiple recipes with pagination
-message GetAllRecipesResponse {
-  repeated RecipeResponse recipes = 1;
+message ListRecipesResponse {
+  repeated Recipe recipes = 1;
   int32 page_index = 2;
   int32 page_size = 3;
   int32 total_count = 4;
   int32 total_pages = 5;
 }
 
-// Request for creating a new recipe
 message CreateRecipeRequest {
-  string name = 1;
-  string description = 2;
-  string prep_time = 3;
-  string cook_time = 4;
-  string main_ingredient_id = 5; // UUID string
-  string cuisine_id = 6; // UUID string
-  repeated string ingredient_ids = 7; // UUID strings
-  repeated string directions = 8;
-  string user_id = 9; // UUID string
-  string main_ingredient_name = 10;
-  string cuisine_name = 11;
-  repeated string ingredient_names = 12;
-  repeated string tags = 13;
-  bool guided_mode = 14;
-  repeated IngredientInput ingredients = 15;
+  RecipeInput recipe = 1;
+  string user_id = 2; // UUID string
 }
 
-// Request for getting similar recipes
+message UpdateRecipeRequest {
+  string recipe_id = 1; // UUID string
+  RecipeInput recipe = 2;
+  string user_id = 3; // UUID string
+}
+
+message DeleteRecipeRequest {
+  string recipe_id = 1; // UUID string
+  string user_id = 2; // UUID string
+}
+
 message GetSimilarRecipesRequest {
   string recipe_id = 1; // UUID string
   int32 amount = 2;
   string user_id = 3; // UUID string
 }
 
-// Request for getting recipes by cuisine
-message GetRecipesByCuisineRequest {
-  string cuisine_id = 1; // UUID string
+message Recipe {
+  string id = 1; // UUID string
   string user_id = 2; // UUID string
+  string name = 3;
+  string description = 4;
+  int32 prep_time_minutes = 5;
+  int32 cook_time_minutes = 6;
+  int32 total_time_minutes = 7;
+  int32 servings = 8;
+  google.protobuf.DoubleValue yield_quantity = 9;
+  string yield_unit = 10;
+  IngredientRef main_ingredient = 11;
+  Cuisine cuisine = 12;
+  repeated IngredientLine ingredient_lines = 13;
+  repeated RecipeStep steps = 14;
+  repeated string tags = 15;
+  string image_url = 16;
+  RecipeNutrition nutrition = 17;
 }
 
-// Request for getting recipes by ingredient
-message GetRecipesByIngredientRequest {
+message RecipeInput {
+  string name = 1;
+  string description = 2;
+  int32 prep_time_minutes = 3;
+  int32 cook_time_minutes = 4;
+  int32 servings = 5;
+  google.protobuf.DoubleValue yield_quantity = 6;
+  string yield_unit = 7;
+  string main_ingredient_id = 8; // UUID string
+  string main_ingredient_name = 9;
+  string cuisine_id = 10; // UUID string
+  string cuisine_name = 11;
+  repeated IngredientLineInput ingredient_lines = 12;
+  repeated RecipeStepInput steps = 13;
+  repeated string tags = 14;
+  string image_url = 15;
+  RecipeNutrition nutrition = 16;
+}
+
+message IngredientRef {
+  string id = 1; // UUID string
+  string name = 2;
+}
+
+message IngredientLine {
+  IngredientRef ingredient = 1;
+  google.protobuf.DoubleValue quantity_value = 2;
+  string quantity_text = 3;
+  string unit = 4;
+  bool is_optional = 5;
+  string note = 6;
+  int32 sort_order = 7;
+}
+
+message IngredientLineInput {
   string ingredient_id = 1; // UUID string
-  string user_id = 2; // UUID string
+  string ingredient_name = 2;
+  google.protobuf.DoubleValue quantity_value = 3;
+  string quantity_text = 4;
+  string unit = 5;
+  bool is_optional = 6;
+  string note = 7;
+  int32 sort_order = 8;
 }
 
-// Request for getting recipes avoiding an allergy
-message GetRecipesByAllergyRequest {
-  string allergy_id = 1; // UUID string
-  string user_id = 2; // UUID string
+message RecipeStep {
+  int32 step_index = 1;
+  string instruction = 2;
+  google.protobuf.Int32Value duration_seconds = 3;
+  google.protobuf.DoubleValue temperature_value = 4;
+  string temperature_unit = 5;
+  string media_url = 6;
 }
 
-// Response containing recipe details
-message RecipeResponse {
-  string id = 1; // UUID string
-  string name = 2;
-  string description = 3;
-  string prep_time = 4;
-  string cook_time = 5;
-  Ingredient main_ingredient = 6;
-  Cuisine cuisine = 7;
-  repeated Ingredient ingredients = 8;
-  repeated string directions = 9;
+message RecipeStepInput {
+  int32 step_index = 1;
+  string instruction = 2;
+  google.protobuf.Int32Value duration_seconds = 3;
+  google.protobuf.DoubleValue temperature_value = 4;
+  string temperature_unit = 5;
+  string media_url = 6;
 }
 
-// Ingredient entity
-message Ingredient {
-  string id = 1; // UUID string
-  string name = 2;
-  string quantity = 3;
-  string unit = 4;
+message RecipeNutrition {
+  int32 calories_total = 1;
+  int32 calories_per_serving = 2;
+  double protein_g = 3;
+  double carbs_g = 4;
+  double fat_g = 5;
+  double fiber_g = 6;
+  double sugar_g = 7;
+  double sodium_mg = 8;
 }
 
-// Ingredient input for recipe creation
-message IngredientInput {
-  string id = 1; // UUID string
-  string name = 2;
-  string quantity = 3;
-  string unit = 4;
-}
-
-// Cuisine entity
 message Cuisine {
   string id = 1; // UUID string
   string name = 2;
 }
 
-// Unit entity
-message Unit {
-  string id = 1; // UUID string
-  string name = 2;
-}
-
-// Request for getting available units
-message GetUnitsRequest {
+message GetCuisinesRequest {
   string user_id = 1; // UUID string
 }
 
-// Response containing units
-message GetUnitsResponse {
-  repeated Unit units = 1;
+message GetCuisinesResponse {
+  repeated Cuisine cuisines = 1;
 }
 
-// Request for creating a unit
-message CreateUnitRequest {
+message CreateCuisineRequest {
   string name = 1;
   string user_id = 2; // UUID string
 }

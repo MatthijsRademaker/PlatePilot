@@ -3,6 +3,8 @@ package testutil
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -105,4 +107,65 @@ func (p *FakeMealPlanner) SetSuggestedRecipes(ids ...uuid.UUID) {
 // SuggestMealsCallCount returns the number of SuggestMeals calls
 func (p *FakeMealPlanner) SuggestMealsCallCount() int {
 	return len(p.SuggestMealsCalls)
+}
+
+// FakeMealPlanStore is a fake implementation of MealPlanStore for handler testing.
+type FakeMealPlanStore struct {
+	Plans map[string]domain.WeekPlan
+
+	FailOnGet    bool
+	FailOnUpsert bool
+
+	GetCalls    []GetWeekPlanCall
+	UpsertCalls []domain.WeekPlan
+}
+
+// GetWeekPlanCall records a get request.
+type GetWeekPlanCall struct {
+	UserID    uuid.UUID
+	StartDate time.Time
+}
+
+// NewFakeMealPlanStore creates a new fake plan store.
+func NewFakeMealPlanStore() *FakeMealPlanStore {
+	return &FakeMealPlanStore{
+		Plans:       make(map[string]domain.WeekPlan),
+		GetCalls:    []GetWeekPlanCall{},
+		UpsertCalls: []domain.WeekPlan{},
+	}
+}
+
+// GetWeekPlan retrieves a stored plan or returns not found.
+func (s *FakeMealPlanStore) GetWeekPlan(ctx context.Context, userID uuid.UUID, startDate time.Time) (*domain.WeekPlan, error) {
+	s.GetCalls = append(s.GetCalls, GetWeekPlanCall{UserID: userID, StartDate: startDate})
+
+	if s.FailOnGet {
+		return nil, errors.New("fake meal plan store error")
+	}
+
+	key := s.planKey(userID, startDate)
+	plan, ok := s.Plans[key]
+	if !ok {
+		return nil, repository.ErrMealPlanNotFound
+	}
+
+	return &plan, nil
+}
+
+// UpsertWeekPlan stores the provided plan.
+func (s *FakeMealPlanStore) UpsertWeekPlan(ctx context.Context, plan domain.WeekPlan) (*domain.WeekPlan, error) {
+	s.UpsertCalls = append(s.UpsertCalls, plan)
+
+	if s.FailOnUpsert {
+		return nil, errors.New("fake meal plan store error")
+	}
+
+	key := s.planKey(plan.UserID, plan.StartDate)
+	s.Plans[key] = plan
+
+	return &plan, nil
+}
+
+func (s *FakeMealPlanStore) planKey(userID uuid.UUID, startDate time.Time) string {
+	return fmt.Sprintf("%s|%s", userID.String(), startDate.Format("2006-01-02"))
 }

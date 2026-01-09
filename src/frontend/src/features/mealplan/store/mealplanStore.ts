@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import type { HandlerRecipeJSON } from '@/api/generated/models';
 import type { WeekPlan, DayPlan, MealSlot, MealType } from '@features/mealplan/types/mealplan';
 import { postMealplanSuggest } from '@/api/generated/platepilot';
+import { getWeekPlan, upsertWeekPlan } from '@features/mealplan/api/mealplanApi';
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0] as string;
@@ -51,6 +52,7 @@ export const useMealplanStore = defineStore('mealplan', () => {
   const currentWeek = ref<WeekPlan>(generateWeekPlan(getWeekStart(new Date())));
   const suggestedRecipeIds = ref<string[]>([]);
   const loading = ref(false);
+  const saving = ref(false);
   const suggestionsLoading = ref(false);
   const error = ref<string | null>(null);
   const suggestionsError = ref<string | null>(null);
@@ -79,21 +81,25 @@ export const useMealplanStore = defineStore('mealplan', () => {
         break;
       }
     }
+    void saveWeek();
   }
 
   function clearSlot(slotId: string) {
     setRecipeForSlot(slotId, null);
   }
 
-  function navigateWeek(direction: 'prev' | 'next') {
+  async function navigateWeek(direction: 'prev' | 'next') {
     const currentStart = new Date(currentWeek.value.startDate);
     const offset = direction === 'next' ? 7 : -7;
     currentStart.setDate(currentStart.getDate() + offset);
     currentWeek.value = generateWeekPlan(currentStart);
+    await loadWeek(currentStart);
   }
 
-  function goToCurrentWeek() {
-    currentWeek.value = generateWeekPlan(getWeekStart(new Date()));
+  async function goToCurrentWeek() {
+    const start = getWeekStart(new Date());
+    currentWeek.value = generateWeekPlan(start);
+    await loadWeek(start);
   }
 
   function clearWeek() {
@@ -102,6 +108,44 @@ export const useMealplanStore = defineStore('mealplan', () => {
         meal.recipe = null;
       });
     });
+    void saveWeek();
+  }
+
+  async function loadWeek(startDate: Date) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const week = await getWeekPlan(formatDate(startDate));
+      currentWeek.value = week;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to load meal plan';
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function saveWeek() {
+    saving.value = true;
+    error.value = null;
+    try {
+      const payload = {
+        startDate: currentWeek.value.startDate,
+        endDate: currentWeek.value.endDate,
+        days: currentWeek.value.days.map((day) => ({
+          date: day.date,
+          meals: day.meals.map((meal) => ({
+            mealType: meal.mealType,
+            recipeId: meal.recipe?.id ?? undefined,
+          })),
+        })),
+      };
+      const week = await upsertWeekPlan(payload);
+      currentWeek.value = week;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to save meal plan';
+    } finally {
+      saving.value = false;
+    }
   }
 
   async function fetchSuggestions(amount: number = 5): Promise<void> {
@@ -133,6 +177,7 @@ export const useMealplanStore = defineStore('mealplan', () => {
     currentWeek,
     suggestedRecipeIds,
     loading,
+    saving,
     suggestionsLoading,
     error,
     suggestionsError,
@@ -145,6 +190,8 @@ export const useMealplanStore = defineStore('mealplan', () => {
     navigateWeek,
     goToCurrentWeek,
     clearWeek,
+    loadWeek,
+    saveWeek,
     fetchSuggestions,
     clearSuggestions,
   };

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/google/uuid"
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/platepilot/backend/internal/common/domain"
@@ -110,12 +111,12 @@ func (p *Publisher) Close() error {
 	return p.conn.Close()
 }
 
-// PublishRecipeCreated publishes a RecipeCreatedEvent
-func (p *Publisher) PublishRecipeCreated(ctx context.Context, recipe *domain.Recipe) error {
+// PublishRecipeUpserted publishes a RecipeUpsertedEvent.
+func (p *Publisher) PublishRecipeUpserted(ctx context.Context, recipe *domain.Recipe) error {
 	recipeDTO := dto.FromRecipe(recipe)
-	event := events.NewRecipeCreatedEvent(recipeDTO)
+	event := events.NewRecipeUpsertedEvent(recipeDTO)
 
-	p.logger.Info("publishing recipe created event",
+	p.logger.Info("publishing recipe upserted event",
 		"recipeId", recipe.ID,
 		"recipeName", recipe.Name,
 	)
@@ -123,12 +124,12 @@ func (p *Publisher) PublishRecipeCreated(ctx context.Context, recipe *domain.Rec
 	return p.Publish(ctx, event)
 }
 
-// PublishRecipeUpdated publishes a RecipeUpdatedEvent
-func (p *Publisher) PublishRecipeUpdated(ctx context.Context, recipe *domain.Recipe) error {
-	event := events.NewRecipeUpdatedEvent(recipe.ID)
+// PublishRecipeDeleted publishes a RecipeDeletedEvent.
+func (p *Publisher) PublishRecipeDeleted(ctx context.Context, recipeID, userID uuid.UUID) error {
+	event := events.NewRecipeDeletedEvent(recipeID, userID)
 
-	p.logger.Info("publishing recipe updated event",
-		"recipeId", recipe.ID,
+	p.logger.Info("publishing recipe deleted event",
+		"recipeId", recipeID,
 	)
 
 	return p.Publish(ctx, event)
@@ -137,10 +138,10 @@ func (p *Publisher) PublishRecipeUpdated(ctx context.Context, recipe *domain.Rec
 // routingKeyForEvent returns the routing key for a given event
 func routingKeyForEvent(event events.Event) string {
 	switch event.EventType() {
-	case "RecipeCreatedEvent":
-		return "recipe.created"
-	case "RecipeUpdatedEvent":
-		return "recipe.updated"
+	case "RecipeUpsertedEvent":
+		return "recipe.upserted"
+	case "RecipeDeletedEvent":
+		return "recipe.deleted"
 	default:
 		return "recipe.unknown"
 	}

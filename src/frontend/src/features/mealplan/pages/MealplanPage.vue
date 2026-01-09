@@ -171,6 +171,7 @@ onMounted(() => {
   if (recipeStore.recipes.length === 0) {
     void recipeStore.fetchRecipes();
   }
+  void goToCurrentWeek();
 });
 
 function openRecipeSelector(slot: MealSlot) {

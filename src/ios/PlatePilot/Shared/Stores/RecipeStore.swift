@@ -64,28 +64,69 @@ final class RecipeStore {
         ingredients: [RecipeIngredientInput],
         instructions: [String],
         tags: [String],
-        guidedMode: Bool
+        cuisineName: String?
     ) async throws -> Recipe {
-        let ingredientNames = ingredients.map { $0.name }
-        let payload = CreateRecipeRequestDTO(
-            name: name,
-            description: description,
-            prepTime: formattedTime(prepMinutes),
-            cookTime: formattedTime(cookMinutes),
-            mainIngredientName: ingredientNames.first,
-            cuisineName: nil,
-            ingredientNames: ingredientNames,
-            ingredients: ingredients.map {
-                CreateRecipeIngredientDTO(
-                    id: nil,
-                    name: $0.name,
-                    quantity: $0.quantity,
-                    unit: $0.unit
+        let cleanedIngredients = ingredients
+            .map { ingredient in
+                RecipeIngredientInput(
+                    name: ingredient.name.trimmingCharacters(in: .whitespacesAndNewlines),
+                    quantity: ingredient.quantity.trimmingCharacters(in: .whitespacesAndNewlines),
+                    unit: ingredient.unit.trimmingCharacters(in: .whitespacesAndNewlines)
                 )
-            },
-            directions: instructions,
-            tags: tags,
-            guidedMode: guidedMode
+            }
+            .filter { !$0.name.isEmpty }
+
+        let ingredientLines = cleanedIngredients.enumerated().map { index, ingredient in
+            IngredientLineInputDTO(
+                ingredientId: nil,
+                ingredientName: ingredient.name,
+                quantityValue: nil,
+                quantityText: ingredient.quantity.isEmpty ? nil : ingredient.quantity,
+                unit: ingredient.unit.isEmpty ? nil : ingredient.unit,
+                isOptional: false,
+                note: nil,
+                sortOrder: index + 1
+            )
+        }
+
+        let steps = instructions
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .enumerated()
+            .map { index, instruction in
+                RecipeStepInputDTO(
+                    stepIndex: index + 1,
+                    instruction: instruction,
+                    durationSeconds: nil,
+                    temperatureValue: nil,
+                    temperatureUnit: nil,
+                    mediaUrl: nil
+                )
+            }
+
+        let cleanedTags = tags
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        let payload = CreateRecipeRequestDTO(
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+            description: description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? nil
+                : description.trimmingCharacters(in: .whitespacesAndNewlines),
+            prepTimeMinutes: prepMinutes,
+            cookTimeMinutes: cookMinutes,
+            servings: 1,
+            yieldQuantity: nil,
+            yieldUnit: nil,
+            mainIngredientId: nil,
+            mainIngredientName: ingredientLines.first?.ingredientName,
+            cuisineId: nil,
+            cuisineName: cuisineName?.trimmingCharacters(in: .whitespacesAndNewlines),
+            ingredientLines: ingredientLines,
+            steps: steps,
+            tags: cleanedTags,
+            imageUrl: nil,
+            nutrition: nil
         )
 
         do {
@@ -104,21 +145,25 @@ final class RecipeStore {
         isLoading = false
     }
 
-    private func formattedTime(_ minutes: Int) -> String {
-        guard minutes > 0 else { return "" }
-        return "\(minutes) min"
+    func loadUnits() async throws -> [String] {
+        return []
     }
 
-    func loadUnits() async throws -> [String] {
-        let units = try await apiClient.fetchUnits()
-        return units
+    func createUnit(name: String) async throws -> String {
+        let cleaned = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? name : cleaned
+    }
+
+    func loadCuisines() async throws -> [String] {
+        let cuisines = try await apiClient.fetchCuisines()
+        return cuisines
             .compactMap { $0.name?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
     }
 
-    func createUnit(name: String) async throws -> String {
-        let unit = try await apiClient.createUnit(name: name)
-        return unit.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? name
+    func createCuisine(name: String) async throws -> String {
+        let cuisine = try await apiClient.createCuisine(name: name)
+        return cuisine.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? name
     }
 }
 

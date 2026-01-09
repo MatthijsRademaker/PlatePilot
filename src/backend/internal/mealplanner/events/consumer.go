@@ -170,23 +170,23 @@ func (c *Consumer) handleMessage(ctx context.Context, msg amqp.Delivery) error {
 	}
 
 	switch envelope.Type {
-	case "RecipeCreatedEvent":
-		return c.handleRecipeCreated(ctx, msg.Body)
-	case "RecipeUpdatedEvent":
-		return c.handleRecipeUpdated(ctx, msg.Body)
+	case "RecipeUpsertedEvent":
+		return c.handleRecipeUpserted(ctx, msg.Body)
+	case "RecipeDeletedEvent":
+		return c.handleRecipeDeleted(ctx, msg.Body)
 	default:
 		c.logger.Warn("unknown event type", "type", envelope.Type)
 		return nil // Acknowledge unknown events to prevent redelivery
 	}
 }
 
-func (c *Consumer) handleRecipeCreated(ctx context.Context, body []byte) error {
-	var event RecipeCreatedEvent
+func (c *Consumer) handleRecipeUpserted(ctx context.Context, body []byte) error {
+	var event RecipeUpsertedEvent
 	if err := json.Unmarshal(body, &event); err != nil {
-		return fmt.Errorf("unmarshal recipe created event: %w", err)
+		return fmt.Errorf("unmarshal recipe upserted event: %w", err)
 	}
 
-	c.logger.Info("handling recipe created event",
+	c.logger.Info("handling recipe upserted event",
 		"eventId", event.ID,
 		"recipeId", event.Recipe.ID,
 		"recipeName", event.Recipe.Name,
@@ -194,7 +194,8 @@ func (c *Consumer) handleRecipeCreated(ctx context.Context, body []byte) error {
 
 	// Convert DTO to repository model and upsert
 	recipe := event.Recipe.ToRepositoryModel()
-	if err := c.repo.Upsert(ctx, recipe); err != nil {
+	lines := event.Recipe.ToIngredientLineModels()
+	if err := c.repo.Upsert(ctx, recipe, lines); err != nil {
 		return fmt.Errorf("upsert recipe: %w", err)
 	}
 
@@ -202,64 +203,85 @@ func (c *Consumer) handleRecipeCreated(ctx context.Context, body []byte) error {
 	return nil
 }
 
-func (c *Consumer) handleRecipeUpdated(ctx context.Context, body []byte) error {
-	var event RecipeUpdatedEvent
+func (c *Consumer) handleRecipeDeleted(ctx context.Context, body []byte) error {
+	var event RecipeDeletedEvent
 	if err := json.Unmarshal(body, &event); err != nil {
-		return fmt.Errorf("unmarshal recipe updated event: %w", err)
+		return fmt.Errorf("unmarshal recipe deleted event: %w", err)
 	}
 
-	c.logger.Info("handling recipe updated event",
+	c.logger.Info("handling recipe deleted event",
 		"eventId", event.ID,
 		"aggregateId", event.AggregateId,
 	)
 
-	// For updates, we'd need the full recipe data
-	// This could be fetched from the Recipe API or included in the event
-	// For now, just log it
-	c.logger.Warn("recipe update handling not fully implemented - would need to fetch from Recipe API")
+	if err := c.repo.Delete(ctx, event.AggregateId); err != nil {
+		return fmt.Errorf("delete recipe: %w", err)
+	}
+
+	c.logger.Info("recipe deleted from read model", "recipeId", event.AggregateId)
 	return nil
 }
 
 // EventEnvelope is the common structure for all events
 type EventEnvelope struct {
-	ID          uuid.UUID `json:"id"`
-	Type        string    `json:"type"`
-	OccurredOn  string    `json:"occurredOn"`
-	AggregateId uuid.UUID `json:"aggregateId"`
+	ID               uuid.UUID `json:"id"`
+	Type             string    `json:"type"`
+	OccurredOn        string    `json:"occurredOn"`
+	AggregateId       uuid.UUID `json:"aggregateId"`
+	SchemaVersion     int       `json:"schemaVersion"`
+	AggregateVersion  int       `json:"aggregateVersion"`
 }
 
-// RecipeCreatedEvent represents a recipe creation event
-type RecipeCreatedEvent struct {
+// RecipeUpsertedEvent represents a recipe upsert event
+type RecipeUpsertedEvent struct {
 	EventEnvelope
 	Recipe RecipeDTO `json:"recipe"`
 }
 
-// RecipeUpdatedEvent represents a recipe update event
-type RecipeUpdatedEvent struct {
+// RecipeDeletedEvent represents a recipe delete event
+type RecipeDeletedEvent struct {
 	EventEnvelope
+	UserID    uuid.UUID `json:"userId"`
+	DeletedAt string    `json:"deletedAt"`
 }
 
 // RecipeDTO is the recipe data in events
 type RecipeDTO struct {
-	ID              uuid.UUID       `json:"id"`
-	UserID          uuid.UUID       `json:"userId"`
-	Name            string          `json:"name"`
-	Description     string          `json:"description"`
-	PrepTime        string          `json:"prepTime"`
-	CookTime        string          `json:"cookTime"`
-	MainIngredient  IngredientDTO   `json:"mainIngredient"`
-	Cuisine         CuisineDTO      `json:"cuisine"`
-	Ingredients     []IngredientDTO `json:"ingredients"`
-	Allergies       []AllergyDTO    `json:"allergies"`
-	Directions      []string        `json:"directions"`
-	NutritionalInfo NutritionalDTO  `json:"nutritionalInfo"`
-	Metadata        MetadataDTO     `json:"metadata"`
+	ID               uuid.UUID          `json:"id"`
+	UserID           uuid.UUID          `json:"userId"`
+	Name             string             `json:"name"`
+	Description      string             `json:"description"`
+	PrepTimeMinutes  int                `json:"prepTimeMinutes"`
+	CookTimeMinutes  int                `json:"cookTimeMinutes"`
+	TotalTimeMinutes int                `json:"totalTimeMinutes"`
+	Servings         int                `json:"servings"`
+	YieldQuantity    *float64           `json:"yieldQuantity"`
+	YieldUnit        string             `json:"yieldUnit"`
+	MainIngredient   IngredientDTO      `json:"mainIngredient"`
+	Cuisine          CuisineDTO         `json:"cuisine"`
+	IngredientLines  []IngredientLineDTO `json:"ingredientLines"`
+	Allergies        []AllergyDTO       `json:"allergies"`
+	Tags             []string           `json:"tags"`
+	ImageURL         string             `json:"imageUrl"`
+	Nutrition        RecipeNutritionDTO `json:"nutrition"`
+	SearchVector     []float32          `json:"searchVector"`
 }
 
 // IngredientDTO represents an ingredient in events
 type IngredientDTO struct {
 	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`
+}
+
+// IngredientLineDTO represents an ingredient line item in events
+type IngredientLineDTO struct {
+	Ingredient    IngredientDTO `json:"ingredient"`
+	QuantityValue *float64      `json:"quantityValue"`
+	QuantityText  string        `json:"quantityText"`
+	Unit          string        `json:"unit"`
+	IsOptional    bool          `json:"isOptional"`
+	Note          string        `json:"note"`
+	SortOrder     int           `json:"sortOrder"`
 }
 
 // CuisineDTO represents a cuisine in events
@@ -274,24 +296,28 @@ type AllergyDTO struct {
 	Name string    `json:"name"`
 }
 
-// NutritionalDTO represents nutritional info in events
-type NutritionalDTO struct {
-	Calories int `json:"calories"`
-}
-
-// MetadataDTO represents metadata in events
-type MetadataDTO struct {
-	SearchVector  []float32 `json:"searchVector"`
-	ImageURL      string    `json:"imageUrl"`
-	Tags          []string  `json:"tags"`
-	PublishedDate string    `json:"publishedDate"`
+// RecipeNutritionDTO represents aggregated nutrition in events
+type RecipeNutritionDTO struct {
+	CaloriesTotal      int     `json:"caloriesTotal"`
+	CaloriesPerServing int     `json:"caloriesPerServing"`
+	ProteinG           float64 `json:"proteinG"`
+	CarbsG             float64 `json:"carbsG"`
+	FatG               float64 `json:"fatG"`
+	FiberG             float64 `json:"fiberG"`
+	SugarG             float64 `json:"sugarG"`
+	SodiumMg           float64 `json:"sodiumMg"`
 }
 
 // ToRepositoryModel converts the DTO to a repository model
 func (d *RecipeDTO) ToRepositoryModel() *repository.Recipe {
-	ingredientIDs := make([]uuid.UUID, len(d.Ingredients))
-	for i, ing := range d.Ingredients {
-		ingredientIDs[i] = ing.ID
+	tags := d.Tags
+	if tags == nil {
+		tags = []string{}
+	}
+
+	ingredientIDs := make([]uuid.UUID, len(d.IngredientLines))
+	for i, line := range d.IngredientLines {
+		ingredientIDs[i] = line.Ingredient.ID
 	}
 
 	allergyIDs := make([]uuid.UUID, len(d.Allergies))
@@ -304,20 +330,49 @@ func (d *RecipeDTO) ToRepositoryModel() *repository.Recipe {
 		UserID:             d.UserID,
 		Name:               d.Name,
 		Description:        d.Description,
-		PrepTime:           d.PrepTime,
-		CookTime:           d.CookTime,
-		SearchVector:       vectorFromSlice(d.Metadata.SearchVector),
+		PrepTimeMinutes:    d.PrepTimeMinutes,
+		CookTimeMinutes:    d.CookTimeMinutes,
+		TotalTimeMinutes:   d.TotalTimeMinutes,
+		Servings:           d.Servings,
+		YieldQuantity:      d.YieldQuantity,
+		YieldUnit:          d.YieldUnit,
+		SearchVector:       vectorFromSlice(d.SearchVector),
 		CuisineID:          d.Cuisine.ID,
 		CuisineName:        d.Cuisine.Name,
 		MainIngredientID:   d.MainIngredient.ID,
 		MainIngredientName: d.MainIngredient.Name,
 		IngredientIDs:      ingredientIDs,
 		AllergyIDs:         allergyIDs,
-		Directions:         d.Directions,
-		ImageURL:           d.Metadata.ImageURL,
-		Tags:               d.Metadata.Tags,
-		Calories:           d.NutritionalInfo.Calories,
+		ImageURL:           d.ImageURL,
+		Tags:               tags,
+		CaloriesTotal:      d.Nutrition.CaloriesTotal,
+		CaloriesPerServing: d.Nutrition.CaloriesPerServing,
+		ProteinG:           d.Nutrition.ProteinG,
+		CarbsG:             d.Nutrition.CarbsG,
+		FatG:               d.Nutrition.FatG,
+		FiberG:             d.Nutrition.FiberG,
+		SugarG:             d.Nutrition.SugarG,
+		SodiumMg:           d.Nutrition.SodiumMg,
 	}
+}
+
+// ToIngredientLineModels converts ingredient line DTOs to repository models.
+func (d *RecipeDTO) ToIngredientLineModels() []repository.IngredientLine {
+	lines := make([]repository.IngredientLine, 0, len(d.IngredientLines))
+	for _, line := range d.IngredientLines {
+		lines = append(lines, repository.IngredientLine{
+			RecipeID:       d.ID,
+			IngredientID:   line.Ingredient.ID,
+			IngredientName: line.Ingredient.Name,
+			QuantityValue:  line.QuantityValue,
+			QuantityText:   line.QuantityText,
+			Unit:           line.Unit,
+			IsOptional:     line.IsOptional,
+			Note:           line.Note,
+			SortOrder:      line.SortOrder,
+		})
+	}
+	return lines
 }
 
 func vectorFromSlice(v []float32) pgvector.Vector {

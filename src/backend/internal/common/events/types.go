@@ -17,10 +17,12 @@ type Event interface {
 
 // BaseEvent provides common event fields
 type BaseEvent struct {
-	ID          uuid.UUID `json:"id"`
-	Type        string    `json:"type"`
-	OccurredOn  time.Time `json:"occurredOn"`
-	AggregateId uuid.UUID `json:"aggregateId"`
+	ID               uuid.UUID `json:"id"`
+	Type             string    `json:"type"`
+	OccurredOn        time.Time `json:"occurredOn"`
+	AggregateId       uuid.UUID `json:"aggregateId"`
+	SchemaVersion     int       `json:"schemaVersion"`
+	AggregateVersion  int       `json:"aggregateVersion"`
 }
 
 func (e BaseEvent) EventID() uuid.UUID     { return e.ID }
@@ -29,37 +31,45 @@ func (e BaseEvent) OccurredAt() time.Time  { return e.OccurredOn }
 func (e BaseEvent) AggregateID() uuid.UUID { return e.AggregateId }
 
 // RecipeCreatedEvent is published when a new recipe is created
-type RecipeCreatedEvent struct {
+type RecipeUpsertedEvent struct {
 	BaseEvent
 	Recipe dto.RecipeDTO `json:"recipe"`
 }
 
-// NewRecipeCreatedEvent creates a new RecipeCreatedEvent
-func NewRecipeCreatedEvent(recipe dto.RecipeDTO) RecipeCreatedEvent {
-	return RecipeCreatedEvent{
+// NewRecipeUpsertedEvent creates a new RecipeUpsertedEvent.
+func NewRecipeUpsertedEvent(recipe dto.RecipeDTO) RecipeUpsertedEvent {
+	return RecipeUpsertedEvent{
 		BaseEvent: BaseEvent{
-			ID:          uuid.New(),
-			Type:        "RecipeCreatedEvent",
-			OccurredOn:  time.Now().UTC(),
-			AggregateId: recipe.ID,
+			ID:              uuid.New(),
+			Type:            "RecipeUpsertedEvent",
+			OccurredOn:       time.Now().UTC(),
+			AggregateId:      recipe.ID,
+			SchemaVersion:    1,
+			AggregateVersion: 0,
 		},
 		Recipe: recipe,
 	}
 }
 
-// RecipeUpdatedEvent is published when a recipe is updated
-type RecipeUpdatedEvent struct {
+// RecipeDeletedEvent is published when a recipe is deleted.
+type RecipeDeletedEvent struct {
 	BaseEvent
+	UserID    uuid.UUID `json:"userId"`
+	DeletedAt time.Time `json:"deletedAt"`
 }
 
-// NewRecipeUpdatedEvent creates a new RecipeUpdatedEvent
-func NewRecipeUpdatedEvent(recipeID uuid.UUID) RecipeUpdatedEvent {
-	return RecipeUpdatedEvent{
+// NewRecipeDeletedEvent creates a new RecipeDeletedEvent.
+func NewRecipeDeletedEvent(recipeID, userID uuid.UUID) RecipeDeletedEvent {
+	return RecipeDeletedEvent{
 		BaseEvent: BaseEvent{
-			ID:          uuid.New(),
-			Type:        "RecipeUpdatedEvent",
-			OccurredOn:  time.Now().UTC(),
-			AggregateId: recipeID,
+			ID:              uuid.New(),
+			Type:            "RecipeDeletedEvent",
+			OccurredOn:       time.Now().UTC(),
+			AggregateId:      recipeID,
+			SchemaVersion:    1,
+			AggregateVersion: 0,
 		},
+		UserID:    userID,
+		DeletedAt: time.Now().UTC(),
 	}
 }

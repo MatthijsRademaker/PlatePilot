@@ -7,8 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pgvector/pgvector-go"
-
-	"github.com/platepilot/backend/internal/mealplanner/repository"
 )
 
 // SuggestionRequest contains the parameters for suggesting recipes
@@ -80,12 +78,12 @@ type scoredRecipe struct {
 	score float64
 }
 
-func (p *Planner) filterByConstraints(recipes []repository.Recipe, constraints []DailyConstraints) []repository.Recipe {
+func (p *Planner) filterByConstraints(recipes []Recipe, constraints []DailyConstraints) []Recipe {
 	if len(constraints) == 0 {
 		return recipes
 	}
 
-	var filtered []repository.Recipe
+	var filtered []Recipe
 	for _, recipe := range recipes {
 		if p.matchesAnyConstraint(recipe, constraints) {
 			filtered = append(filtered, recipe)
@@ -94,7 +92,7 @@ func (p *Planner) filterByConstraints(recipes []repository.Recipe, constraints [
 	return filtered
 }
 
-func (p *Planner) matchesAnyConstraint(recipe repository.Recipe, constraints []DailyConstraints) bool {
+func (p *Planner) matchesAnyConstraint(recipe Recipe, constraints []DailyConstraints) bool {
 	// If there are no constraints, all recipes match
 	if len(constraints) == 0 {
 		return true
@@ -109,7 +107,7 @@ func (p *Planner) matchesAnyConstraint(recipe repository.Recipe, constraints []D
 	return false
 }
 
-func (p *Planner) matchesDailyConstraint(recipe repository.Recipe, constraint DailyConstraints) bool {
+func (p *Planner) matchesDailyConstraint(recipe Recipe, constraint DailyConstraints) bool {
 	// Check cuisine constraints (if any specified, must match one)
 	if len(constraint.CuisineConstraints) > 0 {
 		cuisineMatch := false
@@ -150,7 +148,7 @@ func (p *Planner) matchesDailyConstraint(recipe repository.Recipe, constraint Da
 	return true
 }
 
-func (p *Planner) removeSelected(recipes []repository.Recipe, selected []uuid.UUID) []repository.Recipe {
+func (p *Planner) removeSelected(recipes []Recipe, selected []uuid.UUID) []Recipe {
 	if len(selected) == 0 {
 		return recipes
 	}
@@ -160,7 +158,7 @@ func (p *Planner) removeSelected(recipes []repository.Recipe, selected []uuid.UU
 		selectedSet[id] = true
 	}
 
-	var filtered []repository.Recipe
+	var filtered []Recipe
 	for _, recipe := range recipes {
 		if !selectedSet[recipe.ID] {
 			filtered = append(filtered, recipe)
@@ -169,10 +167,10 @@ func (p *Planner) removeSelected(recipes []repository.Recipe, selected []uuid.UU
 	return filtered
 }
 
-func (p *Planner) scoreForDiversity(candidates []repository.Recipe, selected []uuid.UUID, allRecipes []repository.Recipe) []scoredRecipe {
+func (p *Planner) scoreForDiversity(candidates []Recipe, selected []uuid.UUID, allRecipes []Recipe) []scoredRecipe {
 	// Build a map of selected recipe vectors for diversity calculation
 	selectedVectors := make([]pgvector.Vector, 0, len(selected))
-	recipeMap := make(map[uuid.UUID]repository.Recipe)
+	recipeMap := make(map[uuid.UUID]Recipe)
 	for _, r := range allRecipes {
 		recipeMap[r.ID] = r
 	}

@@ -55,3 +55,30 @@ func (c *MealPlannerClient) SuggestRecipes(ctx context.Context, req *mealplanner
 
 	return resp.GetRecipeIds(), nil
 }
+
+// GetWeekPlan retrieves a week plan for a user.
+func (c *MealPlannerClient) GetWeekPlan(ctx context.Context, userID, startDate string) (*mealplannerpb.WeekPlan, error) {
+	c.logger.Debug("getting week plan", "startDate", startDate, "userId", userID)
+
+	resp, err := c.client.GetWeekPlan(ctx, &mealplannerpb.GetWeekPlanRequest{
+		UserId:    userID,
+		StartDate: startDate,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get week plan: %w", err)
+	}
+
+	return resp.GetPlan(), nil
+}
+
+// UpsertWeekPlan creates or updates a week plan.
+func (c *MealPlannerClient) UpsertWeekPlan(ctx context.Context, req *mealplannerpb.UpsertWeekPlanRequest) (*mealplannerpb.WeekPlan, error) {
+	c.logger.Debug("upserting week plan", "userId", req.GetUserId())
+
+	resp, err := c.client.UpsertWeekPlan(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("upsert week plan: %w", err)
+	}
+
+	return resp.GetPlan(), nil
+}
