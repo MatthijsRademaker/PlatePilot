@@ -4,7 +4,7 @@
 
 PlatePilot is an intelligent meal planning and recipe management application built with a microservices architecture. The system enables users to discover, organize, and plan meals with AI-powered recommendations based on preferences, dietary restrictions, and recipe similarity using vector search.
 
-The backend is implemented in Go following CQRS (Command Query Responsibility Segregation) with event-driven communication. The frontend is a Vue.js/Quasar application with vertical slice architecture.
+The backend is implemented in Go following CQRS (Command Query Responsibility Segregation) with event-driven communication. The frontend is a native iOS SwiftUI application featuring Apple's Liquid Glass design language.
 
 ## Architecture Diagram
 
@@ -12,10 +12,11 @@ The backend is implemented in Go following CQRS (Command Query Responsibility Se
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │                                  CLIENTS                                         │
 │                    ┌─────────────────────────────────────┐                       │
-│                    │   Vue.js/Quasar Frontend (SPA)      │                       │
-│                    │   - Recipe Management               │                       │
-│                    │   - Meal Planning UI                │                       │
-│                    │   - Search Interface                │                       │
+│                    │   Native iOS App (SwiftUI)          │                       │
+│                    │   - Recipe Browsing & Detail        │                       │
+│                    │   - Meal Planning (Week View)       │                       │
+│                    │   - Home Dashboard                  │                       │
+│                    │   - Auth & User Profile             │                       │
 │                    └──────────────┬──────────────────────┘                       │
 │                                   │ REST/HTTP                                    │
 └───────────────────────────────────┼─────────────────────────────────────────────┘
@@ -107,31 +108,54 @@ src/backend/
 └── deployments/                      # Docker configurations
 ```
 
-### Frontend Structure (Vertical Slices)
+### Frontend Structure (iOS Native)
 
 ```
-src/frontend/src/
-├── features/                         # Feature modules
-│   ├── recipe/                       # Recipe feature
-│   │   ├── types/                    # TypeScript interfaces
-│   │   ├── api/                      # API calls
-│   │   ├── store/                    # Pinia store
-│   │   ├── composables/              # Vue composables
-│   │   ├── components/               # Feature components
-│   │   ├── pages/                    # Route pages
-│   │   └── routes.ts                 # Feature routes
-│   ├── mealplan/                     # Meal planning feature
-│   ├── search/                       # Search feature
-│   └── home/                         # Dashboard feature
-├── shared/                           # Cross-feature code
-│   ├── api/                          # HTTP client
-│   ├── components/                   # Shared components
-│   ├── composables/                  # Shared composables
-│   └── types/                        # Shared types
-├── layouts/                          # App layouts
-├── router/                           # Vue Router setup
-└── stores/                           # Pinia setup
+src/ios/PlatePilot/
+├── App/                              # App entry and navigation
+│   ├── PlatePilotApp.swift           # App entry point
+│   ├── AppState.swift                # Global app state
+│   ├── RootView.swift                # Root navigation
+│   ├── AppView.swift                 # Main tab view
+│   ├── Router.swift                  # Navigation router
+│   └── AppTab.swift                  # Tab definitions
+├── Features/                         # Feature modules
+│   ├── Home/                         # Dashboard
+│   │   ├── HomeView.swift
+│   │   ├── TodayPlanCard.swift
+│   │   ├── DailyCalorieTrackerView.swift
+│   │   └── RecipeSuggestionsView.swift
+│   ├── Recipes/                      # Recipe browsing
+│   │   ├── RecipeListView.swift
+│   │   ├── RecipeDetailView.swift
+│   │   ├── RecipeCardView.swift
+│   │   └── RecipeCreateView.swift
+│   ├── MealPlan/                     # Meal planning
+│   │   ├── MealPlanView.swift
+│   │   ├── WeekPlanView.swift
+│   │   └── MealSlotCardView.swift
+│   ├── Search/                       # Search interface
+│   │   └── SearchView.swift
+│   ├── Insights/                     # Analytics
+│   │   └── InsightsView.swift
+│   └── Auth/                         # Authentication
+│       └── AuthFlowView.swift
+├── Shared/                           # Shared code
+│   ├── API/                          # REST API client
+│   │   ├── APIClient.swift
+│   │   ├── APIConfig.swift
+│   │   └── Endpoints/
+│   ├── Models/                       # Data models
+│   │   ├── Recipe.swift
+│   │   ├── MealPlan.swift
+│   │   └── User.swift
+│   ├── Components/                   # Reusable UI components
+│   ├── Extensions/                   # Swift extensions
+│   └── Utils/                        # Utility functions
+└── Resources/                        # Assets, colors, fonts
 ```
+
+**Deprecated**: `src/frontend/` (Vue.js/Quasar) - No longer maintained
 
 ## Data Flow
 
@@ -245,15 +269,16 @@ Recipe API                     RabbitMQ                      MealPlanner API
 | `pgvector-go` | Vector operations |
 | `amqp091-go` | RabbitMQ client |
 
-### Frontend Libraries
+### Frontend Stack (iOS Native)
 
-| Library | Purpose |
-|---------|---------|
-| Vue.js 3 | UI framework |
-| Quasar 2 | Component library |
-| Pinia | State management |
-| Vue Router | Routing |
-| TypeScript | Type safety |
+| Technology | Purpose |
+|------------|---------|
+| SwiftUI | Declarative UI framework |
+| Swift 6+ | Primary language |
+| URLSession | Networking (async/await) |
+| @Observable | Modern Swift observation for state |
+| Keychain | Secure credential storage |
+| XcodeGen | Project file generation |
 
 ## Development Guidelines
 
@@ -284,31 +309,41 @@ type MealPlanner interface {
 }
 ```
 
-### Frontend Patterns
+### iOS/SwiftUI Patterns
 
-```typescript
-// Import from feature barrel exports
-import { Recipe, useRecipeStore } from '@/features/recipe';
+```swift
+// Observable state management
+@Observable
+class RecipeListViewModel {
+    var recipes: [Recipe] = []
+    var isLoading = false
+    var errorMessage: String?
 
-// Composable pattern for reusable logic
-export function useRecipeList() {
-  const store = useRecipeStore();
-  const { recipes, loading, error } = storeToRefs(store);
+    func fetchRecipes() async {
+        isLoading = true
+        defer { isLoading = false }
 
-  onMounted(() => store.fetchRecipes());
-
-  return { recipes, loading, error };
+        do {
+            recipes = try await APIClient.shared.getRecipes()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
 }
 
-// Pinia composition API store
-export const useRecipeStore = defineStore('recipe', () => {
-  const recipes = ref<Recipe[]>([]);
-  const loading = ref(false);
+// SwiftUI View
+struct RecipeListView: View {
+    @State private var viewModel = RecipeListViewModel()
 
-  async function fetchRecipes() { /* ... */ }
-
-  return { recipes, loading, fetchRecipes };
-});
+    var body: some View {
+        List(viewModel.recipes) { recipe in
+            RecipeCardView(recipe: recipe)
+        }
+        .task {
+            await viewModel.fetchRecipes()
+        }
+    }
+}
 ```
 
 ### API Endpoints

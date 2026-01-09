@@ -25,11 +25,11 @@ The swarm consists of specialized AI agents that work together to implement feat
 
 .claude/                    # Claude Code configuration
 ├── agents/                 # Specialized subagents for workers
-│   ├── frontend-dev.md     # Vue/TypeScript/Tailwind specialist
+│   ├── frontend-dev.md     # iOS SwiftUI specialist
 │   ├── backend-dev.md      # Go/DDD specialist
-│   ├── frontend-tester.md  # Vitest test specialist
-│   ├── backend-tester.md   # Ginkgo BDD test specialist
-│   └── e2e-tester.md       # Playwright E2E specialist
+│   ├── frontend-tester.md  # XCTest specialist (iOS)
+│   ├── backend-tester.md   # Go testing specialist
+│   └── e2e-tester.md       # XCUITest E2E specialist (iOS)
 ├── skills/                 # Claude Code skills
 │   └── swarm-board/        # Task board interaction skill
 └── settings.local.json     # MCP server configuration
@@ -51,16 +51,16 @@ Backlog → InProgress → Review → Done
 
 Workers delegate specialized work to subagents defined in `.claude/agents/`:
 
-- **Frontend work** → `frontend-dev` subagent (Vue, Tailwind, Vuetify patterns)
-- **Backend work** → `backend-dev` subagent (Go, DDD patterns)
-- **Tests** → `*-tester` subagents (Vitest, Ginkgo, Playwright)
+- **Frontend work** → `frontend-dev` subagent (SwiftUI, iOS native patterns)
+- **Backend work** → `backend-dev` subagent (Go, CQRS/DDD patterns)
+- **Tests** → `*-tester` subagents (XCTest, Go testing, XCUITest)
 
 ### 3. MCP Servers
 
 The project is configured with MCP (Model Context Protocol) servers for enhanced capabilities:
 
-- **tailwindcss** - Tailwind CSS class lookups and documentation
-- **playwright** - Browser automation for E2E testing
+- **xcode** - Xcode project management and iOS development (planned)
+- **playwright** - Browser automation (legacy, for deprecated Vue frontend)
 
 MCP servers are pre-installed in the worker Docker image and configured in `.claude/settings.local.json`.
 

@@ -29,10 +29,11 @@ The MVP focuses on the **Mealplanner Agent** - the first of three planned AI per
 
 ## Short-Term Goals (Next Sprint)
 
-- Implement vector-based recipe similarity search in the frontend
-- Create the meal planning UI (week view with meal slots)
-- Connect frontend to existing backend APIs (BFF → gRPC services)
-- Add basic recipe filtering (by cuisine, ingredients, allergies)
+- Complete shopping list feature in iOS app
+- Enhance meal planning UI (week view with drag-and-drop)
+- Implement recipe creation flow with image upload
+- Add calorie tracking integration with meal plans
+- Refine Liquid Glass design patterns across all screens
 
 ## Medium-Term Goals (1-3 Months)
 
@@ -55,12 +56,14 @@ The ultimate goal is a **multi-agent collaborative system** where:
 ## Technical Constraints
 
 - **Backend**: Go microservices (Recipe API, MealPlanner API, Mobile BFF)
-- **Frontend**: Vue.js 3 + Quasar 2 (vertical slice architecture)
+- **Frontend**: Native iOS with SwiftUI (feature-based architecture)
+- **Design Language**: Apple's Liquid Glass design (iOS 26+)
 - **Vector Search**: PostgreSQL with pgvector extension
 - **Communication**: gRPC between services, REST for client-facing BFF
 - **Messaging**: RabbitMQ for event-driven updates
-- **No ORM**: Explicit SQL queries with pgx
+- **No ORM**: Explicit SQL queries with pgx (backend)
 - **Hobby project**: Simple solutions preferred, no enterprise patterns
+- **Project Generation**: XcodeGen for reproducible Xcode projects
 
 ## Out of Scope
 
@@ -73,11 +76,12 @@ The ultimate goal is a **multi-agent collaborative system** where:
 
 ## Quality Standards
 
-- Code must have tests (table-driven tests for Go)
-- Must follow existing code patterns (vertical slices in frontend, CQRS in backend)
-- Performance considerations (vector search should be fast)
+- Code must have tests (table-driven tests for Go, XCTest for iOS)
+- Must follow existing code patterns (feature-based architecture in iOS, CQRS in backend)
+- Performance considerations (vector search should be fast, iOS animations smooth)
 - Intuitive UX - the app should feel like talking to helpful assistants
-- Mobile-first design with Quasar components
+- Native iOS design with SwiftUI and Liquid Glass patterns
+- Proper async/await patterns in Swift for networking
 
 ## Priority Guidelines
 
@@ -98,10 +102,12 @@ Place design files in the designs/ folder and reference them here:
 
 ## Notes for Autonomous Development
 
-- Focus on the Mealplanner Agent first - it's the MVP foundation
+- Focus on refining the iOS app - the Vue.js frontend is deprecated
 - Each agent should feel like a distinct mini-app with its own personality
 - Keep the three agents loosely coupled initially, plan for integration later
 - Prefer small, well-defined tasks over large features
 - Consider dependencies between features
 - The backend infrastructure (Go services, vector search) is already in place
-- Frontend vertical slices align well with the agent/section concept
+- iOS feature-based structure aligns well with the agent/section concept
+- Use XcodeGen for project file management (never edit .xcodeproj directly)
+- Test on real devices when possible to validate networking with BFF

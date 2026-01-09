@@ -13,6 +13,7 @@
             - own metadata (how often suggested?)
         - save constraints for easy reuse
     - ShoppingList -> once core recipes is done and unified app
+        - alrready have a backend
         - aggregate units and quantities
         - categories for ingredients -> should these live in the recipe data?
             - categories can be used for walking route
