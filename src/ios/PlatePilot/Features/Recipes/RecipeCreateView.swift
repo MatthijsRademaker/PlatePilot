@@ -17,9 +17,12 @@ struct RecipeCreateView: View {
     @State private var newIngredientQuantity = RecipeCreationMetrics.defaultQuantity
     @State private var newIngredientUnit = RecipeCreationMetrics.defaultUnit
     @State private var availableUnits: [String] = RecipeCreationMetrics.defaultUnits
+    @State private var availableCuisines: [String] = []
     @State private var isUnitOverlayVisible = false
     @State private var unitOverlayTarget: UnitPickerTarget?
     @State private var newUnitName = ""
+    @State private var isCuisineOverlayVisible = false
+    @State private var newCuisineName = ""
     @State private var timePickerTarget: TimePickerTarget?
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var photoImage: Image?
@@ -43,14 +46,14 @@ struct RecipeCreateView: View {
                     metaCard
                         .modifier(sectionAnimation(delay: 0.1))
 
+                    cuisineSection
+                        .modifier(sectionAnimation(delay: 0.13))
+
                     ingredientSection
                         .modifier(sectionAnimation(delay: 0.15))
 
                     instructionSection
                         .modifier(sectionAnimation(delay: 0.2))
-
-                    guidedModeRow
-                        .modifier(sectionAnimation(delay: 0.25))
 
                     dietTagsRow
                         .modifier(sectionAnimation(delay: 0.3))
@@ -80,6 +83,14 @@ struct RecipeCreateView: View {
                 )
                 .transition(.opacity)
             }
+            if isCuisineOverlayVisible {
+                CuisineCreationOverlay(
+                    cuisineName: $newCuisineName,
+                    onCancel: { hideCuisineOverlay() },
+                    onSave: { saveCuisine() }
+                )
+                .transition(.opacity)
+            }
         }
         .onAppear {
             withAnimation(.easeOut(duration: 0.4)) {
@@ -88,6 +99,7 @@ struct RecipeCreateView: View {
         }
         .task {
             await loadUnits()
+            await loadCuisines()
         }
         .onChange(of: selectedPhoto) { _, newValue in
             guard let newValue else {
@@ -96,7 +108,8 @@ struct RecipeCreateView: View {
             }
             Task {
                 if let data = try? await newValue.loadTransferable(type: Data.self),
-                   let uiImage = UIImage(data: data) {
+                    let uiImage = UIImage(data: data)
+                {
                     await MainActor.run {
                         photoImage = Image(uiImage: uiImage)
                     }
@@ -188,6 +201,28 @@ struct RecipeCreateView: View {
         }
     }
 
+    private var cuisineSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Cuisine", actionLabel: "Add cuisine") {
+                showCuisineOverlay()
+            }
+
+            if availableCuisines.isEmpty {
+                EmptyRow(text: "Add a cuisine")
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(availableCuisines, id: \.self) { cuisine in
+                            TagPill(title: cuisine, isSelected: draft.cuisineName == cuisine) {
+                                toggleCuisine(cuisine)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private var instructionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "Instructions", actionLabel: "Add step") {
@@ -196,9 +231,11 @@ struct RecipeCreateView: View {
 
             VStack(spacing: 10) {
                 ForEach(Array(draft.instructions.enumerated()), id: \.element.id) { index, step in
-                    InstructionRow(index: index + 1, text: step.text, onDelete: {
-                        removeInstruction(step)
-                    })
+                    InstructionRow(
+                        index: index + 1, text: step.text,
+                        onDelete: {
+                            removeInstruction(step)
+                        })
                 }
 
                 if isAddingInstruction {
@@ -302,34 +339,17 @@ struct RecipeCreateView: View {
         }
     }
 
-    private var guidedModeRow: some View {
-        GlassRow {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Guided Cooking Mode")
-                        .font(PlatePilotTheme.bodyFont(size: 16, weight: .semibold))
-                        .foregroundStyle(RecipeCreationColors.textPrimary)
-
-                    Spacer()
-
-                    Toggle("Guided Cooking Mode", isOn: $draft.guidedMode)
-                        .labelsHidden()
-                        .tint(RecipeCreationColors.accent)
-                }
-
-                Text("Keeps steps on-screen while you cook")
-                    .font(PlatePilotTheme.bodyFont(size: 12))
-                    .foregroundStyle(RecipeCreationColors.textSecondary)
-            }
-        }
-    }
-
     private var dietTagsRow: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Dietary Tags")
-                .font(PlatePilotTheme.bodyFont(size: 14, weight: .semibold))
-                .foregroundStyle(RecipeCreationColors.textSecondary)
-
+            HStack(){
+                
+                Text("Dietary Tags")
+                    .font(PlatePilotTheme.bodyFont(size: 16, weight: .semibold))
+                    .foregroundStyle(RecipeCreationColors.textPrimary)
+                
+                Spacer()
+            }
+            
             HStack(spacing: 10) {
                 ForEach(DietTag.allCases, id: \.self) { tag in
                     TagPill(title: tag.title, isSelected: draft.tags.contains(tag)) {
@@ -350,7 +370,9 @@ struct RecipeCreateView: View {
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
                         .fill(RecipeCreationColors.saveGradient)
                         .frame(height: 58)
-                        .shadow(color: RecipeCreationColors.accent.opacity(0.35), radius: 18, x: 0, y: 10)
+                        .shadow(
+                            color: RecipeCreationColors.accent.opacity(0.35), radius: 18, x: 0,
+                            y: 10)
 
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
                         .stroke(Color.white.opacity(0.2), lineWidth: 1)
@@ -384,7 +406,8 @@ struct RecipeCreateView: View {
     }
 
     private var canSave: Bool {
-        !draft.title.trimmed().isEmpty && !draft.ingredients.isEmpty && !draft.instructions.isEmpty && !isSaving
+        !draft.title.trimmed().isEmpty && !draft.ingredients.isEmpty && !draft.instructions.isEmpty
+            && !isSaving
     }
 
     private func sectionAnimation(delay: Double) -> some ViewModifier {
@@ -396,6 +419,15 @@ struct RecipeCreateView: View {
             draft.tags.remove(tag)
         } else {
             draft.tags.insert(tag)
+        }
+        Haptics.light()
+    }
+
+    private func toggleCuisine(_ cuisine: String) {
+        if draft.cuisineName == cuisine {
+            draft.cuisineName = nil
+        } else {
+            draft.cuisineName = cuisine
         }
         Haptics.light()
     }
@@ -433,6 +465,28 @@ struct RecipeCreateView: View {
         guard !cleaned.isEmpty else { return }
         Task {
             await persistUnit(cleaned)
+        }
+    }
+
+    private func showCuisineOverlay() {
+        newCuisineName = ""
+        withAnimation(.easeOut(duration: 0.2)) {
+            isCuisineOverlayVisible = true
+        }
+    }
+
+    private func hideCuisineOverlay() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            isCuisineOverlayVisible = false
+        }
+        newCuisineName = ""
+    }
+
+    private func saveCuisine() {
+        let cleaned = newCuisineName.trimmed()
+        guard !cleaned.isEmpty else { return }
+        Task {
+            await persistCuisine(cleaned)
         }
     }
 
@@ -530,7 +584,7 @@ struct RecipeCreateView: View {
                 ingredients: ingredients,
                 instructions: draft.instructions.map { $0.text.trimmed() }.filter { !$0.isEmpty },
                 tags: draft.tags.map { $0.apiValue },
-                guidedMode: draft.guidedMode
+                cuisineName: draft.cuisineName?.trimmed().nonEmpty
             )
             dismiss()
         } catch {
@@ -561,7 +615,9 @@ struct RecipeCreateView: View {
             let combined = (RecipeCreationMetrics.defaultUnits + units)
                 .map { $0.trimmed() }
                 .filter { !$0.isEmpty }
-            let unique = Array(Set(combined)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+            let unique = Array(Set(combined)).sorted {
+                $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+            }
             await MainActor.run {
                 availableUnits = unique
             }
@@ -572,12 +628,31 @@ struct RecipeCreateView: View {
         }
     }
 
+    private func loadCuisines() async {
+        do {
+            let cuisines = try await recipeStore.loadCuisines()
+            let unique = Array(Set(cuisines))
+                .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+            await MainActor.run {
+                availableCuisines = unique
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = (error as? APIError)?.errorDescription ?? "Unable to load cuisines."
+            }
+        }
+    }
+
     private func persistUnit(_ cleaned: String) async {
         do {
             let savedUnit = try await recipeStore.createUnit(name: cleaned)
             await MainActor.run {
-                let resolvedUnit = availableUnits.first { $0.caseInsensitiveCompare(savedUnit) == .orderedSame } ?? savedUnit
-                if !availableUnits.contains(where: { $0.caseInsensitiveCompare(resolvedUnit) == .orderedSame }) {
+                let resolvedUnit =
+                    availableUnits.first { $0.caseInsensitiveCompare(savedUnit) == .orderedSame }
+                    ?? savedUnit
+                if !availableUnits.contains(where: {
+                    $0.caseInsensitiveCompare(resolvedUnit) == .orderedSame
+                }) {
                     availableUnits.append(resolvedUnit)
                 }
                 if let target = unitOverlayTarget {
@@ -589,6 +664,30 @@ struct RecipeCreateView: View {
         } catch {
             await MainActor.run {
                 errorMessage = (error as? APIError)?.errorDescription ?? "Unable to save unit."
+            }
+        }
+    }
+
+    private func persistCuisine(_ cleaned: String) async {
+        do {
+            let savedCuisine = try await recipeStore.createCuisine(name: cleaned)
+            await MainActor.run {
+                let resolvedCuisine =
+                    availableCuisines.first {
+                        $0.caseInsensitiveCompare(savedCuisine) == .orderedSame
+                    } ?? savedCuisine
+                if !availableCuisines.contains(where: {
+                    $0.caseInsensitiveCompare(resolvedCuisine) == .orderedSame
+                }) {
+                    availableCuisines.append(resolvedCuisine)
+                }
+                draft.cuisineName = resolvedCuisine
+                Haptics.light()
+                hideCuisineOverlay()
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = (error as? APIError)?.errorDescription ?? "Unable to save cuisine."
             }
         }
     }
@@ -645,8 +744,8 @@ private struct RecipeDraft {
     var cookMinutes: Int = 30
     var ingredients: [IngredientDraft] = []
     var instructions: [InstructionDraft] = []
-    var guidedMode: Bool = false
     var tags: Set<DietTag> = []
+    var cuisineName: String? = nil
 }
 
 private struct IngredientDraft: Identifiable, Hashable {
@@ -692,7 +791,9 @@ private enum RecipeCreationMetrics {
     static let hubBarHeight: CGFloat = 76
     static let defaultQuantity = "1"
     static let defaultUnit = "unit"
-    static let defaultUnits = ["unit", "g", "kg", "ml", "l", "tsp", "tbsp", "cup", "pinch", "slice"]
+    static let defaultUnits = [
+        "unit", "g", "kg", "ml", "l", "tsp", "tbsp", "cup", "pinch", "slice",
+    ]
 }
 
 private enum RecipeCreationColors {
@@ -701,12 +802,15 @@ private enum RecipeCreationColors {
     static let accent = Color(red: 0.88, green: 0.44, blue: 0.12)
     static let accentGlow = Color(red: 1.0, green: 0.7, blue: 0.42)
     static let saveGradient = LinearGradient(
-        colors: [Color(red: 0.95, green: 0.5, blue: 0.24), Color(red: 0.87, green: 0.35, blue: 0.16)],
+        colors: [
+            Color(red: 0.95, green: 0.5, blue: 0.24), Color(red: 0.87, green: 0.35, blue: 0.16),
+        ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 }
 
+// TODO: Add some bubbles or cool artsy background on top of the gradient. To make liquid glass pop
 private struct RecipeCreationBackground: View {
     let reduceTransparency: Bool
 
@@ -716,7 +820,7 @@ private struct RecipeCreationBackground: View {
                 colors: [
                     Color(red: 0.95, green: 0.55, blue: 0.22),
                     Color(red: 0.97, green: 0.7, blue: 0.4),
-                    Color(red: 1.0, green: 0.95, blue: 0.91)
+                    Color(red: 1.0, green: 0.95, blue: 0.91),
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -747,9 +851,9 @@ private struct GlassCard<Content: View>: View {
             .animation(.easeOut(duration: 0.2), value: isFocused)
     }
 
-    @ViewBuilder
     private var glassBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: RecipeCreationMetrics.cardRadius, style: .continuous)
+        let shape = RoundedRectangle(
+            cornerRadius: RecipeCreationMetrics.cardRadius, style: .continuous)
 
         let base = ZStack {
             shape
@@ -758,7 +862,9 @@ private struct GlassCard<Content: View>: View {
             shape
                 .stroke(
                     LinearGradient(
-                        colors: [Color.white.opacity(isFocused ? 0.4 : 0.28), Color.white.opacity(0.08)],
+                        colors: [
+                            Color.white.opacity(isFocused ? 0.4 : 0.28), Color.white.opacity(0.08),
+                        ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -766,14 +872,20 @@ private struct GlassCard<Content: View>: View {
                 )
         }
 
-        return base
+        return
+            base
             .applyGlassIfNeeded(
                 reduceTransparency: reduceTransparency,
                 cornerRadius: RecipeCreationMetrics.cardRadius,
                 tint: .white.opacity(isFocused ? 0.2 : 0.14)
             )
-            .shadow(color: RecipeCreationColors.accent.opacity(isFocused ? 0.24 : 0.18), radius: isFocused ? 26 : 20, x: 0, y: isFocused ? 12 : 10)
-            .shadow(color: Color.black.opacity(isFocused ? 0.12 : 0.08), radius: isFocused ? 20 : 16, x: 0, y: isFocused ? 8 : 6)
+            .shadow(
+                color: RecipeCreationColors.accent.opacity(isFocused ? 0.24 : 0.18),
+                radius: isFocused ? 26 : 20, x: 0, y: isFocused ? 12 : 10
+            )
+            .shadow(
+                color: Color.black.opacity(isFocused ? 0.12 : 0.08), radius: isFocused ? 20 : 16,
+                x: 0, y: isFocused ? 8 : 6)
     }
 }
 
@@ -788,10 +900,11 @@ private struct GlassRow<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(glassBackground)
     }
-    
+
     @ViewBuilder
     private var glassBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: RecipeCreationMetrics.rowRadius, style: .continuous)
+        let shape = RoundedRectangle(
+            cornerRadius: RecipeCreationMetrics.rowRadius, style: .continuous)
         if reduceTransparency {
             shape
                 .fill(Color.white.opacity(0.9))
@@ -823,7 +936,8 @@ private struct SectionHeader: View {
                     .foregroundStyle(.white)
                     .frame(width: 30, height: 30)
                     .background(RecipeCreationColors.saveGradient, in: Circle())
-                    .shadow(color: RecipeCreationColors.accentGlow.opacity(0.6), radius: 10, x: 0, y: 6)
+                    .shadow(
+                        color: RecipeCreationColors.accentGlow.opacity(0.6), radius: 10, x: 0, y: 6)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(actionLabel)
@@ -988,7 +1102,9 @@ private struct InstructionRow: View {
                     .font(PlatePilotTheme.bodyFont(size: 12, weight: .semibold))
                     .foregroundStyle(RecipeCreationColors.textPrimary)
                     .frame(width: 24, height: 24)
-                    .background(Color.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(
+                        Color.white.opacity(0.2),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                 Text(text)
                     .font(PlatePilotTheme.bodyFont(size: 14))
@@ -1108,7 +1224,9 @@ private struct TagPill: View {
                     Capsule()
                         .stroke(Color.white.opacity(isSelected ? 0.25 : 0.2), lineWidth: 1)
                 )
-                .shadow(color: isSelected ? RecipeCreationColors.accentGlow.opacity(0.5) : .clear, radius: 10, x: 0, y: 6)
+                .shadow(
+                    color: isSelected ? RecipeCreationColors.accentGlow.opacity(0.5) : .clear,
+                    radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -1208,6 +1326,62 @@ private struct UnitCreationOverlay: View {
     }
 }
 
+private struct CuisineCreationOverlay: View {
+    @Binding var cuisineName: String
+    let onCancel: () -> Void
+    let onSave: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture(perform: onCancel)
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Add Cuisine")
+                    .font(PlatePilotTheme.titleFont(size: 20))
+                    .foregroundStyle(RecipeCreationColors.textPrimary)
+
+                TextField("e.g. Italian, Thai", text: $cuisineName)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .font(PlatePilotTheme.bodyFont(size: 15))
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.white.opacity(0.25))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    )
+
+                HStack(spacing: 12) {
+                    Button("Cancel", action: onCancel)
+                        .buttonStyle(.bordered)
+
+                    Spacer()
+
+                    Button("Save Cuisine", action: onSave)
+                        .buttonStyle(.borderedProminent)
+                        .disabled(cuisineName.trimmed().isEmpty)
+                }
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                    )
+            )
+            .padding(.horizontal, 32)
+        }
+    }
+}
+
 private struct TimePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var minutes: Int
@@ -1291,15 +1465,22 @@ private enum Haptics {
     }
 }
 
-private extension String {
-    func trimmed() -> String {
+extension String {
+    fileprivate func trimmed() -> String {
         trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    fileprivate var nonEmpty: String? {
+        let cleaned = trimmed()
+        return cleaned.isEmpty ? nil : cleaned
     }
 }
 
-private extension View {
+extension View {
     @ViewBuilder
-    func applyGlassIfNeeded(reduceTransparency: Bool, cornerRadius: CGFloat, tint: Color) -> some View {
+    fileprivate func applyGlassIfNeeded(
+        reduceTransparency: Bool, cornerRadius: CGFloat, tint: Color
+    ) -> some View {
         if reduceTransparency {
             self
         } else {

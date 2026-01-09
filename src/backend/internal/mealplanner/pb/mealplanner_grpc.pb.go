@@ -20,6 +20,8 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	MealPlannerService_SuggestRecipes_FullMethodName = "/mealplanner.v1.MealPlannerService/SuggestRecipes"
+	MealPlannerService_GetWeekPlan_FullMethodName    = "/mealplanner.v1.MealPlannerService/GetWeekPlan"
+	MealPlannerService_UpsertWeekPlan_FullMethodName = "/mealplanner.v1.MealPlannerService/UpsertWeekPlan"
 )
 
 // MealPlannerServiceClient is the client API for MealPlannerService service.
@@ -30,6 +32,10 @@ const (
 type MealPlannerServiceClient interface {
 	// Suggests recipes based on given constraints
 	SuggestRecipes(ctx context.Context, in *SuggestionsRequest, opts ...grpc.CallOption) (*SuggestionsResponse, error)
+	// Retrieves a week plan for a given start date
+	GetWeekPlan(ctx context.Context, in *GetWeekPlanRequest, opts ...grpc.CallOption) (*GetWeekPlanResponse, error)
+	// Creates or updates a week plan
+	UpsertWeekPlan(ctx context.Context, in *UpsertWeekPlanRequest, opts ...grpc.CallOption) (*UpsertWeekPlanResponse, error)
 }
 
 type mealPlannerServiceClient struct {
@@ -50,6 +56,26 @@ func (c *mealPlannerServiceClient) SuggestRecipes(ctx context.Context, in *Sugge
 	return out, nil
 }
 
+func (c *mealPlannerServiceClient) GetWeekPlan(ctx context.Context, in *GetWeekPlanRequest, opts ...grpc.CallOption) (*GetWeekPlanResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetWeekPlanResponse)
+	err := c.cc.Invoke(ctx, MealPlannerService_GetWeekPlan_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mealPlannerServiceClient) UpsertWeekPlan(ctx context.Context, in *UpsertWeekPlanRequest, opts ...grpc.CallOption) (*UpsertWeekPlanResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpsertWeekPlanResponse)
+	err := c.cc.Invoke(ctx, MealPlannerService_UpsertWeekPlan_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MealPlannerServiceServer is the server API for MealPlannerService service.
 // All implementations must embed UnimplementedMealPlannerServiceServer
 // for forward compatibility.
@@ -58,6 +84,10 @@ func (c *mealPlannerServiceClient) SuggestRecipes(ctx context.Context, in *Sugge
 type MealPlannerServiceServer interface {
 	// Suggests recipes based on given constraints
 	SuggestRecipes(context.Context, *SuggestionsRequest) (*SuggestionsResponse, error)
+	// Retrieves a week plan for a given start date
+	GetWeekPlan(context.Context, *GetWeekPlanRequest) (*GetWeekPlanResponse, error)
+	// Creates or updates a week plan
+	UpsertWeekPlan(context.Context, *UpsertWeekPlanRequest) (*UpsertWeekPlanResponse, error)
 	mustEmbedUnimplementedMealPlannerServiceServer()
 }
 
@@ -70,6 +100,12 @@ type UnimplementedMealPlannerServiceServer struct{}
 
 func (UnimplementedMealPlannerServiceServer) SuggestRecipes(context.Context, *SuggestionsRequest) (*SuggestionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SuggestRecipes not implemented")
+}
+func (UnimplementedMealPlannerServiceServer) GetWeekPlan(context.Context, *GetWeekPlanRequest) (*GetWeekPlanResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetWeekPlan not implemented")
+}
+func (UnimplementedMealPlannerServiceServer) UpsertWeekPlan(context.Context, *UpsertWeekPlanRequest) (*UpsertWeekPlanResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertWeekPlan not implemented")
 }
 func (UnimplementedMealPlannerServiceServer) mustEmbedUnimplementedMealPlannerServiceServer() {}
 func (UnimplementedMealPlannerServiceServer) testEmbeddedByValue()                            {}
@@ -110,6 +146,42 @@ func _MealPlannerService_SuggestRecipes_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MealPlannerService_GetWeekPlan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWeekPlanRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MealPlannerServiceServer).GetWeekPlan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MealPlannerService_GetWeekPlan_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MealPlannerServiceServer).GetWeekPlan(ctx, req.(*GetWeekPlanRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MealPlannerService_UpsertWeekPlan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertWeekPlanRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MealPlannerServiceServer).UpsertWeekPlan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MealPlannerService_UpsertWeekPlan_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MealPlannerServiceServer).UpsertWeekPlan(ctx, req.(*UpsertWeekPlanRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MealPlannerService_ServiceDesc is the grpc.ServiceDesc for MealPlannerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -120,6 +192,14 @@ var MealPlannerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SuggestRecipes",
 			Handler:    _MealPlannerService_SuggestRecipes_Handler,
+		},
+		{
+			MethodName: "GetWeekPlan",
+			Handler:    _MealPlannerService_GetWeekPlan_Handler,
+		},
+		{
+			MethodName: "UpsertWeekPlan",
+			Handler:    _MealPlannerService_UpsertWeekPlan_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

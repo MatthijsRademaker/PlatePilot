@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pgvector/pgvector-go"
 	"github.com/platepilot/backend/internal/common/domain"
 )
@@ -18,7 +20,6 @@ var (
 	ErrIngredientNotFound = errors.New("ingredient not found")
 	ErrCuisineNotFound    = errors.New("cuisine not found")
 	ErrAllergyNotFound    = errors.New("allergy not found")
-	ErrUnitNotFound       = errors.New("unit not found")
 	ErrUserNotFound       = errors.New("user not found")
 )
 
@@ -33,25 +34,33 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 }
 
 func accessClause(alias string, userParam int) string {
-	return fmt.Sprintf("%s.user_id = $%d OR EXISTS (SELECT 1 FROM recipe_shares rs WHERE rs.recipe_id = %s.id AND rs.shared_with_user_id = $%d)", alias, userParam, alias, userParam)
+	return fmt.Sprintf("(%s.user_id = $%d OR EXISTS (SELECT 1 FROM recipe_shares rs WHERE rs.recipe_id = %s.id AND rs.shared_with_user_id = $%d))", alias, userParam, alias, userParam)
+}
+
+func activeClause(alias string) string {
+	return fmt.Sprintf("%s.deleted_at IS NULL", alias)
 }
 
 // GetByID retrieves a recipe by ID with all related entities
 func (r *Repository) GetByID(ctx context.Context, userID, id uuid.UUID) (*domain.Recipe, error) {
 	query := `
 		SELECT
-			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
-			r.directions, r.nutritional_info_calories,
-			r.metadata_search_vector, r.metadata_image_url,
-			r.metadata_tags, r.metadata_published_date,
-			r.created_at, r.updated_at,
-			c.id, c.name, c.created_at,
-			mi.id, mi.name, mi.quantity, mi.created_at
+			r.id, r.user_id, r.name, r.description,
+			r.prep_time_minutes, r.cook_time_minutes, r.total_time_minutes,
+			r.servings, r.yield_quantity, r.yield_unit,
+			r.image_url, r.tags, r.search_vector,
+			r.created_at, r.updated_at, r.deleted_at,
+			c.id, c.user_id, c.name, c.created_at,
+			mi.id, mi.user_id, mi.name, mi.description, mi.created_at, mi.updated_at,
+			rn.calories_total, rn.calories_per_serving,
+			rn.protein_g, rn.carbs_g, rn.fat_g, rn.fiber_g, rn.sugar_g, rn.sodium_mg
 		FROM recipes r
 		JOIN cuisines c ON r.cuisine_id = c.id
 		JOIN ingredients mi ON r.main_ingredient_id = mi.id
+		LEFT JOIN recipe_nutrition rn ON rn.recipe_id = r.id
 		WHERE r.id = $1
-		  AND (` + accessClause("r", 2) + `)
+		  AND ` + activeClause("r") + `
+		  AND ` + accessClause("r", 2) + `
 	`
 
 	var recipe domain.Recipe
@@ -60,16 +69,28 @@ func (r *Repository) GetByID(ctx context.Context, userID, id uuid.UUID) (*domain
 	var searchVector pgvector.Vector
 	var imageURL *string
 	var tags []string
-	var publishedDate time.Time
+	var yieldUnit *string
+	var yieldQuantity pgtype.Numeric
+	var deletedAt *time.Time
+	var protein pgtype.Numeric
+	var carbs pgtype.Numeric
+	var fat pgtype.Numeric
+	var fiber pgtype.Numeric
+	var sugar pgtype.Numeric
+	var sodium pgtype.Numeric
+	var caloriesTotal int
+	var caloriesPerServing int
 
 	err := r.pool.QueryRow(ctx, query, id, userID).Scan(
 		&recipe.ID, &recipe.UserID, &recipe.Name, &recipe.Description,
-		&recipe.PrepTime, &recipe.CookTime,
-		&recipe.Directions, &recipe.NutritionalInfo.Calories,
-		&searchVector, &imageURL, &tags, &publishedDate,
-		&recipe.CreatedAt, &recipe.UpdatedAt,
-		&cuisine.ID, &cuisine.Name, &cuisine.CreatedAt,
-		&mainIngredient.ID, &mainIngredient.Name, &mainIngredient.Quantity, &mainIngredient.CreatedAt,
+		&recipe.PrepTimeMinutes, &recipe.CookTimeMinutes, &recipe.TotalTimeMinutes,
+		&recipe.Servings, &yieldQuantity, &yieldUnit,
+		&imageURL, &tags, &searchVector,
+		&recipe.CreatedAt, &recipe.UpdatedAt, &deletedAt,
+		&cuisine.ID, &cuisine.UserID, &cuisine.Name, &cuisine.CreatedAt,
+		&mainIngredient.ID, &mainIngredient.UserID, &mainIngredient.Name, &mainIngredient.Description, &mainIngredient.CreatedAt, &mainIngredient.UpdatedAt,
+		&caloriesTotal, &caloriesPerServing,
+		&protein, &carbs, &fat, &fiber, &sugar, &sodium,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -80,54 +101,123 @@ func (r *Repository) GetByID(ctx context.Context, userID, id uuid.UUID) (*domain
 
 	recipe.Cuisine = &cuisine
 	recipe.MainIngredient = &mainIngredient
-	recipe.Metadata.SearchVector = searchVector
+	recipe.SearchVector = searchVector
 	if imageURL != nil {
-		recipe.Metadata.ImageURL = *imageURL
+		recipe.ImageURL = *imageURL
 	}
-	recipe.Metadata.Tags = tags
-	recipe.Metadata.PublishedDate = publishedDate
-
-	// Load recipe ingredients
-	ingredients, err := r.getRecipeIngredients(ctx, id)
+	if yieldUnit != nil {
+		recipe.YieldUnit = *yieldUnit
+	}
+	yieldPtr, err := numericToFloatPtr(yieldQuantity)
 	if err != nil {
-		return nil, fmt.Errorf("load ingredients: %w", err)
+		return nil, fmt.Errorf("parse yield quantity: %w", err)
 	}
-	recipe.Ingredients = ingredients
+	recipe.YieldQuantity = yieldPtr
+	recipe.Tags = tags
+	recipe.DeletedAt = deletedAt
+	recipe.Nutrition = domain.RecipeNutrition{
+		CaloriesTotal:      caloriesTotal,
+		CaloriesPerServing: caloriesPerServing,
+		ProteinG:           numericToFloat(protein),
+		CarbsG:             numericToFloat(carbs),
+		FatG:               numericToFloat(fat),
+		FiberG:             numericToFloat(fiber),
+		SugarG:             numericToFloat(sugar),
+		SodiumMg:           numericToFloat(sodium),
+	}
+
+	lines, err := r.getRecipeIngredientLines(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("load ingredient lines: %w", err)
+	}
+	recipe.IngredientLines = lines
+
+	steps, err := r.getRecipeSteps(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("load steps: %w", err)
+	}
+	recipe.Steps = steps
 
 	return &recipe, nil
 }
 
 // GetAll retrieves all recipes with pagination
-func (r *Repository) GetAll(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
-	query := `
+func (r *Repository) List(ctx context.Context, userID uuid.UUID, filter domain.RecipeFilter, limit, offset int) ([]domain.Recipe, error) {
+	var sb strings.Builder
+	args := []any{userID}
+	argPos := 2
+
+	sb.WriteString(`
 		SELECT
-			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
-			r.directions, r.nutritional_info_calories,
-			r.metadata_search_vector, r.metadata_image_url,
-			r.metadata_tags, r.metadata_published_date,
-			r.created_at, r.updated_at,
-			c.id, c.name, c.created_at,
-			mi.id, mi.name, mi.quantity, mi.created_at
+			r.id, r.user_id, r.name, r.description,
+			r.prep_time_minutes, r.cook_time_minutes, r.total_time_minutes,
+			r.servings, r.yield_quantity, r.yield_unit,
+			r.image_url, r.tags, r.search_vector,
+			r.created_at, r.updated_at, r.deleted_at,
+			c.id, c.user_id, c.name, c.created_at,
+			mi.id, mi.user_id, mi.name, mi.description, mi.created_at, mi.updated_at,
+			rn.calories_total, rn.calories_per_serving,
+			rn.protein_g, rn.carbs_g, rn.fat_g, rn.fiber_g, rn.sugar_g, rn.sodium_mg
 		FROM recipes r
 		JOIN cuisines c ON r.cuisine_id = c.id
 		JOIN ingredients mi ON r.main_ingredient_id = mi.id
-		WHERE ` + accessClause("r", 1) + `
-		ORDER BY r.created_at DESC
-		LIMIT $2 OFFSET $3
-	`
+		LEFT JOIN recipe_nutrition rn ON rn.recipe_id = r.id
+		WHERE ` + activeClause("r") + `
+		  AND ` + accessClause("r", 1) + `
+	`)
 
-	rows, err := r.pool.Query(ctx, query, userID, limit, offset)
+	if filter.CuisineID != nil {
+		sb.WriteString(fmt.Sprintf(" AND r.cuisine_id = $%d", argPos))
+		args = append(args, *filter.CuisineID)
+		argPos++
+	}
+
+	if filter.IngredientID != nil {
+		sb.WriteString(fmt.Sprintf(`
+			AND (
+				r.main_ingredient_id = $%d OR EXISTS (
+					SELECT 1 FROM recipe_ingredient_lines ril
+					WHERE ril.recipe_id = r.id AND ril.ingredient_id = $%d
+				)
+			)
+		`, argPos, argPos))
+		args = append(args, *filter.IngredientID)
+		argPos++
+	}
+
+	if filter.AllergyID != nil {
+		sb.WriteString(fmt.Sprintf(`
+			AND NOT EXISTS (
+				SELECT 1 FROM ingredient_allergies ia
+				WHERE ia.ingredient_id = r.main_ingredient_id AND ia.allergy_id = $%d
+			)
+			AND NOT EXISTS (
+				SELECT 1
+				FROM recipe_ingredient_lines ril
+				JOIN ingredient_allergies ia ON ril.ingredient_id = ia.ingredient_id
+				WHERE ril.recipe_id = r.id AND ia.allergy_id = $%d
+			)
+		`, argPos, argPos))
+		args = append(args, *filter.AllergyID)
+		argPos++
+	}
+
+	if len(filter.Tags) > 0 {
+		sb.WriteString(fmt.Sprintf(" AND r.tags @> $%d", argPos))
+		args = append(args, filter.Tags)
+		argPos++
+	}
+
+	sb.WriteString(fmt.Sprintf(" ORDER BY r.created_at DESC LIMIT $%d OFFSET $%d", argPos, argPos+1))
+	args = append(args, limit, offset)
+
+	rows, err := r.pool.Query(ctx, sb.String(), args...)
 	if err != nil {
 		return nil, fmt.Errorf("query recipes: %w", err)
 	}
 	defer rows.Close()
 
-	recipes, err := r.scanRecipes(ctx, rows)
-	if err != nil {
-		return nil, err
-	}
-
-	return recipes, nil
+	return r.scanRecipes(ctx, rows)
 }
 
 // Create creates a new recipe with all relationships
@@ -143,51 +233,110 @@ func (r *Repository) Create(ctx context.Context, recipe *domain.Recipe) error {
 		recipe.ID = uuid.New()
 	}
 
-	// Insert recipe
+	if recipe.TotalTimeMinutes == 0 {
+		recipe.TotalTimeMinutes = recipe.PrepTimeMinutes + recipe.CookTimeMinutes
+	}
+
 	query := `
 		INSERT INTO recipes (
-			id, user_id, name, description, prep_time, cook_time,
-			main_ingredient_id, cuisine_id, directions,
-			nutritional_info_calories, metadata_search_vector,
-			metadata_image_url, metadata_tags, metadata_published_date
+			id, user_id, name, description,
+			prep_time_minutes, cook_time_minutes, total_time_minutes,
+			servings, yield_quantity, yield_unit,
+			main_ingredient_id, cuisine_id,
+			image_url, tags, search_vector
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+			$1, $2, $3, $4,
+			$5, $6, $7,
+			$8, $9, $10,
+			$11, $12,
+			$13, $14, $15
 		)
 	`
 
 	var imageURL *string
-	if recipe.Metadata.ImageURL != "" {
-		imageURL = &recipe.Metadata.ImageURL
+	if recipe.ImageURL != "" {
+		imageURL = &recipe.ImageURL
 	}
 
-	// Ensure tags is not nil (PostgreSQL requires non-null for TEXT[] with NOT NULL)
-	tags := recipe.Metadata.Tags
+	var yieldUnit *string
+	if recipe.YieldUnit != "" {
+		yieldUnit = &recipe.YieldUnit
+	}
+
+	tags := recipe.Tags
 	if tags == nil {
 		tags = []string{}
 	}
 
 	_, err = tx.Exec(ctx, query,
 		recipe.ID, recipe.UserID, recipe.Name, recipe.Description,
-		recipe.PrepTime, recipe.CookTime,
-		recipe.MainIngredient.ID, recipe.Cuisine.ID, recipe.Directions,
-		recipe.NutritionalInfo.Calories, recipe.Metadata.SearchVector,
-		imageURL, tags, recipe.Metadata.PublishedDate,
+		recipe.PrepTimeMinutes, recipe.CookTimeMinutes, recipe.TotalTimeMinutes,
+		recipe.Servings, recipe.YieldQuantity, yieldUnit,
+		recipe.MainIngredient.ID, recipe.Cuisine.ID,
+		imageURL, tags, recipe.SearchVector,
 	)
 	if err != nil {
 		return fmt.Errorf("insert recipe: %w", err)
 	}
 
-	// Insert recipe-ingredient relationships
-	for _, ingredient := range recipe.Ingredients {
-		_, err = tx.Exec(ctx,
-			`INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit)
-			 VALUES ($1, $2, $3, $4)
-			 ON CONFLICT (recipe_id, ingredient_id)
-			 DO UPDATE SET quantity = EXCLUDED.quantity, unit = EXCLUDED.unit`,
-			recipe.ID, ingredient.ID, ingredient.Quantity, ingredient.Unit,
+	_, err = tx.Exec(ctx, `
+		INSERT INTO recipe_nutrition (
+			recipe_id, calories_total, calories_per_serving,
+			protein_g, carbs_g, fat_g, fiber_g, sugar_g, sodium_mg
+		) VALUES (
+			$1, $2, $3,
+			$4, $5, $6, $7, $8, $9
+		)
+	`, recipe.ID, recipe.Nutrition.CaloriesTotal, recipe.Nutrition.CaloriesPerServing,
+		recipe.Nutrition.ProteinG, recipe.Nutrition.CarbsG, recipe.Nutrition.FatG,
+		recipe.Nutrition.FiberG, recipe.Nutrition.SugarG, recipe.Nutrition.SodiumMg,
+	)
+	if err != nil {
+		return fmt.Errorf("insert recipe nutrition: %w", err)
+	}
+
+	for _, line := range recipe.IngredientLines {
+		lineID := line.ID
+		if lineID == uuid.Nil {
+			lineID = uuid.New()
+		}
+		_, err = tx.Exec(ctx, `
+			INSERT INTO recipe_ingredient_lines (
+				id, recipe_id, ingredient_id,
+				quantity_value, quantity_text, unit,
+				is_optional, note, sort_order
+			) VALUES (
+				$1, $2, $3,
+				$4, $5, $6,
+				$7, $8, $9
+			)
+		`, lineID, recipe.ID, line.Ingredient.ID,
+			line.QuantityValue, line.QuantityText, line.Unit,
+			line.IsOptional, line.Note, line.SortOrder,
 		)
 		if err != nil {
-			return fmt.Errorf("insert recipe ingredient: %w", err)
+			return fmt.Errorf("insert recipe ingredient line: %w", err)
+		}
+	}
+
+	for _, step := range recipe.Steps {
+		stepID := step.ID
+		if stepID == uuid.Nil {
+			stepID = uuid.New()
+		}
+		_, err = tx.Exec(ctx, `
+			INSERT INTO recipe_steps (
+				id, recipe_id, step_index, instruction,
+				duration_seconds, temperature_value, temperature_unit, media_url
+			) VALUES (
+				$1, $2, $3, $4,
+				$5, $6, $7, $8
+			)
+		`, stepID, recipe.ID, step.StepIndex, step.Instruction,
+			step.DurationSeconds, step.TemperatureValue, step.TemperatureUnit, step.MediaURL,
+		)
+		if err != nil {
+			return fmt.Errorf("insert recipe step: %w", err)
 		}
 	}
 
@@ -208,24 +357,39 @@ func (r *Repository) Update(ctx context.Context, recipe *domain.Recipe) error {
 
 	query := `
 		UPDATE recipes SET
-			name = $2, description = $3, prep_time = $4, cook_time = $5,
-			main_ingredient_id = $6, cuisine_id = $7, directions = $8,
-			nutritional_info_calories = $9, metadata_search_vector = $10,
-			metadata_image_url = $11, metadata_tags = $12, metadata_published_date = $13
-		WHERE id = $1 AND user_id = $14
+			name = $2, description = $3,
+			prep_time_minutes = $4, cook_time_minutes = $5, total_time_minutes = $6,
+			servings = $7, yield_quantity = $8, yield_unit = $9,
+			main_ingredient_id = $10, cuisine_id = $11,
+			image_url = $12, tags = $13, search_vector = $14
+		WHERE id = $1 AND user_id = $15 AND deleted_at IS NULL
 	`
 
 	var imageURL *string
-	if recipe.Metadata.ImageURL != "" {
-		imageURL = &recipe.Metadata.ImageURL
+	if recipe.ImageURL != "" {
+		imageURL = &recipe.ImageURL
+	}
+
+	if recipe.TotalTimeMinutes == 0 {
+		recipe.TotalTimeMinutes = recipe.PrepTimeMinutes + recipe.CookTimeMinutes
+	}
+
+	var yieldUnit *string
+	if recipe.YieldUnit != "" {
+		yieldUnit = &recipe.YieldUnit
+	}
+
+	tags := recipe.Tags
+	if tags == nil {
+		tags = []string{}
 	}
 
 	result, err := tx.Exec(ctx, query,
 		recipe.ID, recipe.Name, recipe.Description,
-		recipe.PrepTime, recipe.CookTime,
-		recipe.MainIngredient.ID, recipe.Cuisine.ID, recipe.Directions,
-		recipe.NutritionalInfo.Calories, recipe.Metadata.SearchVector,
-		imageURL, recipe.Metadata.Tags, recipe.Metadata.PublishedDate,
+		recipe.PrepTimeMinutes, recipe.CookTimeMinutes, recipe.TotalTimeMinutes,
+		recipe.Servings, recipe.YieldQuantity, yieldUnit,
+		recipe.MainIngredient.ID, recipe.Cuisine.ID,
+		imageURL, tags, recipe.SearchVector,
 		recipe.UserID,
 	)
 	if err != nil {
@@ -236,20 +400,85 @@ func (r *Repository) Update(ctx context.Context, recipe *domain.Recipe) error {
 		return ErrRecipeNotFound
 	}
 
-	// Replace recipe ingredients
-	_, err = tx.Exec(ctx, `DELETE FROM recipe_ingredients WHERE recipe_id = $1`, recipe.ID)
+	_, err = tx.Exec(ctx, `
+		INSERT INTO recipe_nutrition (
+			recipe_id, calories_total, calories_per_serving,
+			protein_g, carbs_g, fat_g, fiber_g, sugar_g, sodium_mg
+		) VALUES (
+			$1, $2, $3,
+			$4, $5, $6, $7, $8, $9
+		)
+		ON CONFLICT (recipe_id) DO UPDATE SET
+			calories_total = EXCLUDED.calories_total,
+			calories_per_serving = EXCLUDED.calories_per_serving,
+			protein_g = EXCLUDED.protein_g,
+			carbs_g = EXCLUDED.carbs_g,
+			fat_g = EXCLUDED.fat_g,
+			fiber_g = EXCLUDED.fiber_g,
+			sugar_g = EXCLUDED.sugar_g,
+			sodium_mg = EXCLUDED.sodium_mg,
+			updated_at = NOW()
+	`, recipe.ID, recipe.Nutrition.CaloriesTotal, recipe.Nutrition.CaloriesPerServing,
+		recipe.Nutrition.ProteinG, recipe.Nutrition.CarbsG, recipe.Nutrition.FatG,
+		recipe.Nutrition.FiberG, recipe.Nutrition.SugarG, recipe.Nutrition.SodiumMg,
+	)
 	if err != nil {
-		return fmt.Errorf("delete recipe ingredients: %w", err)
+		return fmt.Errorf("upsert recipe nutrition: %w", err)
 	}
 
-	for _, ingredient := range recipe.Ingredients {
-		_, err = tx.Exec(ctx,
-			`INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit)
-			 VALUES ($1, $2, $3, $4)`,
-			recipe.ID, ingredient.ID, ingredient.Quantity, ingredient.Unit,
+	// Replace recipe ingredient lines
+	_, err = tx.Exec(ctx, `DELETE FROM recipe_ingredient_lines WHERE recipe_id = $1`, recipe.ID)
+	if err != nil {
+		return fmt.Errorf("delete recipe ingredient lines: %w", err)
+	}
+
+	for _, line := range recipe.IngredientLines {
+		lineID := line.ID
+		if lineID == uuid.Nil {
+			lineID = uuid.New()
+		}
+		_, err = tx.Exec(ctx, `
+			INSERT INTO recipe_ingredient_lines (
+				id, recipe_id, ingredient_id,
+				quantity_value, quantity_text, unit,
+				is_optional, note, sort_order
+			) VALUES (
+				$1, $2, $3,
+				$4, $5, $6,
+				$7, $8, $9
+			)
+		`, lineID, recipe.ID, line.Ingredient.ID,
+			line.QuantityValue, line.QuantityText, line.Unit,
+			line.IsOptional, line.Note, line.SortOrder,
 		)
 		if err != nil {
-			return fmt.Errorf("insert recipe ingredient: %w", err)
+			return fmt.Errorf("insert recipe ingredient line: %w", err)
+		}
+	}
+
+	_, err = tx.Exec(ctx, `DELETE FROM recipe_steps WHERE recipe_id = $1`, recipe.ID)
+	if err != nil {
+		return fmt.Errorf("delete recipe steps: %w", err)
+	}
+
+	for _, step := range recipe.Steps {
+		stepID := step.ID
+		if stepID == uuid.Nil {
+			stepID = uuid.New()
+		}
+		_, err = tx.Exec(ctx, `
+			INSERT INTO recipe_steps (
+				id, recipe_id, step_index, instruction,
+				duration_seconds, temperature_value, temperature_unit, media_url
+			) VALUES (
+				$1, $2, $3, $4,
+				$5, $6, $7, $8
+			)
+		`, stepID, recipe.ID, step.StepIndex, step.Instruction,
+			step.DurationSeconds, step.TemperatureValue, step.TemperatureUnit, step.MediaURL,
+		)
+		if err != nil {
+			return fmt.Errorf("insert recipe step: %w", err)
 		}
 	}
 
@@ -262,7 +491,11 @@ func (r *Repository) Update(ctx context.Context, recipe *domain.Recipe) error {
 
 // Delete removes a recipe
 func (r *Repository) Delete(ctx context.Context, userID, id uuid.UUID) error {
-	result, err := r.pool.Exec(ctx, `DELETE FROM recipes WHERE id = $1 AND user_id = $2`, id, userID)
+	result, err := r.pool.Exec(ctx, `
+		UPDATE recipes
+		SET deleted_at = NOW()
+		WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL
+	`, id, userID)
 	if err != nil {
 		return fmt.Errorf("delete recipe: %w", err)
 	}
@@ -281,7 +514,7 @@ func (r *Repository) GetSimilar(ctx context.Context, userID, recipeID uuid.UUID,
 	// First get the vector for the target recipe
 	var targetVector pgvector.Vector
 	err := r.pool.QueryRow(ctx,
-		`SELECT metadata_search_vector FROM recipes r WHERE r.id = $1 AND (`+accessClause("r", 2)+`)`,
+		`SELECT search_vector FROM recipes r WHERE r.id = $1 AND `+activeClause("r")+` AND `+accessClause("r", 2),
 		recipeID, userID,
 	).Scan(&targetVector)
 	if err != nil {
@@ -293,19 +526,23 @@ func (r *Repository) GetSimilar(ctx context.Context, userID, recipeID uuid.UUID,
 
 	query := `
 		SELECT
-			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
-			r.directions, r.nutritional_info_calories,
-			r.metadata_search_vector, r.metadata_image_url,
-			r.metadata_tags, r.metadata_published_date,
-			r.created_at, r.updated_at,
-			c.id, c.name, c.created_at,
-			mi.id, mi.name, mi.quantity, mi.created_at
+			r.id, r.user_id, r.name, r.description,
+			r.prep_time_minutes, r.cook_time_minutes, r.total_time_minutes,
+			r.servings, r.yield_quantity, r.yield_unit,
+			r.image_url, r.tags, r.search_vector,
+			r.created_at, r.updated_at, r.deleted_at,
+			c.id, c.user_id, c.name, c.created_at,
+			mi.id, mi.user_id, mi.name, mi.description, mi.created_at, mi.updated_at,
+			rn.calories_total, rn.calories_per_serving,
+			rn.protein_g, rn.carbs_g, rn.fat_g, rn.fiber_g, rn.sugar_g, rn.sodium_mg
 		FROM recipes r
 		JOIN cuisines c ON r.cuisine_id = c.id
 		JOIN ingredients mi ON r.main_ingredient_id = mi.id
+		LEFT JOIN recipe_nutrition rn ON rn.recipe_id = r.id
 		WHERE r.id != $1
-		  AND (` + accessClause("r", 2) + `)
-		ORDER BY r.metadata_search_vector <=> $3
+		  AND ` + activeClause("r") + `
+		  AND ` + accessClause("r", 2) + `
+		ORDER BY r.search_vector <=> $3
 		LIMIT $4
 	`
 
@@ -319,140 +556,55 @@ func (r *Repository) GetSimilar(ctx context.Context, userID, recipeID uuid.UUID,
 }
 
 // GetByCuisine retrieves recipes by cuisine ID
-func (r *Repository) GetByCuisine(ctx context.Context, userID, cuisineID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
-	query := `
-		SELECT
-			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
-			r.directions, r.nutritional_info_calories,
-			r.metadata_search_vector, r.metadata_image_url,
-			r.metadata_tags, r.metadata_published_date,
-			r.created_at, r.updated_at,
-			c.id, c.name, c.created_at,
-			mi.id, mi.name, mi.quantity, mi.created_at
-		FROM recipes r
-		JOIN cuisines c ON r.cuisine_id = c.id
-		JOIN ingredients mi ON r.main_ingredient_id = mi.id
-		WHERE r.cuisine_id = $1
-		  AND (` + accessClause("r", 2) + `)
-		ORDER BY r.created_at DESC
-		LIMIT $3 OFFSET $4
-	`
-
-	rows, err := r.pool.Query(ctx, query, cuisineID, userID, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("query recipes by cuisine: %w", err)
-	}
-	defer rows.Close()
-
-	return r.scanRecipes(ctx, rows)
-}
-
-// GetByIngredient retrieves recipes containing a specific ingredient (main or in list)
-func (r *Repository) GetByIngredient(ctx context.Context, userID, ingredientID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
-	query := `
-		SELECT DISTINCT
-			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
-			r.directions, r.nutritional_info_calories,
-			r.metadata_search_vector, r.metadata_image_url,
-			r.metadata_tags, r.metadata_published_date,
-			r.created_at, r.updated_at,
-			c.id, c.name, c.created_at,
-			mi.id, mi.name, mi.quantity, mi.created_at
-		FROM recipes r
-		JOIN cuisines c ON r.cuisine_id = c.id
-		JOIN ingredients mi ON r.main_ingredient_id = mi.id
-		LEFT JOIN recipe_ingredients ri ON r.id = ri.recipe_id
-		WHERE (r.main_ingredient_id = $1 OR ri.ingredient_id = $1)
-		  AND (` + accessClause("r", 2) + `)
-		ORDER BY r.created_at DESC
-		LIMIT $3 OFFSET $4
-	`
-
-	rows, err := r.pool.Query(ctx, query, ingredientID, userID, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("query recipes by ingredient: %w", err)
-	}
-	defer rows.Close()
-
-	return r.scanRecipes(ctx, rows)
-}
-
-// GetExcludingAllergy retrieves recipes that don't contain ingredients with a specific allergy
-func (r *Repository) GetExcludingAllergy(ctx context.Context, userID, allergyID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
-	// Find recipes that have NO ingredients with the given allergy
-	query := `
-		SELECT
-			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
-			r.directions, r.nutritional_info_calories,
-			r.metadata_search_vector, r.metadata_image_url,
-			r.metadata_tags, r.metadata_published_date,
-			r.created_at, r.updated_at,
-			c.id, c.name, c.created_at,
-			mi.id, mi.name, mi.quantity, mi.created_at
-		FROM recipes r
-		JOIN cuisines c ON r.cuisine_id = c.id
-		JOIN ingredients mi ON r.main_ingredient_id = mi.id
-		WHERE (` + accessClause("r", 2) + `)
-		AND NOT EXISTS (
-			-- Check main ingredient for allergy
-			SELECT 1 FROM ingredient_allergies ia
-			WHERE ia.ingredient_id = r.main_ingredient_id AND ia.allergy_id = $1
-		)
-		AND NOT EXISTS (
-			-- Check recipe ingredients for allergy
-			SELECT 1 FROM recipe_ingredients ri
-			JOIN ingredient_allergies ia ON ri.ingredient_id = ia.ingredient_id
-			WHERE ri.recipe_id = r.id AND ia.allergy_id = $1
-		)
-		ORDER BY r.created_at DESC
-		LIMIT $3 OFFSET $4
-	`
-
-	rows, err := r.pool.Query(ctx, query, allergyID, userID, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("query recipes excluding allergy: %w", err)
-	}
-	defer rows.Close()
-
-	return r.scanRecipes(ctx, rows)
-}
-
-// GetByAllergy retrieves recipes that contain ingredients with a specific allergy
-// (useful for finding what TO avoid)
-func (r *Repository) GetByAllergy(ctx context.Context, userID, allergyID uuid.UUID, limit, offset int) ([]domain.Recipe, error) {
-	query := `
-		SELECT DISTINCT
-			r.id, r.user_id, r.name, r.description, r.prep_time, r.cook_time,
-			r.directions, r.nutritional_info_calories,
-			r.metadata_search_vector, r.metadata_image_url,
-			r.metadata_tags, r.metadata_published_date,
-			r.created_at, r.updated_at,
-			c.id, c.name, c.created_at,
-			mi.id, mi.name, mi.quantity, mi.created_at
-		FROM recipes r
-		JOIN cuisines c ON r.cuisine_id = c.id
-		JOIN ingredients mi ON r.main_ingredient_id = mi.id
-		LEFT JOIN recipe_ingredients ri ON r.id = ri.recipe_id
-		LEFT JOIN ingredient_allergies ia ON (ri.ingredient_id = ia.ingredient_id OR r.main_ingredient_id = ia.ingredient_id)
-		WHERE ia.allergy_id = $1
-		  AND (` + accessClause("r", 2) + `)
-		ORDER BY r.created_at DESC
-		LIMIT $3 OFFSET $4
-	`
-
-	rows, err := r.pool.Query(ctx, query, allergyID, userID, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("query recipes by allergy: %w", err)
-	}
-	defer rows.Close()
-
-	return r.scanRecipes(ctx, rows)
-}
-
 // Count returns the total number of recipes
-func (r *Repository) Count(ctx context.Context, userID uuid.UUID) (int64, error) {
+func (r *Repository) Count(ctx context.Context, userID uuid.UUID, filter domain.RecipeFilter) (int64, error) {
+	var sb strings.Builder
+	args := []any{userID}
+	argPos := 2
+
+	sb.WriteString(`SELECT COUNT(*) FROM recipes r WHERE ` + activeClause("r") + ` AND ` + accessClause("r", 1))
+
+	if filter.CuisineID != nil {
+		sb.WriteString(fmt.Sprintf(" AND r.cuisine_id = $%d", argPos))
+		args = append(args, *filter.CuisineID)
+		argPos++
+	}
+	if filter.IngredientID != nil {
+		sb.WriteString(fmt.Sprintf(`
+			AND (
+				r.main_ingredient_id = $%d OR EXISTS (
+					SELECT 1 FROM recipe_ingredient_lines ril
+					WHERE ril.recipe_id = r.id AND ril.ingredient_id = $%d
+				)
+			)
+		`, argPos, argPos))
+		args = append(args, *filter.IngredientID)
+		argPos++
+	}
+	if filter.AllergyID != nil {
+		sb.WriteString(fmt.Sprintf(`
+			AND NOT EXISTS (
+				SELECT 1 FROM ingredient_allergies ia
+				WHERE ia.ingredient_id = r.main_ingredient_id AND ia.allergy_id = $%d
+			)
+			AND NOT EXISTS (
+				SELECT 1
+				FROM recipe_ingredient_lines ril
+				JOIN ingredient_allergies ia ON ril.ingredient_id = ia.ingredient_id
+				WHERE ril.recipe_id = r.id AND ia.allergy_id = $%d
+			)
+		`, argPos, argPos))
+		args = append(args, *filter.AllergyID)
+		argPos++
+	}
+	if len(filter.Tags) > 0 {
+		sb.WriteString(fmt.Sprintf(" AND r.tags @> $%d", argPos))
+		args = append(args, filter.Tags)
+		argPos++
+	}
+
 	var count int64
-	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM recipes r WHERE `+accessClause("r", 1), userID).Scan(&count)
+	err := r.pool.QueryRow(ctx, sb.String(), args...).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("count recipes: %w", err)
 	}
@@ -522,12 +674,12 @@ func (r *Repository) CreateUserCredentials(ctx context.Context, userID uuid.UUID
 // Ingredient operations
 
 // GetIngredientByID retrieves an ingredient by ID
-func (r *Repository) GetIngredientByID(ctx context.Context, id uuid.UUID) (*domain.Ingredient, error) {
-	query := `SELECT id, name, quantity, created_at FROM ingredients WHERE id = $1`
+func (r *Repository) GetIngredientByID(ctx context.Context, userID, id uuid.UUID) (*domain.Ingredient, error) {
+	query := `SELECT id, user_id, name, description, created_at, updated_at FROM ingredients WHERE id = $1 AND user_id = $2`
 
 	var ingredient domain.Ingredient
-	err := r.pool.QueryRow(ctx, query, id).Scan(
-		&ingredient.ID, &ingredient.Name, &ingredient.Quantity, &ingredient.CreatedAt,
+	err := r.pool.QueryRow(ctx, query, id, userID).Scan(
+		&ingredient.ID, &ingredient.UserID, &ingredient.Name, &ingredient.Description, &ingredient.CreatedAt, &ingredient.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -547,12 +699,12 @@ func (r *Repository) GetIngredientByID(ctx context.Context, id uuid.UUID) (*doma
 }
 
 // GetIngredientByName retrieves an ingredient by name
-func (r *Repository) GetIngredientByName(ctx context.Context, name string) (*domain.Ingredient, error) {
-	query := `SELECT id, name, quantity, created_at FROM ingredients WHERE name = $1`
+func (r *Repository) GetIngredientByName(ctx context.Context, userID uuid.UUID, name string) (*domain.Ingredient, error) {
+	query := `SELECT id, user_id, name, description, created_at, updated_at FROM ingredients WHERE user_id = $1 AND name = $2`
 
 	var ingredient domain.Ingredient
-	err := r.pool.QueryRow(ctx, query, name).Scan(
-		&ingredient.ID, &ingredient.Name, &ingredient.Quantity, &ingredient.CreatedAt,
+	err := r.pool.QueryRow(ctx, query, userID, name).Scan(
+		&ingredient.ID, &ingredient.UserID, &ingredient.Name, &ingredient.Description, &ingredient.CreatedAt, &ingredient.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -560,6 +712,12 @@ func (r *Repository) GetIngredientByName(ctx context.Context, name string) (*dom
 		}
 		return nil, fmt.Errorf("query ingredient: %w", err)
 	}
+
+	allergies, err := r.getIngredientAllergies(ctx, ingredient.ID)
+	if err != nil {
+		return nil, fmt.Errorf("load allergies: %w", err)
+	}
+	ingredient.Allergies = allergies
 
 	return &ingredient, nil
 }
@@ -570,8 +728,8 @@ func (r *Repository) CreateIngredient(ctx context.Context, ingredient *domain.In
 		ingredient.ID = uuid.New()
 	}
 
-	query := `INSERT INTO ingredients (id, name, quantity) VALUES ($1, $2, $3)`
-	_, err := r.pool.Exec(ctx, query, ingredient.ID, ingredient.Name, ingredient.Quantity)
+	query := `INSERT INTO ingredients (id, user_id, name, description) VALUES ($1, $2, $3, $4)`
+	_, err := r.pool.Exec(ctx, query, ingredient.ID, ingredient.UserID, ingredient.Name, ingredient.Description)
 	if err != nil {
 		return fmt.Errorf("insert ingredient: %w", err)
 	}
@@ -580,12 +738,9 @@ func (r *Repository) CreateIngredient(ctx context.Context, ingredient *domain.In
 }
 
 // GetOrCreateIngredient gets an existing ingredient by name or creates it
-func (r *Repository) GetOrCreateIngredient(ctx context.Context, name string, quantity string) (*domain.Ingredient, error) {
-	ingredient, err := r.GetIngredientByName(ctx, name)
+func (r *Repository) GetOrCreateIngredient(ctx context.Context, userID uuid.UUID, name string) (*domain.Ingredient, error) {
+	ingredient, err := r.GetIngredientByName(ctx, userID, name)
 	if err == nil {
-		if quantity != "" {
-			ingredient.Quantity = quantity
-		}
 		return ingredient, nil
 	}
 	if !errors.Is(err, ErrIngredientNotFound) {
@@ -594,13 +749,12 @@ func (r *Repository) GetOrCreateIngredient(ctx context.Context, name string, qua
 
 	// Create new ingredient
 	ingredient = &domain.Ingredient{
-		ID:       uuid.New(),
-		Name:     name,
-		Quantity: quantity,
+		ID:          uuid.New(),
+		UserID:      userID,
+		Name:        name,
+		Description: "",
 	}
-	ingredientPersist := *ingredient
-	ingredientPersist.Quantity = ""
-	if err := r.CreateIngredient(ctx, &ingredientPersist); err != nil {
+	if err := r.CreateIngredient(ctx, ingredient); err != nil {
 		return nil, err
 	}
 
@@ -609,12 +763,12 @@ func (r *Repository) GetOrCreateIngredient(ctx context.Context, name string, qua
 
 // Cuisine operations
 
-// GetCuisineByID retrieves a cuisine by ID
-func (r *Repository) GetCuisineByID(ctx context.Context, id uuid.UUID) (*domain.Cuisine, error) {
-	query := `SELECT id, name, created_at FROM cuisines WHERE id = $1`
+// GetCuisineByID retrieves a cuisine by ID for a user.
+func (r *Repository) GetCuisineByID(ctx context.Context, userID, id uuid.UUID) (*domain.Cuisine, error) {
+	query := `SELECT id, user_id, name, created_at FROM cuisines WHERE id = $1 AND user_id = $2`
 
 	var cuisine domain.Cuisine
-	err := r.pool.QueryRow(ctx, query, id).Scan(&cuisine.ID, &cuisine.Name, &cuisine.CreatedAt)
+	err := r.pool.QueryRow(ctx, query, id, userID).Scan(&cuisine.ID, &cuisine.UserID, &cuisine.Name, &cuisine.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrCuisineNotFound
@@ -625,12 +779,12 @@ func (r *Repository) GetCuisineByID(ctx context.Context, id uuid.UUID) (*domain.
 	return &cuisine, nil
 }
 
-// GetCuisineByName retrieves a cuisine by name
-func (r *Repository) GetCuisineByName(ctx context.Context, name string) (*domain.Cuisine, error) {
-	query := `SELECT id, name, created_at FROM cuisines WHERE name = $1`
+// GetCuisineByName retrieves a cuisine by name for a user.
+func (r *Repository) GetCuisineByName(ctx context.Context, userID uuid.UUID, name string) (*domain.Cuisine, error) {
+	query := `SELECT id, user_id, name, created_at FROM cuisines WHERE user_id = $1 AND name = $2`
 
 	var cuisine domain.Cuisine
-	err := r.pool.QueryRow(ctx, query, name).Scan(&cuisine.ID, &cuisine.Name, &cuisine.CreatedAt)
+	err := r.pool.QueryRow(ctx, query, userID, name).Scan(&cuisine.ID, &cuisine.UserID, &cuisine.Name, &cuisine.CreatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrCuisineNotFound
@@ -647,8 +801,8 @@ func (r *Repository) CreateCuisine(ctx context.Context, cuisine *domain.Cuisine)
 		cuisine.ID = uuid.New()
 	}
 
-	query := `INSERT INTO cuisines (id, name) VALUES ($1, $2)`
-	_, err := r.pool.Exec(ctx, query, cuisine.ID, cuisine.Name)
+	query := `INSERT INTO cuisines (id, user_id, name) VALUES ($1, $2, $3)`
+	_, err := r.pool.Exec(ctx, query, cuisine.ID, cuisine.UserID, cuisine.Name)
 	if err != nil {
 		return fmt.Errorf("insert cuisine: %w", err)
 	}
@@ -656,68 +810,35 @@ func (r *Repository) CreateCuisine(ctx context.Context, cuisine *domain.Cuisine)
 	return nil
 }
 
-// Unit operations
-
-// GetUnits retrieves all units for a user.
-func (r *Repository) GetUnits(ctx context.Context, userID uuid.UUID) ([]domain.Unit, error) {
-	query := `SELECT id, user_id, name, created_at FROM units WHERE user_id = $1 ORDER BY name ASC`
+// GetCuisines retrieves all cuisines for a user.
+func (r *Repository) GetCuisines(ctx context.Context, userID uuid.UUID) ([]domain.Cuisine, error) {
+	query := `SELECT id, user_id, name, created_at FROM cuisines WHERE user_id = $1 ORDER BY name ASC`
 
 	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
-		return nil, fmt.Errorf("query units: %w", err)
+		return nil, fmt.Errorf("query cuisines: %w", err)
 	}
 	defer rows.Close()
 
-	var units []domain.Unit
+	var cuisines []domain.Cuisine
 	for rows.Next() {
-		var unit domain.Unit
-		if err := rows.Scan(&unit.ID, &unit.UserID, &unit.Name, &unit.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan unit: %w", err)
+		var cuisine domain.Cuisine
+		if err := rows.Scan(&cuisine.ID, &cuisine.UserID, &cuisine.Name, &cuisine.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan cuisine: %w", err)
 		}
-		units = append(units, unit)
+		cuisines = append(cuisines, cuisine)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate units: %w", err)
+		return nil, fmt.Errorf("iterate cuisines: %w", err)
 	}
 
-	return units, nil
+	return cuisines, nil
 }
 
-// GetUnitByName retrieves a unit by name for a user.
-func (r *Repository) GetUnitByName(ctx context.Context, userID uuid.UUID, name string) (*domain.Unit, error) {
-	query := `SELECT id, user_id, name, created_at FROM units WHERE user_id = $1 AND name = $2`
-
-	var unit domain.Unit
-	err := r.pool.QueryRow(ctx, query, userID, name).Scan(&unit.ID, &unit.UserID, &unit.Name, &unit.CreatedAt)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrUnitNotFound
-		}
-		return nil, fmt.Errorf("query unit: %w", err)
-	}
-
-	return &unit, nil
-}
-
-// CreateUnit creates a new unit.
-func (r *Repository) CreateUnit(ctx context.Context, unit *domain.Unit) error {
-	if unit.ID == uuid.Nil {
-		unit.ID = uuid.New()
-	}
-
-	query := `INSERT INTO units (id, user_id, name) VALUES ($1, $2, $3)`
-	_, err := r.pool.Exec(ctx, query, unit.ID, unit.UserID, unit.Name)
-	if err != nil {
-		return fmt.Errorf("insert unit: %w", err)
-	}
-
-	return nil
-}
-
-// GetOrCreateCuisine gets an existing cuisine by name or creates it
-func (r *Repository) GetOrCreateCuisine(ctx context.Context, name string) (*domain.Cuisine, error) {
-	cuisine, err := r.GetCuisineByName(ctx, name)
+// GetOrCreateCuisine gets an existing cuisine by name or creates it for a user.
+func (r *Repository) GetOrCreateCuisine(ctx context.Context, userID uuid.UUID, name string) (*domain.Cuisine, error) {
+	cuisine, err := r.GetCuisineByName(ctx, userID, name)
 	if err == nil {
 		return cuisine, nil
 	}
@@ -727,8 +848,9 @@ func (r *Repository) GetOrCreateCuisine(ctx context.Context, name string) (*doma
 
 	// Create new cuisine
 	cuisine = &domain.Cuisine{
-		ID:   uuid.New(),
-		Name: name,
+		ID:     uuid.New(),
+		UserID: userID,
+		Name:   name,
 	}
 	if err := r.CreateCuisine(ctx, cuisine); err != nil {
 		return nil, err
@@ -737,11 +859,11 @@ func (r *Repository) GetOrCreateCuisine(ctx context.Context, name string) (*doma
 	return cuisine, nil
 }
 
-// GetAllCuisines retrieves all cuisines
-func (r *Repository) GetAllCuisines(ctx context.Context) ([]domain.Cuisine, error) {
-	query := `SELECT id, name, created_at FROM cuisines ORDER BY name`
+// GetAllCuisines retrieves all cuisines for a user.
+func (r *Repository) GetAllCuisines(ctx context.Context, userID uuid.UUID) ([]domain.Cuisine, error) {
+	query := `SELECT id, user_id, name, created_at FROM cuisines WHERE user_id = $1 ORDER BY name`
 
-	rows, err := r.pool.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("query cuisines: %w", err)
 	}
@@ -750,7 +872,7 @@ func (r *Repository) GetAllCuisines(ctx context.Context) ([]domain.Cuisine, erro
 	var cuisines []domain.Cuisine
 	for rows.Next() {
 		var cuisine domain.Cuisine
-		if err := rows.Scan(&cuisine.ID, &cuisine.Name, &cuisine.CreatedAt); err != nil {
+		if err := rows.Scan(&cuisine.ID, &cuisine.UserID, &cuisine.Name, &cuisine.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan cuisine: %w", err)
 		}
 		cuisines = append(cuisines, cuisine)
@@ -842,32 +964,6 @@ func (r *Repository) AddIngredientAllergy(ctx context.Context, ingredientID, all
 
 // Helper methods
 
-func (r *Repository) getRecipeIngredients(ctx context.Context, recipeID uuid.UUID) ([]domain.Ingredient, error) {
-	query := `
-		SELECT i.id, i.name, ri.quantity, ri.unit, i.created_at
-		FROM ingredients i
-		JOIN recipe_ingredients ri ON i.id = ri.ingredient_id
-		WHERE ri.recipe_id = $1
-	`
-
-	rows, err := r.pool.Query(ctx, query, recipeID)
-	if err != nil {
-		return nil, fmt.Errorf("query recipe ingredients: %w", err)
-	}
-	defer rows.Close()
-
-	var ingredients []domain.Ingredient
-	for rows.Next() {
-		var ingredient domain.Ingredient
-		if err := rows.Scan(&ingredient.ID, &ingredient.Name, &ingredient.Quantity, &ingredient.Unit, &ingredient.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan ingredient: %w", err)
-		}
-		ingredients = append(ingredients, ingredient)
-	}
-
-	return ingredients, nil
-}
-
 func (r *Repository) getIngredientAllergies(ctx context.Context, ingredientID uuid.UUID) ([]domain.Allergy, error) {
 	query := `
 		SELECT a.id, a.name, a.created_at
@@ -894,6 +990,111 @@ func (r *Repository) getIngredientAllergies(ctx context.Context, ingredientID uu
 	return allergies, nil
 }
 
+func (r *Repository) getRecipeIngredientLines(ctx context.Context, recipeID uuid.UUID) ([]domain.RecipeIngredientLine, error) {
+	query := `
+		SELECT
+			ril.id, ril.ingredient_id,
+			ril.quantity_value, ril.quantity_text, ril.unit,
+			ril.is_optional, ril.note, ril.sort_order,
+			i.user_id, i.name, i.description, i.created_at, i.updated_at
+		FROM recipe_ingredient_lines ril
+		JOIN ingredients i ON i.id = ril.ingredient_id
+		WHERE ril.recipe_id = $1
+		ORDER BY ril.sort_order
+	`
+
+	rows, err := r.pool.Query(ctx, query, recipeID)
+	if err != nil {
+		return nil, fmt.Errorf("query recipe ingredient lines: %w", err)
+	}
+	defer rows.Close()
+
+	var lines []domain.RecipeIngredientLine
+	for rows.Next() {
+		var line domain.RecipeIngredientLine
+		var ingredient domain.Ingredient
+		var quantityValue pgtype.Numeric
+
+		if err := rows.Scan(
+			&line.ID, &ingredient.ID,
+			&quantityValue, &line.QuantityText, &line.Unit,
+			&line.IsOptional, &line.Note, &line.SortOrder,
+			&ingredient.UserID, &ingredient.Name, &ingredient.Description, &ingredient.CreatedAt, &ingredient.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan ingredient line: %w", err)
+		}
+
+		valuePtr, err := numericToFloatPtr(quantityValue)
+		if err != nil {
+			return nil, fmt.Errorf("parse ingredient quantity: %w", err)
+		}
+		line.QuantityValue = valuePtr
+
+		allergies, err := r.getIngredientAllergies(ctx, ingredient.ID)
+		if err != nil {
+			return nil, fmt.Errorf("load ingredient allergies: %w", err)
+		}
+		ingredient.Allergies = allergies
+
+		line.Ingredient = ingredient
+		lines = append(lines, line)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate ingredient lines: %w", err)
+	}
+
+	return lines, nil
+}
+
+func (r *Repository) getRecipeSteps(ctx context.Context, recipeID uuid.UUID) ([]domain.RecipeStep, error) {
+	query := `
+		SELECT id, step_index, instruction, duration_seconds, temperature_value, temperature_unit, media_url
+		FROM recipe_steps
+		WHERE recipe_id = $1
+		ORDER BY step_index
+	`
+
+	rows, err := r.pool.Query(ctx, query, recipeID)
+	if err != nil {
+		return nil, fmt.Errorf("query recipe steps: %w", err)
+	}
+	defer rows.Close()
+
+	var steps []domain.RecipeStep
+	for rows.Next() {
+		var step domain.RecipeStep
+		var duration pgtype.Int4
+		var temperature pgtype.Numeric
+
+		if err := rows.Scan(
+			&step.ID, &step.StepIndex, &step.Instruction,
+			&duration, &temperature, &step.TemperatureUnit, &step.MediaURL,
+		); err != nil {
+			return nil, fmt.Errorf("scan recipe step: %w", err)
+		}
+
+		if duration.Valid {
+			value := int(duration.Int32)
+			step.DurationSeconds = &value
+		}
+
+		tempValue, err := numericToFloatPtr(temperature)
+		if err != nil {
+			return nil, fmt.Errorf("parse temperature value: %w", err)
+		}
+		step.TemperatureValue = tempValue
+
+		steps = append(steps, step)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate recipe steps: %w", err)
+	}
+
+	return steps, nil
+}
+
 func (r *Repository) scanRecipes(ctx context.Context, rows pgx.Rows) ([]domain.Recipe, error) {
 	var recipes []domain.Recipe
 
@@ -904,16 +1105,28 @@ func (r *Repository) scanRecipes(ctx context.Context, rows pgx.Rows) ([]domain.R
 		var searchVector pgvector.Vector
 		var imageURL *string
 		var tags []string
-		var publishedDate time.Time
+		var yieldUnit *string
+		var yieldQuantity pgtype.Numeric
+		var deletedAt *time.Time
+		var protein pgtype.Numeric
+		var carbs pgtype.Numeric
+		var fat pgtype.Numeric
+		var fiber pgtype.Numeric
+		var sugar pgtype.Numeric
+		var sodium pgtype.Numeric
+		var caloriesTotal int
+		var caloriesPerServing int
 
 		err := rows.Scan(
 			&recipe.ID, &recipe.UserID, &recipe.Name, &recipe.Description,
-			&recipe.PrepTime, &recipe.CookTime,
-			&recipe.Directions, &recipe.NutritionalInfo.Calories,
-			&searchVector, &imageURL, &tags, &publishedDate,
-			&recipe.CreatedAt, &recipe.UpdatedAt,
-			&cuisine.ID, &cuisine.Name, &cuisine.CreatedAt,
-			&mainIngredient.ID, &mainIngredient.Name, &mainIngredient.Quantity, &mainIngredient.CreatedAt,
+			&recipe.PrepTimeMinutes, &recipe.CookTimeMinutes, &recipe.TotalTimeMinutes,
+			&recipe.Servings, &yieldQuantity, &yieldUnit,
+			&imageURL, &tags, &searchVector,
+			&recipe.CreatedAt, &recipe.UpdatedAt, &deletedAt,
+			&cuisine.ID, &cuisine.UserID, &cuisine.Name, &cuisine.CreatedAt,
+			&mainIngredient.ID, &mainIngredient.UserID, &mainIngredient.Name, &mainIngredient.Description, &mainIngredient.CreatedAt, &mainIngredient.UpdatedAt,
+			&caloriesTotal, &caloriesPerServing,
+			&protein, &carbs, &fat, &fiber, &sugar, &sodium,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("scan recipe: %w", err)
@@ -921,12 +1134,30 @@ func (r *Repository) scanRecipes(ctx context.Context, rows pgx.Rows) ([]domain.R
 
 		recipe.Cuisine = &cuisine
 		recipe.MainIngredient = &mainIngredient
-		recipe.Metadata.SearchVector = searchVector
+		recipe.SearchVector = searchVector
 		if imageURL != nil {
-			recipe.Metadata.ImageURL = *imageURL
+			recipe.ImageURL = *imageURL
 		}
-		recipe.Metadata.Tags = tags
-		recipe.Metadata.PublishedDate = publishedDate
+		if yieldUnit != nil {
+			recipe.YieldUnit = *yieldUnit
+		}
+		yieldPtr, err := numericToFloatPtr(yieldQuantity)
+		if err != nil {
+			return nil, fmt.Errorf("parse yield quantity: %w", err)
+		}
+		recipe.YieldQuantity = yieldPtr
+		recipe.Tags = tags
+		recipe.DeletedAt = deletedAt
+		recipe.Nutrition = domain.RecipeNutrition{
+			CaloriesTotal:      caloriesTotal,
+			CaloriesPerServing: caloriesPerServing,
+			ProteinG:           numericToFloat(protein),
+			CarbsG:             numericToFloat(carbs),
+			FatG:               numericToFloat(fat),
+			FiberG:             numericToFloat(fiber),
+			SugarG:             numericToFloat(sugar),
+			SodiumMg:           numericToFloat(sodium),
+		}
 
 		recipes = append(recipes, recipe)
 	}
@@ -935,14 +1166,48 @@ func (r *Repository) scanRecipes(ctx context.Context, rows pgx.Rows) ([]domain.R
 		return nil, fmt.Errorf("iterate recipes: %w", err)
 	}
 
-	// Load ingredients for each recipe (N+1 queries for now - can optimize later)
 	for i := range recipes {
-		ingredients, err := r.getRecipeIngredients(ctx, recipes[i].ID)
+		lines, err := r.getRecipeIngredientLines(ctx, recipes[i].ID)
 		if err != nil {
 			return nil, err
 		}
-		recipes[i].Ingredients = ingredients
+		recipes[i].IngredientLines = lines
+
+		steps, err := r.getRecipeSteps(ctx, recipes[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		recipes[i].Steps = steps
 	}
 
 	return recipes, nil
+}
+
+func numericToFloat(n pgtype.Numeric) float64 {
+	if !n.Valid {
+		return 0
+	}
+	value, err := n.Float64Value()
+	if err != nil {
+		return 0
+	}
+	if !value.Valid {
+		return 0
+	}
+	return value.Float64
+}
+
+func numericToFloatPtr(n pgtype.Numeric) (*float64, error) {
+	if !n.Valid {
+		return nil, nil
+	}
+	value, err := n.Float64Value()
+	if err != nil {
+		return nil, err
+	}
+	if !value.Valid {
+		return nil, nil
+	}
+	converted := value.Float64
+	return &converted, nil
 }

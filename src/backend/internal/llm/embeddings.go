@@ -120,17 +120,17 @@ func buildRecipeText(recipe *domain.Recipe) string {
 	}
 
 	// Other ingredients
-	if len(recipe.Ingredients) > 0 {
+	if len(recipe.IngredientLines) > 0 {
 		var ingredientNames []string
-		for _, ing := range recipe.Ingredients {
-			ingredientNames = append(ingredientNames, ing.Name)
+		for _, line := range recipe.IngredientLines {
+			ingredientNames = append(ingredientNames, line.Ingredient.Name)
 		}
 		parts = append(parts, "Ingredients: "+joinStrings(ingredientNames, ", "))
 	}
 
-	// Tags from metadata
-	if len(recipe.Metadata.Tags) > 0 {
-		parts = append(parts, "Tags: "+joinStrings(recipe.Metadata.Tags, ", "))
+	// Tags
+	if len(recipe.Tags) > 0 {
+		parts = append(parts, "Tags: "+joinStrings(recipe.Tags, ", "))
 	}
 
 	return joinStrings(parts, ". ")

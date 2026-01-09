@@ -8,10 +8,11 @@ import (
 
 // Ingredient represents an ingredient that can be used in recipes
 type Ingredient struct {
-	ID        uuid.UUID
-	Name      string
-	Quantity  string
-	Unit      string
-	Allergies []Allergy
-	CreatedAt time.Time
+	ID          uuid.UUID
+	UserID      uuid.UUID
+	Name        string
+	Description string
+	Allergies   []Allergy
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }

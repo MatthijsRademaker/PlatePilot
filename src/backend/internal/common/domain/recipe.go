@@ -9,29 +9,71 @@ import (
 
 // Recipe represents a recipe in the system
 type Recipe struct {
-	ID              uuid.UUID
-	UserID          uuid.UUID
-	Name            string
-	Description     string
-	PrepTime        string
-	CookTime        string
-	MainIngredient  *Ingredient
-	Cuisine         *Cuisine
-	Ingredients     []Ingredient
-	Directions      []string
-	NutritionalInfo NutritionalInfo
-	Metadata        Metadata
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	ID               uuid.UUID
+	UserID           uuid.UUID
+	Name             string
+	Description      string
+	PrepTimeMinutes  int
+	CookTimeMinutes  int
+	TotalTimeMinutes int
+	Servings         int
+	YieldQuantity    *float64
+	YieldUnit        string
+	MainIngredient   *Ingredient
+	Cuisine          *Cuisine
+	IngredientLines  []RecipeIngredientLine
+	Steps            []RecipeStep
+	Tags             []string
+	ImageURL         string
+	Nutrition        RecipeNutrition
+	SearchVector     pgvector.Vector
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	DeletedAt        *time.Time
 }
 
-// Allergies returns all unique allergies from the recipe's ingredients
+// RecipeIngredientLine represents a per-recipe ingredient line item.
+type RecipeIngredientLine struct {
+	ID            uuid.UUID
+	Ingredient    Ingredient
+	QuantityValue *float64
+	QuantityText  string
+	Unit          string
+	IsOptional    bool
+	Note          string
+	SortOrder     int
+}
+
+// RecipeStep represents a structured instruction step.
+type RecipeStep struct {
+	ID               uuid.UUID
+	StepIndex        int
+	Instruction      string
+	DurationSeconds  *int
+	TemperatureValue *float64
+	TemperatureUnit  string
+	MediaURL         string
+}
+
+// RecipeNutrition contains aggregated nutritional information for a recipe.
+type RecipeNutrition struct {
+	CaloriesTotal      int
+	CaloriesPerServing int
+	ProteinG           float64
+	CarbsG             float64
+	FatG               float64
+	FiberG             float64
+	SugarG             float64
+	SodiumMg           float64
+}
+
+// Allergies returns all unique allergies from the recipe's ingredients.
 func (r *Recipe) Allergies() []Allergy {
 	seen := make(map[uuid.UUID]bool)
 	var allergies []Allergy
 
-	for _, ingredient := range r.Ingredients {
-		for _, allergy := range ingredient.Allergies {
+	for _, line := range r.IngredientLines {
+		for _, allergy := range line.Ingredient.Allergies {
 			if !seen[allergy.ID] {
 				seen[allergy.ID] = true
 				allergies = append(allergies, allergy)
@@ -54,22 +96,9 @@ func (r *Recipe) AllergyIDs() []uuid.UUID {
 
 // IngredientIDs returns all ingredient IDs
 func (r *Recipe) IngredientIDs() []uuid.UUID {
-	ids := make([]uuid.UUID, len(r.Ingredients))
-	for i, ing := range r.Ingredients {
-		ids[i] = ing.ID
+	ids := make([]uuid.UUID, len(r.IngredientLines))
+	for i, line := range r.IngredientLines {
+		ids[i] = line.Ingredient.ID
 	}
 	return ids
-}
-
-// Metadata contains recipe metadata including search vector
-type Metadata struct {
-	SearchVector  pgvector.Vector
-	ImageURL      string
-	Tags          []string
-	PublishedDate time.Time
-}
-
-// NutritionalInfo contains nutritional information for a recipe
-type NutritionalInfo struct {
-	Calories int
 }

@@ -135,6 +135,507 @@ func (x *SuggestionsResponse) GetRecipeIds() []string {
 	return nil
 }
 
+// Request for a week plan
+type GetWeekPlanRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // UUID string
+	StartDate     string                 `protobuf:"bytes,2,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"` // YYYY-MM-DD
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWeekPlanRequest) Reset() {
+	*x = GetWeekPlanRequest{}
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWeekPlanRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWeekPlanRequest) ProtoMessage() {}
+
+func (x *GetWeekPlanRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWeekPlanRequest.ProtoReflect.Descriptor instead.
+func (*GetWeekPlanRequest) Descriptor() ([]byte, []int) {
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetWeekPlanRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetWeekPlanRequest) GetStartDate() string {
+	if x != nil {
+		return x.StartDate
+	}
+	return ""
+}
+
+// Response for a week plan
+type GetWeekPlanResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Plan          *WeekPlan              `protobuf:"bytes,1,opt,name=plan,proto3" json:"plan,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWeekPlanResponse) Reset() {
+	*x = GetWeekPlanResponse{}
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWeekPlanResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWeekPlanResponse) ProtoMessage() {}
+
+func (x *GetWeekPlanResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWeekPlanResponse.ProtoReflect.Descriptor instead.
+func (*GetWeekPlanResponse) Descriptor() ([]byte, []int) {
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetWeekPlanResponse) GetPlan() *WeekPlan {
+	if x != nil {
+		return x.Plan
+	}
+	return nil
+}
+
+// Request to create or update a week plan
+type UpsertWeekPlanRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // UUID string
+	Plan          *WeekPlanInput         `protobuf:"bytes,2,opt,name=plan,proto3" json:"plan,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertWeekPlanRequest) Reset() {
+	*x = UpsertWeekPlanRequest{}
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertWeekPlanRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertWeekPlanRequest) ProtoMessage() {}
+
+func (x *UpsertWeekPlanRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertWeekPlanRequest.ProtoReflect.Descriptor instead.
+func (*UpsertWeekPlanRequest) Descriptor() ([]byte, []int) {
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UpsertWeekPlanRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *UpsertWeekPlanRequest) GetPlan() *WeekPlanInput {
+	if x != nil {
+		return x.Plan
+	}
+	return nil
+}
+
+// Response after upserting a week plan
+type UpsertWeekPlanResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Plan          *WeekPlan              `protobuf:"bytes,1,opt,name=plan,proto3" json:"plan,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertWeekPlanResponse) Reset() {
+	*x = UpsertWeekPlanResponse{}
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertWeekPlanResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertWeekPlanResponse) ProtoMessage() {}
+
+func (x *UpsertWeekPlanResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertWeekPlanResponse.ProtoReflect.Descriptor instead.
+func (*UpsertWeekPlanResponse) Descriptor() ([]byte, []int) {
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *UpsertWeekPlanResponse) GetPlan() *WeekPlan {
+	if x != nil {
+		return x.Plan
+	}
+	return nil
+}
+
+// Week plan input
+type WeekPlanInput struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StartDate     string                 `protobuf:"bytes,1,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"` // YYYY-MM-DD
+	EndDate       string                 `protobuf:"bytes,2,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty"`       // YYYY-MM-DD
+	Slots         []*MealSlotInput       `protobuf:"bytes,3,rep,name=slots,proto3" json:"slots,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WeekPlanInput) Reset() {
+	*x = WeekPlanInput{}
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WeekPlanInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WeekPlanInput) ProtoMessage() {}
+
+func (x *WeekPlanInput) ProtoReflect() protoreflect.Message {
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WeekPlanInput.ProtoReflect.Descriptor instead.
+func (*WeekPlanInput) Descriptor() ([]byte, []int) {
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *WeekPlanInput) GetStartDate() string {
+	if x != nil {
+		return x.StartDate
+	}
+	return ""
+}
+
+func (x *WeekPlanInput) GetEndDate() string {
+	if x != nil {
+		return x.EndDate
+	}
+	return ""
+}
+
+func (x *WeekPlanInput) GetSlots() []*MealSlotInput {
+	if x != nil {
+		return x.Slots
+	}
+	return nil
+}
+
+// Week plan response
+type WeekPlan struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StartDate     string                 `protobuf:"bytes,1,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"` // YYYY-MM-DD
+	EndDate       string                 `protobuf:"bytes,2,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty"`       // YYYY-MM-DD
+	Slots         []*MealSlot            `protobuf:"bytes,3,rep,name=slots,proto3" json:"slots,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WeekPlan) Reset() {
+	*x = WeekPlan{}
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WeekPlan) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WeekPlan) ProtoMessage() {}
+
+func (x *WeekPlan) ProtoReflect() protoreflect.Message {
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WeekPlan.ProtoReflect.Descriptor instead.
+func (*WeekPlan) Descriptor() ([]byte, []int) {
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *WeekPlan) GetStartDate() string {
+	if x != nil {
+		return x.StartDate
+	}
+	return ""
+}
+
+func (x *WeekPlan) GetEndDate() string {
+	if x != nil {
+		return x.EndDate
+	}
+	return ""
+}
+
+func (x *WeekPlan) GetSlots() []*MealSlot {
+	if x != nil {
+		return x.Slots
+	}
+	return nil
+}
+
+// Meal slot input for a plan
+type MealSlotInput struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"` // YYYY-MM-DD
+	MealType      string                 `protobuf:"bytes,2,opt,name=meal_type,json=mealType,proto3" json:"meal_type,omitempty"`
+	RecipeId      string                 `protobuf:"bytes,3,opt,name=recipe_id,json=recipeId,proto3" json:"recipe_id,omitempty"` // UUID string
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MealSlotInput) Reset() {
+	*x = MealSlotInput{}
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MealSlotInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MealSlotInput) ProtoMessage() {}
+
+func (x *MealSlotInput) ProtoReflect() protoreflect.Message {
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MealSlotInput.ProtoReflect.Descriptor instead.
+func (*MealSlotInput) Descriptor() ([]byte, []int) {
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *MealSlotInput) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *MealSlotInput) GetMealType() string {
+	if x != nil {
+		return x.MealType
+	}
+	return ""
+}
+
+func (x *MealSlotInput) GetRecipeId() string {
+	if x != nil {
+		return x.RecipeId
+	}
+	return ""
+}
+
+// Meal slot in a plan
+type MealSlot struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"` // YYYY-MM-DD
+	MealType      string                 `protobuf:"bytes,2,opt,name=meal_type,json=mealType,proto3" json:"meal_type,omitempty"`
+	Recipe        *MealPlanRecipe        `protobuf:"bytes,3,opt,name=recipe,proto3" json:"recipe,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MealSlot) Reset() {
+	*x = MealSlot{}
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MealSlot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MealSlot) ProtoMessage() {}
+
+func (x *MealSlot) ProtoReflect() protoreflect.Message {
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MealSlot.ProtoReflect.Descriptor instead.
+func (*MealSlot) Descriptor() ([]byte, []int) {
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *MealSlot) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *MealSlot) GetMealType() string {
+	if x != nil {
+		return x.MealType
+	}
+	return ""
+}
+
+func (x *MealSlot) GetRecipe() *MealPlanRecipe {
+	if x != nil {
+		return x.Recipe
+	}
+	return nil
+}
+
+// Minimal recipe info for meal plans
+type MealPlanRecipe struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MealPlanRecipe) Reset() {
+	*x = MealPlanRecipe{}
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MealPlanRecipe) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MealPlanRecipe) ProtoMessage() {}
+
+func (x *MealPlanRecipe) ProtoReflect() protoreflect.Message {
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MealPlanRecipe.ProtoReflect.Descriptor instead.
+func (*MealPlanRecipe) Descriptor() ([]byte, []int) {
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *MealPlanRecipe) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *MealPlanRecipe) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *MealPlanRecipe) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
 // Constraints that apply to a single day
 type DailyConstraints struct {
 	state                 protoimpl.MessageState  `protogen:"open.v1"`
@@ -146,7 +647,7 @@ type DailyConstraints struct {
 
 func (x *DailyConstraints) Reset() {
 	*x = DailyConstraints{}
-	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[2]
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -158,7 +659,7 @@ func (x *DailyConstraints) String() string {
 func (*DailyConstraints) ProtoMessage() {}
 
 func (x *DailyConstraints) ProtoReflect() protoreflect.Message {
-	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[2]
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -171,7 +672,7 @@ func (x *DailyConstraints) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DailyConstraints.ProtoReflect.Descriptor instead.
 func (*DailyConstraints) Descriptor() ([]byte, []int) {
-	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{2}
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *DailyConstraints) GetIngredientConstraints() []*IngredientConstraint {
@@ -198,7 +699,7 @@ type IngredientConstraint struct {
 
 func (x *IngredientConstraint) Reset() {
 	*x = IngredientConstraint{}
-	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[3]
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +711,7 @@ func (x *IngredientConstraint) String() string {
 func (*IngredientConstraint) ProtoMessage() {}
 
 func (x *IngredientConstraint) ProtoReflect() protoreflect.Message {
-	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[3]
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +724,7 @@ func (x *IngredientConstraint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IngredientConstraint.ProtoReflect.Descriptor instead.
 func (*IngredientConstraint) Descriptor() ([]byte, []int) {
-	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{3}
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *IngredientConstraint) GetEntityId() string {
@@ -243,7 +744,7 @@ type CuisineConstraint struct {
 
 func (x *CuisineConstraint) Reset() {
 	*x = CuisineConstraint{}
-	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[4]
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -255,7 +756,7 @@ func (x *CuisineConstraint) String() string {
 func (*CuisineConstraint) ProtoMessage() {}
 
 func (x *CuisineConstraint) ProtoReflect() protoreflect.Message {
-	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[4]
+	mi := &file_mealplanner_v1_mealplanner_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -268,7 +769,7 @@ func (x *CuisineConstraint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CuisineConstraint.ProtoReflect.Descriptor instead.
 func (*CuisineConstraint) Descriptor() ([]byte, []int) {
-	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{4}
+	return file_mealplanner_v1_mealplanner_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *CuisineConstraint) GetEntityId() string {
@@ -290,16 +791,51 @@ const file_mealplanner_v1_mealplanner_proto_rawDesc = "" +
 	"\auser_id\x18\x04 \x01(\tR\x06userId\"4\n" +
 	"\x13SuggestionsResponse\x12\x1d\n" +
 	"\n" +
-	"recipe_ids\x18\x01 \x03(\tR\trecipeIds\"\xc3\x01\n" +
+	"recipe_ids\x18\x01 \x03(\tR\trecipeIds\"L\n" +
+	"\x12GetWeekPlanRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
+	"\n" +
+	"start_date\x18\x02 \x01(\tR\tstartDate\"C\n" +
+	"\x13GetWeekPlanResponse\x12,\n" +
+	"\x04plan\x18\x01 \x01(\v2\x18.mealplanner.v1.WeekPlanR\x04plan\"c\n" +
+	"\x15UpsertWeekPlanRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x121\n" +
+	"\x04plan\x18\x02 \x01(\v2\x1d.mealplanner.v1.WeekPlanInputR\x04plan\"F\n" +
+	"\x16UpsertWeekPlanResponse\x12,\n" +
+	"\x04plan\x18\x01 \x01(\v2\x18.mealplanner.v1.WeekPlanR\x04plan\"~\n" +
+	"\rWeekPlanInput\x12\x1d\n" +
+	"\n" +
+	"start_date\x18\x01 \x01(\tR\tstartDate\x12\x19\n" +
+	"\bend_date\x18\x02 \x01(\tR\aendDate\x123\n" +
+	"\x05slots\x18\x03 \x03(\v2\x1d.mealplanner.v1.MealSlotInputR\x05slots\"t\n" +
+	"\bWeekPlan\x12\x1d\n" +
+	"\n" +
+	"start_date\x18\x01 \x01(\tR\tstartDate\x12\x19\n" +
+	"\bend_date\x18\x02 \x01(\tR\aendDate\x12.\n" +
+	"\x05slots\x18\x03 \x03(\v2\x18.mealplanner.v1.MealSlotR\x05slots\"]\n" +
+	"\rMealSlotInput\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x1b\n" +
+	"\tmeal_type\x18\x02 \x01(\tR\bmealType\x12\x1b\n" +
+	"\trecipe_id\x18\x03 \x01(\tR\brecipeId\"s\n" +
+	"\bMealSlot\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x1b\n" +
+	"\tmeal_type\x18\x02 \x01(\tR\bmealType\x126\n" +
+	"\x06recipe\x18\x03 \x01(\v2\x1e.mealplanner.v1.MealPlanRecipeR\x06recipe\"V\n" +
+	"\x0eMealPlanRecipe\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\"\xc3\x01\n" +
 	"\x10DailyConstraints\x12[\n" +
 	"\x16ingredient_constraints\x18\x01 \x03(\v2$.mealplanner.v1.IngredientConstraintR\x15ingredientConstraints\x12R\n" +
 	"\x13cuisine_constraints\x18\x02 \x03(\v2!.mealplanner.v1.CuisineConstraintR\x12cuisineConstraints\"3\n" +
 	"\x14IngredientConstraint\x12\x1b\n" +
 	"\tentity_id\x18\x01 \x01(\tR\bentityId\"0\n" +
 	"\x11CuisineConstraint\x12\x1b\n" +
-	"\tentity_id\x18\x01 \x01(\tR\bentityId2o\n" +
+	"\tentity_id\x18\x01 \x01(\tR\bentityId2\xa8\x02\n" +
 	"\x12MealPlannerService\x12Y\n" +
-	"\x0eSuggestRecipes\x12\".mealplanner.v1.SuggestionsRequest\x1a#.mealplanner.v1.SuggestionsResponseB7Z5github.com/platepilot/backend/internal/mealplanner/pbb\x06proto3"
+	"\x0eSuggestRecipes\x12\".mealplanner.v1.SuggestionsRequest\x1a#.mealplanner.v1.SuggestionsResponse\x12V\n" +
+	"\vGetWeekPlan\x12\".mealplanner.v1.GetWeekPlanRequest\x1a#.mealplanner.v1.GetWeekPlanResponse\x12_\n" +
+	"\x0eUpsertWeekPlan\x12%.mealplanner.v1.UpsertWeekPlanRequest\x1a&.mealplanner.v1.UpsertWeekPlanResponseB7Z5github.com/platepilot/backend/internal/mealplanner/pbb\x06proto3"
 
 var (
 	file_mealplanner_v1_mealplanner_proto_rawDescOnce sync.Once
@@ -313,25 +849,44 @@ func file_mealplanner_v1_mealplanner_proto_rawDescGZIP() []byte {
 	return file_mealplanner_v1_mealplanner_proto_rawDescData
 }
 
-var file_mealplanner_v1_mealplanner_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_mealplanner_v1_mealplanner_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_mealplanner_v1_mealplanner_proto_goTypes = []any{
-	(*SuggestionsRequest)(nil),   // 0: mealplanner.v1.SuggestionsRequest
-	(*SuggestionsResponse)(nil),  // 1: mealplanner.v1.SuggestionsResponse
-	(*DailyConstraints)(nil),     // 2: mealplanner.v1.DailyConstraints
-	(*IngredientConstraint)(nil), // 3: mealplanner.v1.IngredientConstraint
-	(*CuisineConstraint)(nil),    // 4: mealplanner.v1.CuisineConstraint
+	(*SuggestionsRequest)(nil),     // 0: mealplanner.v1.SuggestionsRequest
+	(*SuggestionsResponse)(nil),    // 1: mealplanner.v1.SuggestionsResponse
+	(*GetWeekPlanRequest)(nil),     // 2: mealplanner.v1.GetWeekPlanRequest
+	(*GetWeekPlanResponse)(nil),    // 3: mealplanner.v1.GetWeekPlanResponse
+	(*UpsertWeekPlanRequest)(nil),  // 4: mealplanner.v1.UpsertWeekPlanRequest
+	(*UpsertWeekPlanResponse)(nil), // 5: mealplanner.v1.UpsertWeekPlanResponse
+	(*WeekPlanInput)(nil),          // 6: mealplanner.v1.WeekPlanInput
+	(*WeekPlan)(nil),               // 7: mealplanner.v1.WeekPlan
+	(*MealSlotInput)(nil),          // 8: mealplanner.v1.MealSlotInput
+	(*MealSlot)(nil),               // 9: mealplanner.v1.MealSlot
+	(*MealPlanRecipe)(nil),         // 10: mealplanner.v1.MealPlanRecipe
+	(*DailyConstraints)(nil),       // 11: mealplanner.v1.DailyConstraints
+	(*IngredientConstraint)(nil),   // 12: mealplanner.v1.IngredientConstraint
+	(*CuisineConstraint)(nil),      // 13: mealplanner.v1.CuisineConstraint
 }
 var file_mealplanner_v1_mealplanner_proto_depIdxs = []int32{
-	2, // 0: mealplanner.v1.SuggestionsRequest.daily_constraints:type_name -> mealplanner.v1.DailyConstraints
-	3, // 1: mealplanner.v1.DailyConstraints.ingredient_constraints:type_name -> mealplanner.v1.IngredientConstraint
-	4, // 2: mealplanner.v1.DailyConstraints.cuisine_constraints:type_name -> mealplanner.v1.CuisineConstraint
-	0, // 3: mealplanner.v1.MealPlannerService.SuggestRecipes:input_type -> mealplanner.v1.SuggestionsRequest
-	1, // 4: mealplanner.v1.MealPlannerService.SuggestRecipes:output_type -> mealplanner.v1.SuggestionsResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	11, // 0: mealplanner.v1.SuggestionsRequest.daily_constraints:type_name -> mealplanner.v1.DailyConstraints
+	7,  // 1: mealplanner.v1.GetWeekPlanResponse.plan:type_name -> mealplanner.v1.WeekPlan
+	6,  // 2: mealplanner.v1.UpsertWeekPlanRequest.plan:type_name -> mealplanner.v1.WeekPlanInput
+	7,  // 3: mealplanner.v1.UpsertWeekPlanResponse.plan:type_name -> mealplanner.v1.WeekPlan
+	8,  // 4: mealplanner.v1.WeekPlanInput.slots:type_name -> mealplanner.v1.MealSlotInput
+	9,  // 5: mealplanner.v1.WeekPlan.slots:type_name -> mealplanner.v1.MealSlot
+	10, // 6: mealplanner.v1.MealSlot.recipe:type_name -> mealplanner.v1.MealPlanRecipe
+	12, // 7: mealplanner.v1.DailyConstraints.ingredient_constraints:type_name -> mealplanner.v1.IngredientConstraint
+	13, // 8: mealplanner.v1.DailyConstraints.cuisine_constraints:type_name -> mealplanner.v1.CuisineConstraint
+	0,  // 9: mealplanner.v1.MealPlannerService.SuggestRecipes:input_type -> mealplanner.v1.SuggestionsRequest
+	2,  // 10: mealplanner.v1.MealPlannerService.GetWeekPlan:input_type -> mealplanner.v1.GetWeekPlanRequest
+	4,  // 11: mealplanner.v1.MealPlannerService.UpsertWeekPlan:input_type -> mealplanner.v1.UpsertWeekPlanRequest
+	1,  // 12: mealplanner.v1.MealPlannerService.SuggestRecipes:output_type -> mealplanner.v1.SuggestionsResponse
+	3,  // 13: mealplanner.v1.MealPlannerService.GetWeekPlan:output_type -> mealplanner.v1.GetWeekPlanResponse
+	5,  // 14: mealplanner.v1.MealPlannerService.UpsertWeekPlan:output_type -> mealplanner.v1.UpsertWeekPlanResponse
+	12, // [12:15] is the sub-list for method output_type
+	9,  // [9:12] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_mealplanner_v1_mealplanner_proto_init() }
@@ -345,7 +900,7 @@ func file_mealplanner_v1_mealplanner_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mealplanner_v1_mealplanner_proto_rawDesc), len(file_mealplanner_v1_mealplanner_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

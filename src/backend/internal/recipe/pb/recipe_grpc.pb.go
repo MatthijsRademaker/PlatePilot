@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,15 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RecipeService_GetRecipeById_FullMethodName          = "/recipe.v1.RecipeService/GetRecipeById"
-	RecipeService_GetAllRecipes_FullMethodName          = "/recipe.v1.RecipeService/GetAllRecipes"
-	RecipeService_CreateRecipe_FullMethodName           = "/recipe.v1.RecipeService/CreateRecipe"
-	RecipeService_GetSimilarRecipes_FullMethodName      = "/recipe.v1.RecipeService/GetSimilarRecipes"
-	RecipeService_GetRecipesByCuisine_FullMethodName    = "/recipe.v1.RecipeService/GetRecipesByCuisine"
-	RecipeService_GetRecipesByIngredient_FullMethodName = "/recipe.v1.RecipeService/GetRecipesByIngredient"
-	RecipeService_GetRecipesByAllergy_FullMethodName    = "/recipe.v1.RecipeService/GetRecipesByAllergy"
-	RecipeService_GetUnits_FullMethodName               = "/recipe.v1.RecipeService/GetUnits"
-	RecipeService_CreateUnit_FullMethodName             = "/recipe.v1.RecipeService/CreateUnit"
+	RecipeService_GetRecipe_FullMethodName         = "/recipe.v1.RecipeService/GetRecipe"
+	RecipeService_ListRecipes_FullMethodName       = "/recipe.v1.RecipeService/ListRecipes"
+	RecipeService_CreateRecipe_FullMethodName      = "/recipe.v1.RecipeService/CreateRecipe"
+	RecipeService_UpdateRecipe_FullMethodName      = "/recipe.v1.RecipeService/UpdateRecipe"
+	RecipeService_DeleteRecipe_FullMethodName      = "/recipe.v1.RecipeService/DeleteRecipe"
+	RecipeService_GetSimilarRecipes_FullMethodName = "/recipe.v1.RecipeService/GetSimilarRecipes"
+	RecipeService_GetCuisines_FullMethodName       = "/recipe.v1.RecipeService/GetCuisines"
+	RecipeService_CreateCuisine_FullMethodName     = "/recipe.v1.RecipeService/CreateCuisine"
 )
 
 // RecipeServiceClient is the client API for RecipeService service.
@@ -36,24 +36,14 @@ const (
 //
 // Service definition for recipe management
 type RecipeServiceClient interface {
-	// Gets a recipe by its ID
-	GetRecipeById(ctx context.Context, in *GetRecipeByIdRequest, opts ...grpc.CallOption) (*RecipeResponse, error)
-	// Gets a paginated list of all recipes
-	GetAllRecipes(ctx context.Context, in *GetAllRecipesRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error)
-	// Creates a new recipe
-	CreateRecipe(ctx context.Context, in *CreateRecipeRequest, opts ...grpc.CallOption) (*RecipeResponse, error)
-	// Gets recipes similar to a given recipe
-	GetSimilarRecipes(ctx context.Context, in *GetSimilarRecipesRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error)
-	// Gets recipes by cuisine
-	GetRecipesByCuisine(ctx context.Context, in *GetRecipesByCuisineRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error)
-	// Gets recipes by ingredient
-	GetRecipesByIngredient(ctx context.Context, in *GetRecipesByIngredientRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error)
-	// Gets recipes avoiding an allergy
-	GetRecipesByAllergy(ctx context.Context, in *GetRecipesByAllergyRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error)
-	// Gets available ingredient units
-	GetUnits(ctx context.Context, in *GetUnitsRequest, opts ...grpc.CallOption) (*GetUnitsResponse, error)
-	// Creates a new ingredient unit
-	CreateUnit(ctx context.Context, in *CreateUnitRequest, opts ...grpc.CallOption) (*Unit, error)
+	GetRecipe(ctx context.Context, in *GetRecipeRequest, opts ...grpc.CallOption) (*Recipe, error)
+	ListRecipes(ctx context.Context, in *ListRecipesRequest, opts ...grpc.CallOption) (*ListRecipesResponse, error)
+	CreateRecipe(ctx context.Context, in *CreateRecipeRequest, opts ...grpc.CallOption) (*Recipe, error)
+	UpdateRecipe(ctx context.Context, in *UpdateRecipeRequest, opts ...grpc.CallOption) (*Recipe, error)
+	DeleteRecipe(ctx context.Context, in *DeleteRecipeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetSimilarRecipes(ctx context.Context, in *GetSimilarRecipesRequest, opts ...grpc.CallOption) (*ListRecipesResponse, error)
+	GetCuisines(ctx context.Context, in *GetCuisinesRequest, opts ...grpc.CallOption) (*GetCuisinesResponse, error)
+	CreateCuisine(ctx context.Context, in *CreateCuisineRequest, opts ...grpc.CallOption) (*Cuisine, error)
 }
 
 type recipeServiceClient struct {
@@ -64,29 +54,29 @@ func NewRecipeServiceClient(cc grpc.ClientConnInterface) RecipeServiceClient {
 	return &recipeServiceClient{cc}
 }
 
-func (c *recipeServiceClient) GetRecipeById(ctx context.Context, in *GetRecipeByIdRequest, opts ...grpc.CallOption) (*RecipeResponse, error) {
+func (c *recipeServiceClient) GetRecipe(ctx context.Context, in *GetRecipeRequest, opts ...grpc.CallOption) (*Recipe, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RecipeResponse)
-	err := c.cc.Invoke(ctx, RecipeService_GetRecipeById_FullMethodName, in, out, cOpts...)
+	out := new(Recipe)
+	err := c.cc.Invoke(ctx, RecipeService_GetRecipe_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *recipeServiceClient) GetAllRecipes(ctx context.Context, in *GetAllRecipesRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error) {
+func (c *recipeServiceClient) ListRecipes(ctx context.Context, in *ListRecipesRequest, opts ...grpc.CallOption) (*ListRecipesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetAllRecipesResponse)
-	err := c.cc.Invoke(ctx, RecipeService_GetAllRecipes_FullMethodName, in, out, cOpts...)
+	out := new(ListRecipesResponse)
+	err := c.cc.Invoke(ctx, RecipeService_ListRecipes_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *recipeServiceClient) CreateRecipe(ctx context.Context, in *CreateRecipeRequest, opts ...grpc.CallOption) (*RecipeResponse, error) {
+func (c *recipeServiceClient) CreateRecipe(ctx context.Context, in *CreateRecipeRequest, opts ...grpc.CallOption) (*Recipe, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RecipeResponse)
+	out := new(Recipe)
 	err := c.cc.Invoke(ctx, RecipeService_CreateRecipe_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -94,9 +84,29 @@ func (c *recipeServiceClient) CreateRecipe(ctx context.Context, in *CreateRecipe
 	return out, nil
 }
 
-func (c *recipeServiceClient) GetSimilarRecipes(ctx context.Context, in *GetSimilarRecipesRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error) {
+func (c *recipeServiceClient) UpdateRecipe(ctx context.Context, in *UpdateRecipeRequest, opts ...grpc.CallOption) (*Recipe, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetAllRecipesResponse)
+	out := new(Recipe)
+	err := c.cc.Invoke(ctx, RecipeService_UpdateRecipe_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recipeServiceClient) DeleteRecipe(ctx context.Context, in *DeleteRecipeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, RecipeService_DeleteRecipe_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recipeServiceClient) GetSimilarRecipes(ctx context.Context, in *GetSimilarRecipesRequest, opts ...grpc.CallOption) (*ListRecipesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListRecipesResponse)
 	err := c.cc.Invoke(ctx, RecipeService_GetSimilarRecipes_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -104,50 +114,20 @@ func (c *recipeServiceClient) GetSimilarRecipes(ctx context.Context, in *GetSimi
 	return out, nil
 }
 
-func (c *recipeServiceClient) GetRecipesByCuisine(ctx context.Context, in *GetRecipesByCuisineRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error) {
+func (c *recipeServiceClient) GetCuisines(ctx context.Context, in *GetCuisinesRequest, opts ...grpc.CallOption) (*GetCuisinesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetAllRecipesResponse)
-	err := c.cc.Invoke(ctx, RecipeService_GetRecipesByCuisine_FullMethodName, in, out, cOpts...)
+	out := new(GetCuisinesResponse)
+	err := c.cc.Invoke(ctx, RecipeService_GetCuisines_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *recipeServiceClient) GetRecipesByIngredient(ctx context.Context, in *GetRecipesByIngredientRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error) {
+func (c *recipeServiceClient) CreateCuisine(ctx context.Context, in *CreateCuisineRequest, opts ...grpc.CallOption) (*Cuisine, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetAllRecipesResponse)
-	err := c.cc.Invoke(ctx, RecipeService_GetRecipesByIngredient_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recipeServiceClient) GetRecipesByAllergy(ctx context.Context, in *GetRecipesByAllergyRequest, opts ...grpc.CallOption) (*GetAllRecipesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetAllRecipesResponse)
-	err := c.cc.Invoke(ctx, RecipeService_GetRecipesByAllergy_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recipeServiceClient) GetUnits(ctx context.Context, in *GetUnitsRequest, opts ...grpc.CallOption) (*GetUnitsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetUnitsResponse)
-	err := c.cc.Invoke(ctx, RecipeService_GetUnits_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *recipeServiceClient) CreateUnit(ctx context.Context, in *CreateUnitRequest, opts ...grpc.CallOption) (*Unit, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Unit)
-	err := c.cc.Invoke(ctx, RecipeService_CreateUnit_FullMethodName, in, out, cOpts...)
+	out := new(Cuisine)
+	err := c.cc.Invoke(ctx, RecipeService_CreateCuisine_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -160,24 +140,14 @@ func (c *recipeServiceClient) CreateUnit(ctx context.Context, in *CreateUnitRequ
 //
 // Service definition for recipe management
 type RecipeServiceServer interface {
-	// Gets a recipe by its ID
-	GetRecipeById(context.Context, *GetRecipeByIdRequest) (*RecipeResponse, error)
-	// Gets a paginated list of all recipes
-	GetAllRecipes(context.Context, *GetAllRecipesRequest) (*GetAllRecipesResponse, error)
-	// Creates a new recipe
-	CreateRecipe(context.Context, *CreateRecipeRequest) (*RecipeResponse, error)
-	// Gets recipes similar to a given recipe
-	GetSimilarRecipes(context.Context, *GetSimilarRecipesRequest) (*GetAllRecipesResponse, error)
-	// Gets recipes by cuisine
-	GetRecipesByCuisine(context.Context, *GetRecipesByCuisineRequest) (*GetAllRecipesResponse, error)
-	// Gets recipes by ingredient
-	GetRecipesByIngredient(context.Context, *GetRecipesByIngredientRequest) (*GetAllRecipesResponse, error)
-	// Gets recipes avoiding an allergy
-	GetRecipesByAllergy(context.Context, *GetRecipesByAllergyRequest) (*GetAllRecipesResponse, error)
-	// Gets available ingredient units
-	GetUnits(context.Context, *GetUnitsRequest) (*GetUnitsResponse, error)
-	// Creates a new ingredient unit
-	CreateUnit(context.Context, *CreateUnitRequest) (*Unit, error)
+	GetRecipe(context.Context, *GetRecipeRequest) (*Recipe, error)
+	ListRecipes(context.Context, *ListRecipesRequest) (*ListRecipesResponse, error)
+	CreateRecipe(context.Context, *CreateRecipeRequest) (*Recipe, error)
+	UpdateRecipe(context.Context, *UpdateRecipeRequest) (*Recipe, error)
+	DeleteRecipe(context.Context, *DeleteRecipeRequest) (*emptypb.Empty, error)
+	GetSimilarRecipes(context.Context, *GetSimilarRecipesRequest) (*ListRecipesResponse, error)
+	GetCuisines(context.Context, *GetCuisinesRequest) (*GetCuisinesResponse, error)
+	CreateCuisine(context.Context, *CreateCuisineRequest) (*Cuisine, error)
 	mustEmbedUnimplementedRecipeServiceServer()
 }
 
@@ -188,32 +158,29 @@ type RecipeServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRecipeServiceServer struct{}
 
-func (UnimplementedRecipeServiceServer) GetRecipeById(context.Context, *GetRecipeByIdRequest) (*RecipeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetRecipeById not implemented")
+func (UnimplementedRecipeServiceServer) GetRecipe(context.Context, *GetRecipeRequest) (*Recipe, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRecipe not implemented")
 }
-func (UnimplementedRecipeServiceServer) GetAllRecipes(context.Context, *GetAllRecipesRequest) (*GetAllRecipesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetAllRecipes not implemented")
+func (UnimplementedRecipeServiceServer) ListRecipes(context.Context, *ListRecipesRequest) (*ListRecipesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListRecipes not implemented")
 }
-func (UnimplementedRecipeServiceServer) CreateRecipe(context.Context, *CreateRecipeRequest) (*RecipeResponse, error) {
+func (UnimplementedRecipeServiceServer) CreateRecipe(context.Context, *CreateRecipeRequest) (*Recipe, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateRecipe not implemented")
 }
-func (UnimplementedRecipeServiceServer) GetSimilarRecipes(context.Context, *GetSimilarRecipesRequest) (*GetAllRecipesResponse, error) {
+func (UnimplementedRecipeServiceServer) UpdateRecipe(context.Context, *UpdateRecipeRequest) (*Recipe, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateRecipe not implemented")
+}
+func (UnimplementedRecipeServiceServer) DeleteRecipe(context.Context, *DeleteRecipeRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteRecipe not implemented")
+}
+func (UnimplementedRecipeServiceServer) GetSimilarRecipes(context.Context, *GetSimilarRecipesRequest) (*ListRecipesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSimilarRecipes not implemented")
 }
-func (UnimplementedRecipeServiceServer) GetRecipesByCuisine(context.Context, *GetRecipesByCuisineRequest) (*GetAllRecipesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetRecipesByCuisine not implemented")
+func (UnimplementedRecipeServiceServer) GetCuisines(context.Context, *GetCuisinesRequest) (*GetCuisinesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCuisines not implemented")
 }
-func (UnimplementedRecipeServiceServer) GetRecipesByIngredient(context.Context, *GetRecipesByIngredientRequest) (*GetAllRecipesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetRecipesByIngredient not implemented")
-}
-func (UnimplementedRecipeServiceServer) GetRecipesByAllergy(context.Context, *GetRecipesByAllergyRequest) (*GetAllRecipesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetRecipesByAllergy not implemented")
-}
-func (UnimplementedRecipeServiceServer) GetUnits(context.Context, *GetUnitsRequest) (*GetUnitsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetUnits not implemented")
-}
-func (UnimplementedRecipeServiceServer) CreateUnit(context.Context, *CreateUnitRequest) (*Unit, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateUnit not implemented")
+func (UnimplementedRecipeServiceServer) CreateCuisine(context.Context, *CreateCuisineRequest) (*Cuisine, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateCuisine not implemented")
 }
 func (UnimplementedRecipeServiceServer) mustEmbedUnimplementedRecipeServiceServer() {}
 func (UnimplementedRecipeServiceServer) testEmbeddedByValue()                       {}
@@ -236,38 +203,38 @@ func RegisterRecipeServiceServer(s grpc.ServiceRegistrar, srv RecipeServiceServe
 	s.RegisterService(&RecipeService_ServiceDesc, srv)
 }
 
-func _RecipeService_GetRecipeById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRecipeByIdRequest)
+func _RecipeService_GetRecipe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRecipeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RecipeServiceServer).GetRecipeById(ctx, in)
+		return srv.(RecipeServiceServer).GetRecipe(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RecipeService_GetRecipeById_FullMethodName,
+		FullMethod: RecipeService_GetRecipe_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecipeServiceServer).GetRecipeById(ctx, req.(*GetRecipeByIdRequest))
+		return srv.(RecipeServiceServer).GetRecipe(ctx, req.(*GetRecipeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RecipeService_GetAllRecipes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAllRecipesRequest)
+func _RecipeService_ListRecipes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRecipesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RecipeServiceServer).GetAllRecipes(ctx, in)
+		return srv.(RecipeServiceServer).ListRecipes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RecipeService_GetAllRecipes_FullMethodName,
+		FullMethod: RecipeService_ListRecipes_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecipeServiceServer).GetAllRecipes(ctx, req.(*GetAllRecipesRequest))
+		return srv.(RecipeServiceServer).ListRecipes(ctx, req.(*ListRecipesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -290,6 +257,42 @@ func _RecipeService_CreateRecipe_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RecipeService_UpdateRecipe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRecipeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecipeServiceServer).UpdateRecipe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RecipeService_UpdateRecipe_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecipeServiceServer).UpdateRecipe(ctx, req.(*UpdateRecipeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RecipeService_DeleteRecipe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRecipeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecipeServiceServer).DeleteRecipe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RecipeService_DeleteRecipe_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecipeServiceServer).DeleteRecipe(ctx, req.(*DeleteRecipeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _RecipeService_GetSimilarRecipes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSimilarRecipesRequest)
 	if err := dec(in); err != nil {
@@ -308,92 +311,38 @@ func _RecipeService_GetSimilarRecipes_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RecipeService_GetRecipesByCuisine_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRecipesByCuisineRequest)
+func _RecipeService_GetCuisines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCuisinesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RecipeServiceServer).GetRecipesByCuisine(ctx, in)
+		return srv.(RecipeServiceServer).GetCuisines(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RecipeService_GetRecipesByCuisine_FullMethodName,
+		FullMethod: RecipeService_GetCuisines_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecipeServiceServer).GetRecipesByCuisine(ctx, req.(*GetRecipesByCuisineRequest))
+		return srv.(RecipeServiceServer).GetCuisines(ctx, req.(*GetCuisinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RecipeService_GetRecipesByIngredient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRecipesByIngredientRequest)
+func _RecipeService_CreateCuisine_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCuisineRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RecipeServiceServer).GetRecipesByIngredient(ctx, in)
+		return srv.(RecipeServiceServer).CreateCuisine(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RecipeService_GetRecipesByIngredient_FullMethodName,
+		FullMethod: RecipeService_CreateCuisine_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecipeServiceServer).GetRecipesByIngredient(ctx, req.(*GetRecipesByIngredientRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RecipeService_GetRecipesByAllergy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRecipesByAllergyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecipeServiceServer).GetRecipesByAllergy(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RecipeService_GetRecipesByAllergy_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecipeServiceServer).GetRecipesByAllergy(ctx, req.(*GetRecipesByAllergyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RecipeService_GetUnits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetUnitsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecipeServiceServer).GetUnits(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RecipeService_GetUnits_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecipeServiceServer).GetUnits(ctx, req.(*GetUnitsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RecipeService_CreateUnit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateUnitRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RecipeServiceServer).CreateUnit(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RecipeService_CreateUnit_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecipeServiceServer).CreateUnit(ctx, req.(*CreateUnitRequest))
+		return srv.(RecipeServiceServer).CreateCuisine(ctx, req.(*CreateCuisineRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -406,40 +355,36 @@ var RecipeService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RecipeServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetRecipeById",
-			Handler:    _RecipeService_GetRecipeById_Handler,
+			MethodName: "GetRecipe",
+			Handler:    _RecipeService_GetRecipe_Handler,
 		},
 		{
-			MethodName: "GetAllRecipes",
-			Handler:    _RecipeService_GetAllRecipes_Handler,
+			MethodName: "ListRecipes",
+			Handler:    _RecipeService_ListRecipes_Handler,
 		},
 		{
 			MethodName: "CreateRecipe",
 			Handler:    _RecipeService_CreateRecipe_Handler,
 		},
 		{
+			MethodName: "UpdateRecipe",
+			Handler:    _RecipeService_UpdateRecipe_Handler,
+		},
+		{
+			MethodName: "DeleteRecipe",
+			Handler:    _RecipeService_DeleteRecipe_Handler,
+		},
+		{
 			MethodName: "GetSimilarRecipes",
 			Handler:    _RecipeService_GetSimilarRecipes_Handler,
 		},
 		{
-			MethodName: "GetRecipesByCuisine",
-			Handler:    _RecipeService_GetRecipesByCuisine_Handler,
+			MethodName: "GetCuisines",
+			Handler:    _RecipeService_GetCuisines_Handler,
 		},
 		{
-			MethodName: "GetRecipesByIngredient",
-			Handler:    _RecipeService_GetRecipesByIngredient_Handler,
-		},
-		{
-			MethodName: "GetRecipesByAllergy",
-			Handler:    _RecipeService_GetRecipesByAllergy_Handler,
-		},
-		{
-			MethodName: "GetUnits",
-			Handler:    _RecipeService_GetUnits_Handler,
-		},
-		{
-			MethodName: "CreateUnit",
-			Handler:    _RecipeService_CreateUnit_Handler,
+			MethodName: "CreateCuisine",
+			Handler:    _RecipeService_CreateCuisine_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

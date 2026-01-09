@@ -42,6 +42,7 @@ struct MealPlanView: View {
             if recipeStore.recipes.isEmpty {
                 await recipeStore.refresh()
             }
+            await mealPlanStore.loadCurrentWeek()
         }
     }
 }
@@ -100,6 +101,7 @@ private struct MealPlanHeaderView: View {
 }
 
 private struct RecipePickerSheet: View {
+    @Environment(MealPlanStore.self) private var mealPlanStore
     let slot: MealSlot
     @Binding var searchQuery: String
     let recipes: [Recipe]
@@ -184,11 +186,14 @@ private struct RecipePickerSheet: View {
         isSuggesting = true
         suggestedRecipes = []
 
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 750_000_000)
-            let shuffled = recipes.shuffled()
-            suggestedRecipes = Array(shuffled.prefix(3))
-            isSuggesting = false
+        Task {
+            let suggestedIDs = await mealPlanStore.fetchSuggestions(amount: 5)
+            let lookup = Dictionary(uniqueKeysWithValues: recipes.map { ($0.id, $0) })
+            let resolved = suggestedIDs.compactMap { lookup[$0] }
+            await MainActor.run {
+                suggestedRecipes = resolved
+                isSuggesting = false
+            }
         }
     }
 }

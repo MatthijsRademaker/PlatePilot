@@ -17,7 +17,7 @@ struct APIClient: @unchecked Sendable {
 
     func fetchRecipes(pageIndex: Int = 1, pageSize: Int = 20) async throws -> PaginatedRecipesDTO {
         try await request(
-            path: "recipe/all",
+            path: "recipe",
             queryItems: [
                 URLQueryItem(name: "pageIndex", value: String(pageIndex)),
                 URLQueryItem(name: "pageSize", value: String(pageSize))
@@ -30,17 +30,32 @@ struct APIClient: @unchecked Sendable {
     }
 
     func createRecipe(payload: CreateRecipeRequestDTO) async throws -> RecipeDTO {
-        try await request(path: "recipe/create", method: "POST", body: payload)
+        try await request(path: "recipe", method: "POST", body: payload)
     }
 
-    func fetchUnits() async throws -> [UnitDTO] {
-        let response: UnitsResponseDTO = try await request(path: "recipe/units")
+    func fetchCuisines() async throws -> [CuisineDTO] {
+        let response: CuisinesResponseDTO = try await request(path: "recipe/cuisines")
         return response.items ?? []
     }
 
-    func createUnit(name: String) async throws -> UnitDTO {
-        let payload = CreateUnitRequestDTO(name: name)
-        return try await request(path: "recipe/units", method: "POST", body: payload)
+    func createCuisine(name: String) async throws -> CuisineDTO {
+        let payload = CreateCuisineRequestDTO(name: name)
+        return try await request(path: "recipe/cuisines", method: "POST", body: payload)
+    }
+
+    func fetchWeekPlan(startDate: String) async throws -> MealPlanWeekDTO {
+        try await request(
+            path: "mealplan/week",
+            queryItems: [URLQueryItem(name: "startDate", value: startDate)]
+        )
+    }
+
+    func saveWeekPlan(payload: MealPlanWeekSaveRequestDTO) async throws -> MealPlanWeekDTO {
+        try await request(path: "mealplan/week", method: "PUT", body: payload)
+    }
+
+    func suggestMealPlan(payload: MealPlanSuggestRequestDTO) async throws -> MealPlanSuggestResponseDTO {
+        try await request(path: "mealplan/suggest", method: "POST", body: payload)
     }
 
     func register(email: String, password: String, displayName: String) async throws -> TokenResponseDTO {

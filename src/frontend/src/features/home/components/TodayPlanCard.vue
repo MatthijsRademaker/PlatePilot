@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMealplanStore } from '@features/mealplan/store/mealplanStore';
 import type { MealSlot, MealType } from '@features/mealplan/types/mealplan';
@@ -102,6 +102,10 @@ const featuredMeal = computed((): MealSlot | null => {
     if (meal) return meal;
   }
   return null;
+});
+
+onMounted(() => {
+  void mealplanStore.goToCurrentWeek();
 });
 
 function formatMealType(mealType: MealType): string {

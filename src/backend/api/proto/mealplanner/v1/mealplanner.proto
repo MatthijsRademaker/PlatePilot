@@ -8,6 +8,10 @@ option go_package = "github.com/platepilot/backend/internal/mealplanner/pb";
 service MealPlannerService {
   // Suggests recipes based on given constraints
   rpc SuggestRecipes (SuggestionsRequest) returns (SuggestionsResponse);
+  // Retrieves a week plan for a given start date
+  rpc GetWeekPlan (GetWeekPlanRequest) returns (GetWeekPlanResponse);
+  // Creates or updates a week plan
+  rpc UpsertWeekPlan (UpsertWeekPlanRequest) returns (UpsertWeekPlanResponse);
 }
 
 // Request message for suggesting recipes
@@ -21,6 +25,63 @@ message SuggestionsRequest {
 // Response message containing suggested recipe IDs
 message SuggestionsResponse {
   repeated string recipe_ids = 1; // UUID strings
+}
+
+// Request for a week plan
+message GetWeekPlanRequest {
+  string user_id = 1; // UUID string
+  string start_date = 2; // YYYY-MM-DD
+}
+
+// Response for a week plan
+message GetWeekPlanResponse {
+  WeekPlan plan = 1;
+}
+
+// Request to create or update a week plan
+message UpsertWeekPlanRequest {
+  string user_id = 1; // UUID string
+  WeekPlanInput plan = 2;
+}
+
+// Response after upserting a week plan
+message UpsertWeekPlanResponse {
+  WeekPlan plan = 1;
+}
+
+// Week plan input
+message WeekPlanInput {
+  string start_date = 1; // YYYY-MM-DD
+  string end_date = 2; // YYYY-MM-DD
+  repeated MealSlotInput slots = 3;
+}
+
+// Week plan response
+message WeekPlan {
+  string start_date = 1; // YYYY-MM-DD
+  string end_date = 2; // YYYY-MM-DD
+  repeated MealSlot slots = 3;
+}
+
+// Meal slot input for a plan
+message MealSlotInput {
+  string date = 1; // YYYY-MM-DD
+  string meal_type = 2;
+  string recipe_id = 3; // UUID string
+}
+
+// Meal slot in a plan
+message MealSlot {
+  string date = 1; // YYYY-MM-DD
+  string meal_type = 2;
+  MealPlanRecipe recipe = 3;
+}
+
+// Minimal recipe info for meal plans
+message MealPlanRecipe {
+  string id = 1;
+  string name = 2;
+  string description = 3;
 }
 
 // Constraints that apply to a single day

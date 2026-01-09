@@ -88,5 +88,8 @@ struct TodayPlanCard: View {
             .background(PlatePilotTheme.headerGradient, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             .shadow(color: PlatePilotTheme.accent.opacity(0.25), radius: 16, x: 0, y: 8)
         }
+        .task {
+            await mealPlanStore.loadCurrentWeek()
+        }
     }
 }
