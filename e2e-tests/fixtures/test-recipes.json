@@ -1,0 +1,52 @@
+[
+  {
+    "id": "test-recipe-1",
+    "name": "E2E Test Pasta",
+    "description": "A test recipe for E2E tests",
+    "cuisine": "Italian",
+    "prepTime": 15,
+    "cookTime": 20,
+    "servings": 4,
+    "calories": 450,
+    "ingredients": [
+      "400g pasta",
+      "2 tbsp olive oil",
+      "3 cloves garlic",
+      "1 can tomatoes"
+    ],
+    "directions": [
+      "Boil pasta according to package directions",
+      "Heat olive oil in a pan",
+      "Add minced garlic and cook until fragrant",
+      "Add tomatoes and simmer",
+      "Toss with cooked pasta"
+    ],
+    "tags": ["quick", "easy", "vegetarian"]
+  },
+  {
+    "id": "test-recipe-2",
+    "name": "E2E Test Salad",
+    "description": "A healthy test salad",
+    "cuisine": "Mediterranean",
+    "prepTime": 10,
+    "cookTime": 0,
+    "servings": 2,
+    "calories": 250,
+    "ingredients": [
+      "Mixed greens",
+      "Cherry tomatoes",
+      "Cucumber",
+      "Feta cheese",
+      "Olive oil",
+      "Lemon juice"
+    ],
+    "directions": [
+      "Wash and dry greens",
+      "Chop vegetables",
+      "Combine in a bowl",
+      "Drizzle with olive oil and lemon juice",
+      "Top with feta cheese"
+    ],
+    "tags": ["healthy", "quick", "vegetarian", "no-cook"]
+  }
+]

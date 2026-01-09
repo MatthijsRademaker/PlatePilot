@@ -1,0 +1,60 @@
+appId: com.platepilot.app
+---
+# Test Suite: Home Screen
+# Tests the home dashboard with today's plan and calorie tracker
+
+# Launch the app
+- launchApp
+
+# Wait for home screen to load
+- waitForElement:
+    text: "Today's Plan"
+    timeout: 5000
+
+# Test: Home screen displays correctly
+- assertVisible: "Today's Plan"
+- assertVisible: "Daily Calories"
+- assertVisible: "Recipe Suggestions"
+
+# Test: Today's Plan card is present
+- assertVisible:
+    id: "TodayPlanCard"
+
+# Test: Daily Calorie Tracker is functional
+- assertVisible:
+    id: "DailyCalorieTracker"
+- assertVisible: "0"  # Initial calorie count
+- assertVisible: "2000"  # Daily goal
+
+# Test: Recipe Suggestions carousel is present
+- assertVisible: "Recipe Suggestions"
+- assertVisible:
+    id: "RecipeSuggestionsView"
+
+# Test: Can scroll recipe suggestions
+- scrollUntilVisible:
+    element:
+      id: "RecipeCard"
+    direction: LEFT
+    timeout: 3000
+
+# Test: Tap on a recipe suggestion navigates to detail
+- tapOn:
+    id: "RecipeCard"
+    index: 0
+- waitForElement: "Ingredients"
+- assertVisible: "Directions"
+- assertVisible: "Nutrition"
+
+# Go back to home
+- back
+
+# Verify we're back on home screen
+- assertVisible: "Today's Plan"
+
+# Test: Bottom tab navigation is present
+- assertVisible: "Home"
+- assertVisible: "Recipes"
+- assertVisible: "Meal Plan"
+- assertVisible: "Search"
+- assertVisible: "Insights"

@@ -1,0 +1,23 @@
+{
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Features/Home/HomeView.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/HomeView.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/HomeView.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/HomeView.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/HomeView.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/HomeView.swiftdeps"
+  },
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Shared/Views/GlassEffectHelpers.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/GlassEffectHelpers.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/GlassEffectHelpers.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/GlassEffectHelpers.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/GlassEffectHelpers.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/GlassEffectHelpers.swiftdeps"
+  },
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Shared/Views/GlassHubNavigationView.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/GlassHubNavigationView.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/GlassHubNavigationView.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/GlassHubNavigationView.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/GlassHubNavigationView.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/GlassHubNavigationView.swiftdeps"
+  }
+}

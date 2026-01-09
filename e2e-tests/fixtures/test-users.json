@@ -1,0 +1,17 @@
+{
+  "testUser": {
+    "email": "test@platepilot.com",
+    "password": "Test123!",
+    "name": "Test User"
+  },
+  "testUser2": {
+    "email": "test2@platepilot.com",
+    "password": "Test123!",
+    "name": "Test User 2"
+  },
+  "adminUser": {
+    "email": "admin@platepilot.com",
+    "password": "Admin123!",
+    "name": "Admin User"
+  }
+}

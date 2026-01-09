@@ -5,15 +5,11 @@ on:
     branches: [main]
     paths:
       - 'src/backend/**'
-      - 'src/frontend/**'
-      - 'e2e-tests/**'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
     paths:
       - 'src/backend/**'
-      - 'src/frontend/**'
-      - 'e2e-tests/**'
       - '.github/workflows/ci.yml'
 
 env:
@@ -109,71 +105,75 @@ jobs:
           retention-days: 7
 
   # ============================================
-  # Frontend Jobs
+  # Frontend Jobs (DEPRECATED - Vue.js frontend)
   # ============================================
-  frontend:
-    name: Frontend Lint & Test
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src/frontend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Run linter
-        run: bun run lint
-
-      - name: Run tests
-        run: bun run test
+  # frontend:
+  #   name: Frontend Lint & Test (DEPRECATED)
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       working-directory: src/frontend
+  #
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Set up Bun
+  #       uses: oven-sh/setup-bun@v2
+  #
+  #     - name: Install dependencies
+  #       run: bun install --frozen-lockfile
+  #
+  #     - name: Run linter
+  #       run: bun run lint
+  #
+  #     - name: Run tests
+  #       run: bun run test
+  #
+  # NOTE: iOS app testing is in separate workflow (.github/workflows/e2e-ios.yml)
 
   # ============================================
-  # E2E Tests
+  # E2E Tests (DEPRECATED - Playwright for Vue.js)
   # ============================================
-  e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: [backend-build, frontend]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install Playwright dependencies
-        working-directory: e2e-tests
-        run: |
-          bun install --frozen-lockfile
-          bunx playwright install chromium --with-deps
-
-      - name: Start E2E stack
-        run: docker compose -f docker-compose.e2e.yml up -d --build --wait
-        timeout-minutes: 10
-
-      - name: Run E2E tests
-        working-directory: e2e-tests
-        run: bun run test
-
-      - name: Stop E2E stack
-        if: always()
-        run: docker compose -f docker-compose.e2e.yml down -v
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: e2e-tests/test-results/
-          retention-days: 7
+  # e2e:
+  #   name: E2E Tests (DEPRECATED)
+  #   runs-on: ubuntu-latest
+  #   needs: [backend-build]
+  #
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Set up Bun
+  #       uses: oven-sh/setup-bun@v2
+  #
+  #     - name: Install Playwright dependencies
+  #       working-directory: e2e-tests-web-legacy
+  #       run: |
+  #         bun install --frozen-lockfile
+  #         bunx playwright install chromium --with-deps
+  #
+  #     - name: Start E2E stack
+  #       run: docker compose -f docker-compose.e2e.yml up -d --build --wait
+  #       timeout-minutes: 10
+  #
+  #     - name: Run E2E tests
+  #       working-directory: e2e-tests-web-legacy
+  #       run: bun run test
+  #
+  #     - name: Stop E2E stack
+  #       if: always()
+  #       run: docker compose -f docker-compose.e2e.yml down -v
+  #
+  #     - name: Upload Playwright report
+  #       if: failure()
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: playwright-report
+  #         path: e2e-tests-web-legacy/test-results/
+  #         retention-days: 7
+  #
+  # NOTE: iOS E2E tests are in separate workflow (.github/workflows/e2e-ios.yml)
 
   # ============================================
   # Main Branch Only: Docker Build
@@ -181,7 +181,7 @@ jobs:
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
-    needs: [e2e]
+    needs: [backend-build]  # Removed e2e dependency
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
@@ -230,7 +230,7 @@ jobs:
   integration:
     name: Integration Test
     runs-on: ubuntu-latest
-    needs: [e2e]
+    needs: [backend-build]  # Removed e2e dependency
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     services:

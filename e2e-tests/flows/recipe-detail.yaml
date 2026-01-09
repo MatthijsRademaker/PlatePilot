@@ -1,0 +1,66 @@
+appId: com.platepilot.app
+---
+# Test Suite: Recipe Detail
+# Tests recipe detail view with all information
+
+- launchApp
+
+# Navigate to Recipes and open first recipe
+- tapOn: "Recipes"
+- waitForElement: "Recipe List"
+- tapOn:
+    id: "RecipeCard"
+    index: 0
+- waitForElement: "Ingredients"
+
+# Test: Recipe title is displayed
+- assertVisible:
+    id: "RecipeTitle"
+
+# Test: Recipe image is displayed
+- assertVisible:
+    id: "RecipeImage"
+
+# Test: Cuisine info is displayed
+- assertVisible:
+    id: "RecipeCuisine"
+
+# Test: Prep/cook time info (if available)
+# - assertVisible: "Prep Time"
+# - assertVisible: "Cook Time"
+
+# Test: Ingredients section
+- assertVisible: "Ingredients"
+# Should list multiple ingredients
+- scroll  # Scroll to see more ingredients
+
+# Test: Directions section
+- assertVisible: "Directions"
+# Should show step-by-step instructions
+- scroll  # Scroll through directions
+
+# Test: Nutrition section
+- assertVisible: "Nutrition"
+- assertVisible: "Calories"
+# May show protein, carbs, fat, etc.
+
+# Test: Can scroll through entire recipe
+- scroll
+- scroll
+- scroll
+
+# Test: Action buttons (if present)
+# - assertVisible: "Add to Meal Plan"
+# - assertVisible: "Add to Shopping List"
+
+# Test: Navigate back to recipe list
+- back
+- assertVisible: "Recipe List"
+
+# Test: Open different recipe
+- tapOn:
+    id: "RecipeCard"
+    index: 1
+- waitForElement: "Ingredients"
+- assertVisible: "Directions"
+- back

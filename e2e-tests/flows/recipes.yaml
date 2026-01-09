@@ -1,0 +1,50 @@
+appId: com.platepilot.app
+---
+# Test Suite: Recipe Browsing
+# Tests recipe list and filtering functionality
+
+- launchApp
+
+# Navigate to Recipes tab
+- tapOn: "Recipes"
+- waitForElement: "Recipe List"
+
+# Test: Recipe list displays
+- assertVisible: "Recipe List"
+- assertVisible:
+    id: "RecipeCard"
+
+# Test: Recipe cards show basic info
+- assertVisible: "RecipeCard"
+# Recipe cards should show title, cuisine, and image
+
+# Test: Can scroll through recipes
+- scroll
+- scroll
+- assertVisible: "RecipeCard"
+
+# Test: Tap on recipe opens detail view
+- tapOn:
+    id: "RecipeCard"
+    index: 0
+- waitForElement: "Ingredients"
+- assertVisible: "Directions"
+- assertVisible: "Nutrition"
+
+# Test: Recipe detail shows all sections
+- assertVisible: "Ingredients"
+- assertVisible: "Directions"
+- assertVisible: "Nutrition"
+
+# Test: Can scroll through ingredients
+- scroll
+- assertVisible: "Directions"
+
+# Test: Navigate back to recipe list
+- back
+- assertVisible: "Recipe List"
+
+# Test: Search/filter (if implemented)
+# - tapOn: "Search"
+# - inputText: "pasta"
+# - assertVisible: "Pasta"

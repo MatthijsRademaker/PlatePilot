@@ -20,10 +20,6 @@ DROP INDEX IF EXISTS ix_shopping_lists_created_at;
 DROP INDEX IF EXISTS ix_shopping_lists_user_id;
 DROP TABLE IF EXISTS shopping_lists;
 
--- Remove quantity and unit from recipe_ingredients
-ALTER TABLE recipe_ingredients DROP COLUMN IF EXISTS unit;
-ALTER TABLE recipe_ingredients DROP COLUMN IF EXISTS quantity;
-
 -- Remove category from ingredients
 DROP INDEX IF EXISTS ix_ingredients_category_id;
 ALTER TABLE ingredients DROP COLUMN IF EXISTS category_id;

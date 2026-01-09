@@ -1,0 +1,23 @@
+{
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/App/AppState.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AppState.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AppState.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AppState.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AppState.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AppState.swiftdeps"
+  },
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/App/AppTab.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AppTab.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AppTab.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AppTab.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AppTab.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AppTab.swiftdeps"
+  },
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Shared/API/APIModels.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/APIModels.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/APIModels.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/APIModels.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/APIModels.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/APIModels.swiftdeps"
+  }
+}

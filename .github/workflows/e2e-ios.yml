@@ -1,0 +1,93 @@
+name: iOS E2E Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/ios/**'
+      - 'src/backend/**'
+      - 'e2e-tests/**'
+      - '.github/workflows/e2e-ios.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/ios/**'
+      - 'src/backend/**'
+      - 'e2e-tests/**'
+      - '.github/workflows/e2e-ios.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  XCODE_VERSION: '16.2'
+  IOS_VERSION: '26.0'
+  SIMULATOR_DEVICE: 'iPhone 15 Pro'
+
+jobs:
+  ios-e2e:
+    name: iOS E2E Tests with Maestro
+    runs-on: macos-14  # GitHub-hosted macOS runner with Xcode
+    timeout-minutes: 60
+
+    steps:
+      # ============================================
+      # Checkout
+      # ============================================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ============================================
+      # Xcode Setup
+      # ============================================
+      - name: Select Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app/Contents/Developer
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      # ============================================
+      # Run Complete E2E Test Suite
+      # ============================================
+      - name: Run iOS E2E tests
+        run: |
+          cd e2e-tests
+          ./scripts/run-ios-e2e.sh
+        env:
+          IOS_SIMULATOR_NAME: ${{ env.SIMULATOR_DEVICE }}
+          IOS_VERSION: ${{ env.IOS_VERSION }}
+
+      # Cleanup is handled automatically by the script's trap
+
+      # ============================================
+      # Upload Artifacts
+      # ============================================
+      - name: Upload Maestro test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-test-results
+          path: |
+            ~/.maestro/tests/**
+            e2e-tests/flows/**
+          retention-days: 7
+
+      - name: Upload simulator logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulator-logs
+          path: ~/Library/Logs/CoreSimulator
+          retention-days: 7
+
+      - name: Upload Docker logs
+        if: failure()
+        run: |
+          docker compose logs > docker-logs.txt
+          echo "Docker logs saved to docker-logs.txt"
+
+      - name: Upload Docker logs artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-logs
+          path: docker-logs.txt
+          retention-days: 7

@@ -1,0 +1,23 @@
+{
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Features/Recipes/RecipeCardView.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/RecipeCardView.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/RecipeCardView.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/RecipeCardView.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/RecipeCardView.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/RecipeCardView.swiftdeps"
+  },
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Features/Recipes/RecipeCreateView.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/RecipeCreateView.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/RecipeCreateView.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/RecipeCreateView.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/RecipeCreateView.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/RecipeCreateView.swiftdeps"
+  },
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Shared/Models/Recipe.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/Recipe.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/Recipe.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/Recipe.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/Recipe.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/Recipe.swiftdeps"
+  }
+}

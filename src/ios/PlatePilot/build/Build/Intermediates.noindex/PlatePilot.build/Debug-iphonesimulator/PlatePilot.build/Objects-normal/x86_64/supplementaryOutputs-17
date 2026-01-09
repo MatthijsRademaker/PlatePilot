@@ -1,0 +1,23 @@
+{
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/App/PlatePilotApp.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlatePilotApp.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlatePilotApp.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlatePilotApp.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlatePilotApp.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlatePilotApp.swiftdeps"
+  },
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Shared/Theme/PlatePilotTheme.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlatePilotTheme.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlatePilotTheme.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlatePilotTheme.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlatePilotTheme.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlatePilotTheme.swiftdeps"
+  },
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Shared/Views/PlaceholderDetailView.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlaceholderDetailView.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlaceholderDetailView.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlaceholderDetailView.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlaceholderDetailView.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/PlaceholderDetailView.swiftdeps"
+  }
+}

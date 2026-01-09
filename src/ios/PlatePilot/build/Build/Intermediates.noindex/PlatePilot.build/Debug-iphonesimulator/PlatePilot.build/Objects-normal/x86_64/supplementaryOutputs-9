@@ -1,0 +1,23 @@
+{
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Features/CalorieTracker/CalorieTrackerView.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/CalorieTrackerView.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/CalorieTrackerView.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/CalorieTrackerView.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/CalorieTrackerView.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/CalorieTrackerView.swiftdeps"
+  },
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Features/Home/DailyCalorieTrackerView.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/DailyCalorieTrackerView.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/DailyCalorieTrackerView.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/DailyCalorieTrackerView.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/DailyCalorieTrackerView.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/DailyCalorieTrackerView.swiftdeps"
+  },
+  "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/Shared/Auth/AuthTokens.swift" : {
+    "const-values" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AuthTokens.swiftconstvalues",
+    "dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AuthTokens.d",
+    "diagnostics" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AuthTokens.dia",
+    "object" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AuthTokens.o",
+    "swift-dependencies" : "/Users/matthijsrademaker/repos/personal/PlatePilot/src/ios/PlatePilot/build/Build/Intermediates.noindex/PlatePilot.build/Debug-iphonesimulator/PlatePilot.build/Objects-normal/x86_64/AuthTokens.swiftdeps"
+  }
+}

@@ -1,5 +1,5 @@
 -- Shopping List Feature Migration
--- Adds shopping list tables and enhances recipe_ingredients with quantity/unit
+-- Adds shopping list tables and ingredient categories (recipe_ingredient_lines already include quantities/units)
 
 -- Add ingredient categories for shopping list grouping
 CREATE TABLE ingredient_categories (
@@ -28,10 +28,6 @@ INSERT INTO ingredient_categories (name, display_order) VALUES
 -- Add category to ingredients table
 ALTER TABLE ingredients ADD COLUMN category_id UUID REFERENCES ingredient_categories(id);
 CREATE INDEX ix_ingredients_category_id ON ingredients (category_id);
-
--- Add quantity and unit to recipe_ingredients junction table
-ALTER TABLE recipe_ingredients ADD COLUMN quantity DECIMAL(10, 2);
-ALTER TABLE recipe_ingredients ADD COLUMN unit VARCHAR(20);
 
 -- Shopping Lists table
 CREATE TABLE shopping_lists (

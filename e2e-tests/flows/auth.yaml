@@ -1,0 +1,49 @@
+appId: com.platepilot.app
+---
+# Test Suite: Authentication
+# Tests sign in and sign up flows
+# NOTE: This assumes the app starts in a logged-out state
+
+- launchApp
+- clearState  # Clear any existing auth state
+
+# Wait for auth screen to appear
+- waitForElement:
+    text: "Sign In"
+    timeout: 5000
+
+# Test: Auth screen displays correctly
+- assertVisible: "Sign In"
+- assertVisible: "Create Account"
+
+# Test: Sign in flow
+- tapOn: "Sign In"
+- waitForElement: "Email"
+
+# Input test credentials
+- tapOn: "Email"
+- inputText: "${TEST_USER_EMAIL}"
+- tapOn: "Password"
+- inputText: "${TEST_USER_PASSWORD}"
+
+# Submit sign in
+- tapOn: "Sign In"
+- waitForElement:
+    text: "Today's Plan"
+    timeout: 10000
+
+# Verify we're logged in and on home screen
+- assertVisible: "Today's Plan"
+- assertVisible: "Daily Calories"
+
+# Test: Sign out
+- tapOn: "Profile"  # Or wherever the account/settings button is
+- waitForElement: "Sign Out"
+- tapOn: "Sign Out"
+
+# Verify we're back at auth screen
+- waitForElement: "Sign In"
+- assertVisible: "Create Account"
+
+# Note: Create Account flow would be tested separately
+# to avoid creating duplicate test accounts

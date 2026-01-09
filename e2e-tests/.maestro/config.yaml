@@ -1,0 +1,21 @@
+# Maestro Global Configuration
+# https://maestro.mobile.dev/reference/configuration
+
+# iOS app identifier
+appId: com.platepilot.app
+
+# Default timeouts (milliseconds)
+timeout:
+  default: 10000    # 10 seconds default timeout for element waits
+  long: 30000       # 30 seconds for slower operations (API calls, etc.)
+
+# Retry configuration
+retry:
+  maxAttempts: 3
+  delayBetweenAttempts: 1000
+
+# Environment variables (can be overridden)
+env:
+  API_BASE_URL: "http://localhost:8080/v1"
+  TEST_USER_EMAIL: "test@platepilot.com"
+  TEST_USER_PASSWORD: "Test123!"

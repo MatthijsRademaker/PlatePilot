@@ -1,0 +1,50 @@
+appId: com.platepilot.app
+---
+# Test Suite: Meal Planning
+# Tests weekly meal plan view and meal slot management
+
+- launchApp
+
+# Navigate to Meal Plan tab
+- tapOn: "Meal Plan"
+- waitForElement: "Week View"
+
+# Test: Week view displays all days
+- assertVisible: "Monday"
+- assertVisible: "Tuesday"
+- assertVisible: "Wednesday"
+- assertVisible: "Thursday"
+- assertVisible: "Friday"
+- assertVisible: "Saturday"
+- assertVisible: "Sunday"
+
+# Test: Can scroll horizontally through days
+- scrollUntilVisible:
+    element:
+      text: "Sunday"
+    direction: RIGHT
+    timeout: 3000
+
+# Test: Meal slots are present
+- assertVisible:
+    id: "MealSlotCard"
+
+# Test: Empty meal slot shows placeholder
+# - assertVisible: "Add a meal"
+
+# Test: Can tap on meal slot
+- tapOn:
+    id: "MealSlotCard"
+    index: 0
+
+# This might open a sheet to select a recipe
+# - assertVisible: "Select Recipe"
+
+# Test: Navigate back
+- back
+- assertVisible: "Week View"
+
+# Test: Can view different weeks (if week navigation is implemented)
+# - tapOn: "Next Week"
+# - assertVisible: "Week View"
+# - tapOn: "Previous Week"

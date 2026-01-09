@@ -326,22 +326,22 @@ func (r *ShoppingListRepository) GetAggregatedIngredients(ctx context.Context, u
 	}
 
 	// Build query to get all ingredients from the specified recipes
-	// with their quantities and units from recipe_ingredients
+	// with their quantities and units from recipe_ingredient_lines
 	query := `
 		SELECT
 			i.id as ingredient_id,
 			i.name as ingredient_name,
 			ic.id as category_id,
 			ic.name as category_name,
-			ri.quantity,
-			ri.unit,
+			ril.quantity_value,
+			ril.unit,
 			r.id as recipe_id,
 			r.name as recipe_name
-		FROM recipe_ingredients ri
-		JOIN ingredients i ON ri.ingredient_id = i.id
-		JOIN recipes r ON ri.recipe_id = r.id
+		FROM recipe_ingredient_lines ril
+		JOIN ingredients i ON ril.ingredient_id = i.id
+		JOIN recipes r ON ril.recipe_id = r.id
 		LEFT JOIN ingredient_categories ic ON i.category_id = ic.id
-		WHERE ri.recipe_id = ANY($1)
+		WHERE ril.recipe_id = ANY($1)
 		  AND (r.user_id = $2 OR EXISTS (SELECT 1 FROM recipe_shares rs WHERE rs.recipe_id = r.id AND rs.shared_with_user_id = $2))
 		ORDER BY ic.display_order NULLS LAST, i.name
 	`
@@ -497,7 +497,7 @@ func (r *ShoppingListRepository) getListItems(ctx context.Context, listID uuid.U
 			sli.id, sli.shopping_list_id, sli.ingredient_id, sli.custom_name,
 			sli.quantity, sli.unit, sli.checked, sli.notes, sli.is_custom,
 			sli.created_at, sli.updated_at,
-			i.id, i.name, i.quantity,
+			i.id, i.name, i.description,
 			ic.id, ic.name, ic.display_order
 		FROM shopping_list_items sli
 		LEFT JOIN ingredients i ON sli.ingredient_id = i.id
@@ -516,14 +516,14 @@ func (r *ShoppingListRepository) getListItems(ctx context.Context, listID uuid.U
 	for rows.Next() {
 		var item domain.ShoppingListItem
 		var ingredientID, catID *uuid.UUID
-		var ingredientName, ingredientQty, catName *string
+		var ingredientName, ingredientDescription, catName *string
 		var catOrder *int
 
 		err := rows.Scan(
 			&item.ID, &item.ShoppingListID, &item.IngredientID, &item.CustomName,
 			&item.Quantity, &item.Unit, &item.Checked, &item.Notes, &item.IsCustom,
 			&item.CreatedAt, &item.UpdatedAt,
-			&ingredientID, &ingredientName, &ingredientQty,
+			&ingredientID, &ingredientName, &ingredientDescription,
 			&catID, &catName, &catOrder,
 		)
 		if err != nil {
@@ -531,14 +531,14 @@ func (r *ShoppingListRepository) getListItems(ctx context.Context, listID uuid.U
 		}
 
 		if ingredientID != nil && ingredientName != nil {
-			qty := ""
-			if ingredientQty != nil {
-				qty = *ingredientQty
+			description := ""
+			if ingredientDescription != nil {
+				description = *ingredientDescription
 			}
 			item.Ingredient = &domain.Ingredient{
-				ID:       *ingredientID,
-				Name:     *ingredientName,
-				Quantity: qty,
+				ID:          *ingredientID,
+				Name:        *ingredientName,
+				Description: description,
 			}
 		}
 

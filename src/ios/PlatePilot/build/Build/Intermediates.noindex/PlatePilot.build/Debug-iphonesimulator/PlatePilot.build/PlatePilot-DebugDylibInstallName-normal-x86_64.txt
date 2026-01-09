@@ -1,0 +1,1 @@
+@rpath/PlatePilot.debug.dylib

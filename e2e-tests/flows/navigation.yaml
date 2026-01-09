@@ -1,0 +1,52 @@
+appId: com.platepilot.app
+---
+# Test Suite: Navigation
+# Tests tab navigation between all main screens
+
+- launchApp
+
+# Start on Home tab
+- assertVisible: "Today's Plan"
+
+# Test: Navigate to Recipes
+- tapOn: "Recipes"
+- waitForElement: "Recipe List"
+- assertVisible: "RecipeCard"
+
+# Test: Navigate to Meal Plan
+- tapOn: "Meal Plan"
+- waitForElement: "Week View"
+- assertVisible: "Monday"
+- assertVisible: "Tuesday"
+
+# Test: Navigate to Search
+- tapOn: "Search"
+- waitForElement: "Search"
+- assertVisible:
+    id: "SearchBar"
+
+# Test: Navigate to Insights
+- tapOn: "Insights"
+- waitForElement: "Insights"
+# Insights may show charts or stats
+
+# Test: Navigate back to Home
+- tapOn: "Home"
+- assertVisible: "Today's Plan"
+- assertVisible: "Daily Calories"
+
+# Test: Deep navigation (Recipe -> Detail -> Back)
+- tapOn: "Recipes"
+- waitForElement: "Recipe List"
+- tapOn:
+    id: "RecipeCard"
+    index: 0
+- waitForElement: "Ingredients"
+- back
+- assertVisible: "Recipe List"
+
+# Test: Can navigate to home from anywhere
+- tapOn: "Meal Plan"
+- waitForElement: "Week View"
+- tapOn: "Home"
+- assertVisible: "Today's Plan"

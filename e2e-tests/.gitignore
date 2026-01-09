@@ -1,8 +1,17 @@
+# Maestro test results
+.maestro/tests/
+maestro-output/
 
-# Playwright
+# Node modules (if needed)
 node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/playwright/.auth/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

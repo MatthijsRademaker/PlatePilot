@@ -77,6 +77,12 @@ type ShoppingListItemJSON struct {
 	CreatedAt    string                   `json:"createdAt"`
 }
 
+// IngredientJSON is the JSON response for ingredient refs.
+type IngredientJSON struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // IngredientCategoryJSON is the JSON response for an ingredient category
 type IngredientCategoryJSON struct {
 	ID           string `json:"id"`
