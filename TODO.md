@@ -1,8 +1,7 @@
 2. Multi user
     - first start with a single always logged in user so to speak? Or just integrate google oauth from the get go? Maybe email with keycloack for poc is easier? IDK
-3. Create the homepage based on design
-4. Create dynamic island nav, which changes based on mode -> maybe a radial in the center to switch modes? 
-
+3, sync ios and frontend, or find a way to do e2e tests with ios app? 
+4. come up with a epic roadmap, stuff is getting to cluttered
 <!-- once the above is done, we swarming -->
 4. Features
     1. Agents

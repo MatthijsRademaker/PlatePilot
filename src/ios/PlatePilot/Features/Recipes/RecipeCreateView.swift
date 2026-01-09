@@ -14,6 +14,12 @@ struct RecipeCreateView: View {
     @State private var isAddingInstruction = false
     @State private var newIngredientName = ""
     @State private var newInstructionText = ""
+    @State private var newIngredientQuantity = RecipeCreationMetrics.defaultQuantity
+    @State private var newIngredientUnit = RecipeCreationMetrics.defaultUnit
+    @State private var availableUnits: [String] = RecipeCreationMetrics.defaultUnits
+    @State private var isUnitOverlayVisible = false
+    @State private var unitOverlayTarget: UnitPickerTarget?
+    @State private var newUnitName = ""
     @State private var timePickerTarget: TimePickerTarget?
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var photoImage: Image?
@@ -59,10 +65,21 @@ struct RecipeCreateView: View {
                 .padding(.bottom, 120)
             }
             .scrollDismissesKeyboard(.immediately)
+
         }
         .safeAreaInset(edge: .bottom) {
             saveBar
                 .padding(.bottom, RecipeCreationMetrics.hubBarHeight + 8)
+        }
+        .overlay {
+            if isUnitOverlayVisible {
+                UnitCreationOverlay(
+                    unitName: $newUnitName,
+                    onCancel: { hideUnitOverlay() },
+                    onSave: { saveUnit() }
+                )
+                .transition(.opacity)
+            }
         }
         .onAppear {
             withAnimation(.easeOut(duration: 0.4)) {
@@ -150,10 +167,14 @@ struct RecipeCreateView: View {
             }
 
             VStack(spacing: 10) {
-                ForEach(draft.ingredients) { ingredient in
-                    IngredientRow(name: ingredient.name, onDelete: {
-                        removeIngredient(ingredient)
-                    })
+                ForEach($draft.ingredients) { $ingredient in
+                    IngredientRow(
+                        ingredient: $ingredient,
+                        quantityOptions: RecipeCreationMetrics.quantityOptions,
+                        unitOptions: availableUnits,
+                        onAddUnit: { showUnitOverlay(target: .ingredient(ingredient.id)) },
+                        onDelete: { removeIngredient(id: ingredient.id) }
+                    )
                 }
 
                 if isAddingIngredient {
@@ -189,38 +210,58 @@ struct RecipeCreateView: View {
 
     private var ingredientInputRow: some View {
         GlassRow {
-            HStack(spacing: 10) {
-                TextField("Add ingredient", text: $newIngredientName)
-                    .font(PlatePilotTheme.bodyFont(size: 14, weight: .medium))
-                    .foregroundStyle(RecipeCreationColors.textPrimary)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled()
-                    .focused($focusedField, equals: .newIngredient)
-                    .submitLabel(.done)
-                    .onSubmit { addIngredient() }
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    TextField("Add ingredient", text: $newIngredientName)
+                        .font(PlatePilotTheme.bodyFont(size: 14, weight: .medium))
+                        .foregroundStyle(RecipeCreationColors.textPrimary)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                        .focused($focusedField, equals: .newIngredient)
+                        .submitLabel(.done)
+                        .onSubmit { addIngredient() }
 
-                Spacer(minLength: 8)
+                    Spacer(minLength: 8)
 
-                Button(action: addIngredient) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
-                        .background(RecipeCreationColors.saveGradient, in: Circle())
+                    Button(action: addIngredient) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 28, height: 28)
+                            .background(RecipeCreationColors.saveGradient, in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(newIngredientName.trimmed().isEmpty)
+                    .accessibilityLabel("Add ingredient")
+
+                    Button(action: cancelIngredientEntry) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(RecipeCreationColors.textSecondary)
+                            .frame(width: 28, height: 28)
+                            .background(Color.white.opacity(0.2), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Cancel ingredient")
                 }
-                .buttonStyle(.plain)
-                .disabled(newIngredientName.trimmed().isEmpty)
-                .accessibilityLabel("Add ingredient")
 
-                Button(action: cancelIngredientEntry) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(RecipeCreationColors.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .background(Color.white.opacity(0.2), in: Circle())
+                HStack(spacing: 10) {
+                    SelectBox(
+                        title: "Quantity",
+                        selection: $newIngredientQuantity,
+                        options: RecipeCreationMetrics.quantityOptions
+                    )
+
+                    HStack(spacing: 6) {
+                        SelectBox(
+                            title: "Unit",
+                            selection: $newIngredientUnit,
+                            options: availableUnits
+                        )
+
+                        UnitAddButton(action: { showUnitOverlay(target: .newIngredient) })
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Cancel ingredient")
             }
         }
     }
@@ -373,13 +414,66 @@ struct RecipeCreateView: View {
         focusedField = .newInstruction
     }
 
+    private func showUnitOverlay(target: UnitPickerTarget) {
+        unitOverlayTarget = target
+        newUnitName = ""
+        withAnimation(.easeOut(duration: 0.2)) {
+            isUnitOverlayVisible = true
+        }
+    }
+
+    private func hideUnitOverlay() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            isUnitOverlayVisible = false
+        }
+        unitOverlayTarget = nil
+        newUnitName = ""
+    }
+
+    private func saveUnit() {
+        let cleaned = newUnitName.trimmed()
+        guard !cleaned.isEmpty else { return }
+
+        let existing = availableUnits.first { $0.caseInsensitiveCompare(cleaned) == .orderedSame }
+        let resolvedUnit = existing ?? cleaned
+        if existing == nil {
+            availableUnits.append(cleaned)
+        }
+
+        if let target = unitOverlayTarget {
+            applyUnit(resolvedUnit, to: target)
+        }
+
+        // TODO: Persist custom units and load available units from the backend.
+        Haptics.light()
+        hideUnitOverlay()
+    }
+
+    private func applyUnit(_ unit: String, to target: UnitPickerTarget) {
+        switch target {
+        case .newIngredient:
+            newIngredientUnit = unit
+        case .ingredient(let id):
+            guard let index = draft.ingredients.firstIndex(where: { $0.id == id }) else { return }
+            draft.ingredients[index].unit = unit
+        }
+    }
+
     private func addIngredient() {
         let cleaned = newIngredientName.trimmed()
         guard !cleaned.isEmpty else { return }
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            draft.ingredients.append(IngredientDraft(name: cleaned))
+            draft.ingredients.append(
+                IngredientDraft(
+                    name: cleaned,
+                    quantity: newIngredientQuantity,
+                    unit: newIngredientUnit
+                )
+            )
         }
         newIngredientName = ""
+        newIngredientQuantity = RecipeCreationMetrics.defaultQuantity
+        newIngredientUnit = RecipeCreationMetrics.defaultUnit
         Haptics.light()
     }
 
@@ -395,6 +489,8 @@ struct RecipeCreateView: View {
 
     private func cancelIngredientEntry() {
         newIngredientName = ""
+        newIngredientQuantity = RecipeCreationMetrics.defaultQuantity
+        newIngredientUnit = RecipeCreationMetrics.defaultUnit
         isAddingIngredient = false
         focusedField = nil
     }
@@ -405,8 +501,8 @@ struct RecipeCreateView: View {
         focusedField = nil
     }
 
-    private func removeIngredient(_ ingredient: IngredientDraft) {
-        if let index = draft.ingredients.firstIndex(of: ingredient) {
+    private func removeIngredient(id: UUID) {
+        if let index = draft.ingredients.firstIndex(where: { $0.id == id }) {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                 draft.ingredients.remove(at: index)
             }
@@ -430,12 +526,14 @@ struct RecipeCreateView: View {
         defer { isSaving = false }
 
         do {
+            let ingredientNames = draft.ingredients.map { $0.name.trimmed() }.filter { !$0.isEmpty }
+            // TODO: Send ingredient quantity/unit to the backend once the API supports it.
             _ = try await recipeStore.createRecipe(
                 name: draft.title.trimmed(),
                 description: draft.description.trimmed(),
                 prepMinutes: draft.prepMinutes,
                 cookMinutes: draft.cookMinutes,
-                ingredients: draft.ingredients.map { $0.name.trimmed() }.filter { !$0.isEmpty },
+                ingredients: ingredientNames,
                 instructions: draft.instructions.map { $0.text.trimmed() }.filter { !$0.isEmpty },
                 tags: draft.tags.map { $0.apiValue },
                 guidedMode: draft.guidedMode
@@ -494,6 +592,20 @@ private enum TimePickerTarget: Identifiable {
     }
 }
 
+private enum UnitPickerTarget: Identifiable {
+    case newIngredient
+    case ingredient(UUID)
+
+    var id: String {
+        switch self {
+        case .newIngredient:
+            return "new"
+        case .ingredient(let id):
+            return id.uuidString
+        }
+    }
+}
+
 private struct RecipeDraft {
     var title: String = ""
     var description: String = ""
@@ -508,6 +620,8 @@ private struct RecipeDraft {
 private struct IngredientDraft: Identifiable, Hashable {
     let id = UUID()
     var name: String
+    var quantity: String
+    var unit: String
 }
 
 private struct InstructionDraft: Identifiable, Hashable {
@@ -544,6 +658,10 @@ private enum RecipeCreationMetrics {
     static let cardPadding: CGFloat = 16
     static let rowRadius: CGFloat = 16
     static let hubBarHeight: CGFloat = 76
+    static let defaultQuantity = "1"
+    static let defaultUnit = "unit"
+    static let quantityOptions = ["1/4", "1/2", "3/4", "1", "1 1/2", "2", "3", "4", "5"]
+    static let defaultUnits = ["unit", "g", "kg", "ml", "l", "tsp", "tbsp", "cup", "pinch", "slice"]
 }
 
 private enum RecipeCreationColors {
@@ -707,32 +825,97 @@ private struct PhotoPickerButton: View {
     }
 }
 
+private struct SelectBox: View {
+    let title: String
+    @Binding var selection: String
+    let options: [String]
+
+    var body: some View {
+        Picker(selection: $selection) {
+            ForEach(options, id: \.self) { option in
+                Text(option).tag(option)
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(selection)
+                    .font(PlatePilotTheme.bodyFont(size: 13, weight: .semibold))
+                    .foregroundStyle(RecipeCreationColors.textSecondary)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(RecipeCreationColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white.opacity(0.2))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .pickerStyle(.menu)
+    }
+}
+
+private struct UnitAddButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "plus")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 24, height: 24)
+                .background(RecipeCreationColors.saveGradient, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add unit")
+    }
+}
+
 private struct IngredientRow: View {
-    let name: String
+    @Binding var ingredient: IngredientDraft
+    let quantityOptions: [String]
+    let unitOptions: [String]
+    let onAddUnit: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
         GlassRow {
-            HStack(spacing: 12) {
-                Circle()
-                    .fill(RecipeCreationColors.accent.opacity(0.7))
-                    .frame(width: 6, height: 6)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 12) {
+                    Circle()
+                        .fill(RecipeCreationColors.accent.opacity(0.7))
+                        .frame(width: 6, height: 6)
 
-                Text(name)
-                    .font(PlatePilotTheme.bodyFont(size: 15))
-                    .foregroundStyle(RecipeCreationColors.textPrimary)
+                    Text(ingredient.name)
+                        .font(PlatePilotTheme.bodyFont(size: 15))
+                        .foregroundStyle(RecipeCreationColors.textPrimary)
 
-                Spacer()
+                    Spacer()
 
-                Button(action: onDelete) {
-                    Image(systemName: "trash")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(RecipeCreationColors.textSecondary)
-                        .frame(width: 28, height: 28)
-                        .background(Color.white.opacity(0.2), in: Circle())
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(RecipeCreationColors.textSecondary)
+                            .frame(width: 28, height: 28)
+                            .background(Color.white.opacity(0.2), in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Delete ingredient")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Delete ingredient")
+
+                HStack(spacing: 10) {
+                    SelectBox(title: "Quantity", selection: $ingredient.quantity, options: quantityOptions)
+
+                    HStack(spacing: 6) {
+                        SelectBox(title: "Unit", selection: $ingredient.unit, options: unitOptions)
+                        UnitAddButton(action: onAddUnit)
+                    }
+                }
             }
         }
     }
@@ -911,6 +1094,62 @@ private struct RecipeCreationEntranceModifier: ViewModifier {
             .opacity(didAppear ? 1 : 0)
             .offset(y: didAppear ? 0 : 14)
             .animation(.easeOut(duration: 0.5).delay(delay), value: didAppear)
+    }
+}
+
+private struct UnitCreationOverlay: View {
+    @Binding var unitName: String
+    let onCancel: () -> Void
+    let onSave: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.25)
+                .ignoresSafeArea()
+                .onTapGesture(perform: onCancel)
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Add Unit")
+                    .font(PlatePilotTheme.titleFont(size: 20))
+                    .foregroundStyle(RecipeCreationColors.textPrimary)
+
+                TextField("e.g. tbsp, cup, g", text: $unitName)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .font(PlatePilotTheme.bodyFont(size: 15))
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.white.opacity(0.25))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    )
+
+                HStack(spacing: 12) {
+                    Button("Cancel", action: onCancel)
+                        .buttonStyle(.bordered)
+
+                    Spacer()
+
+                    Button("Save Unit", action: onSave)
+                        .buttonStyle(.borderedProminent)
+                        .disabled(unitName.trimmed().isEmpty)
+                }
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                    )
+            )
+            .padding(.horizontal, 32)
+        }
     }
 }
 
